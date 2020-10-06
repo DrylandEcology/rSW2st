@@ -19,10 +19,12 @@
 
 
 
-#' Package \pkg{rSW2space}: summary information
+#' Package \pkg{rSW2st}: Collection of general purpose functions that operate on
+#' spatially and temporally explicit objects
+#' to support \pkg{SOILWAT2} and \pkg{STEPWAT2} simulation experiments.
 #'
 #' @docType package
-#' @name rSW2space
+#' @name rSW2st
 "_PACKAGE"
 
 

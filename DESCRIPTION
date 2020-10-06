@@ -9,7 +9,7 @@ Authors@R: c(
     role = c("aut", "cre")))
 Description: Collection of general purpose functions that operate on
   spatially and temporally explicit objects
-   to support SOILWAT2/STEPWAT2 simulation experiments.
+  to support SOILWAT2/STEPWAT2 simulation experiments.
 Depends:
     R (>= 3.5.0),
     methods
