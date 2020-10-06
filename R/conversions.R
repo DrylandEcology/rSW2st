@@ -13,7 +13,7 @@
 #'   convert to \var{"sf"} for a \code{\link[sf:sf]{sf}} object; or
 #'   convert to \var{"sfc"} for
 #'   a \code{\link[sf:sfc_POINT]{sf::sfc_POINT}} object.
-#' @inheritParams rSW2space_crs
+#' @inheritParams rSW2st_crs
 #'
 #' @section Details:
 #'   Argument \code{crs} is only used if \code{locations} is not already a
