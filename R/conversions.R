@@ -1,7 +1,7 @@
 
 #' Convert two-dimensional locations to a spatially explicit object
 #'
-#' @param locations A numerical two-dimensional object
+#' @param x A numerical two-dimensional object
 #'   (a \code{matrix}, \code{array}, or \code{data.frame})
 #'   with longitude/X, latitude/Y as columns;
 #'   a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object; or
@@ -19,10 +19,7 @@
 #'   Argument \code{crs} is only used if \code{locations} is not already a
 #'   spatial object with a \code{crs}.
 #'
-#' @return An object of the requested class. If the input
-#'   object \code{locations} is already of the requested class, then it is
-#'   returned unchanged; otherwise, non-geometry/non-spatial data may be
-#'   discarded.
+#' @return An object of the requested class.
 #'
 #' @examples
 #'  locations <- matrix(
@@ -30,54 +27,55 @@
 #'    nrow = 2
 #'  )
 #'
-#'  pts_sf1 <- convert_points(locations, to_class = "sf")
-#'  pts_sfc1 <- convert_points(locations, to_class = "sfc")
-#'  pts_sp1 <- convert_points(locations, to_class = "sp")
+#'  pts_sf1 <- as_points(locations, to_class = "sf")
+#'  pts_sfc1 <- as_points(locations, to_class = "sfc")
+#'  pts_sp1 <- as_points(locations, to_class = "sp")
 #'
-#'  pts_sf2 <- convert_points(pts_sp1, to_class = "sf")
-#'  pts_sfc2 <- convert_points(pts_sp1, to_class = "sfc")
-#'  pts_sp2 <- convert_points(pts_sf1, to_class = "sp")
+#'  pts_sf2 <- as_points(pts_sp1, to_class = "sf")
+#'  pts_sfc2 <- as_points(pts_sp1, to_class = "sfc")
+#'  pts_sp2 <- as_points(pts_sf1, to_class = "sp")
 #'
-#'  all.equal(pts_sf1, pts_sf2)
-#'  all.equal(pts_sfc1, pts_sfc2)
+#'  all.equal(pts_sf1, pts_sf2, check.attributes = FALSE)
+#'  all.equal(pts_sfc1, pts_sfc2, check.attributes = FALSE)
 #'  all.equal(pts_sp1, pts_sp2)
 #'  all.equal(locations, sf::st_coordinates(pts_sf1), check.attributes = FALSE)
 #'  all.equal(locations, sf::st_coordinates(pts_sfc1), check.attributes = FALSE)
 #'  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
 #'
 #' @export
-convert_points <- function(
-  locations,
+as_points <- function(
+  x,
   to_class = c("sf", "sfc", "sp"),
   crs = 4326
 ) {
 
   to_class <- match.arg(to_class)
 
-  if (inherits(locations, to_class)) {
-    return(locations)
+  if (inherits(x, to_class)) {
+    return(x)
   }
 
-  is_sp <- inherits(locations, "SpatialPoints")
-  is_sf <- inherits(locations, c("sf", "sfc", "sfg"))
+  is_sp <- inherits(x, "SpatialPoints")
+  is_sf <- inherits(x, c("sf", "sfc", "sfg"))
 
   # Convert
   res <- if (is_sf) {
-    tmp <- sf::st_geometry(locations)
     switch(
       EXPR = to_class,
-      sp = as(tmp, "Spatial"),
-      sf = , #nolint
-      sfc = tmp
+      sp = {
+        has_data <- length(setdiff(colnames(x), attr(x, "sf_column"))) > 0
+        if (has_data) as(x, "Spatial") else as(sf::st_geometry(x), "Spatial")
+      },
+      sf = x,
+      sfc = sf::st_geometry(x)
     )
 
   } else if (is_sp) {
-    tmp <- as(locations, "SpatialPoints")
     switch(
       EXPR = to_class,
-      sp = tmp,
-      sf = , #nolint
-      sfc = as(tmp, "sfc")
+      sp = x,
+      sf = as(x, "sf"),
+      sfc = as(x, "sfc")
     )
 
   } else if (!(is_sp || is_sf)) {
@@ -85,17 +83,17 @@ convert_points <- function(
     switch(
       EXPR = to_class,
       sp = sp::SpatialPoints(
-        coords = locations,
-        proj4string = sp::CRS(crs$proj4string)
+        coords = x,
+        proj4string = as(crs, "CRS")
       ),
       sf = , #nolint
       sfc = sf::st_cast(
         x = sf::st_sfc(
           sf::st_multipoint(
-            x = if (inherits(locations, "matrix")) {
-              locations
+            x = if (inherits(x, "matrix")) {
+              x
             } else {
-              data.matrix(locations)
+              data.matrix(x)
             }
           ),
           crs = crs
@@ -105,5 +103,5 @@ convert_points <- function(
     )
   }
 
-  if (to_class == "sf") sf::st_as_sf(res) else res
+  if (to_class == "sf" && !inherits(res, "sf")) sf::st_as_sf(res) else res
 }

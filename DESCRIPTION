@@ -17,13 +17,13 @@ Imports:
     rSW2utils,
     sf,
     sp,
+    rgdal,
     raster
 Suggests:
     testthat,
     spelling,
     lintr,
-    covr,
-    rgdal
+    covr
 Remotes:
     github::DrylandEcology/rSW2utils
 License: GPL-3

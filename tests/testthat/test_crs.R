@@ -4,7 +4,6 @@ test_that("crs", {
 
   # Attempt to handle GDAL3+/PROJ6+ warnings
   has_thin_PROJ6_warnings <-
-    requireNamespace("rgdal") &&
     getNamespaceVersion("rgdal") >= as.numeric_version("1.5.8")
 
   if (has_thin_PROJ6_warnings) {
@@ -52,18 +51,25 @@ test_that("crs", {
     #--- Retrieve crs
     expect_s3_class(sf::st_crs(epsg), expected_class)
     expect_s3_class(sf::st_crs(txt_epsg), expected_class)
-    expect_s3_class(sf::st_crs(sp::CRS(proj4_epsg)), expected_class)
+
+    tmp_spCRS <- if (rgdal::new_proj_and_gdal()) {
+      sp::CRS(SRS_string = txt_epsg)
+    } else {
+      sp::CRS(proj4_epsg)
+    }
+    expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
+
 
     expect_s3_class(
-      sf::st_crs(convert_points(locs, "sp", crs = proj4_epsg)),
+      sf::st_crs(as_points(locs, "sp", crs = epsg)),
       expected_class
     )
     expect_s3_class(
-      sf::st_crs(convert_points(locs, "sf", crs = epsg)),
+      sf::st_crs(as_points(locs, "sf", crs = epsg)),
       expected_class
     )
     expect_s3_class(
-      sf::st_crs(sf::st_as_sf(convert_points(locs, "sf", crs = epsg))),
+      sf::st_crs(sf::st_as_sf(as_points(locs, "sf", crs = epsg))),
       expected_class
     )
 
@@ -74,18 +80,24 @@ test_that("crs", {
     #--- Determine crs units
     expect_equal(crs_units(epsg), expected_unit)
     expect_equal(crs_units(txt_epsg), expected_unit)
-    expect_equal(crs_units(sp::CRS(proj4_epsg)), expected_unit)
+
+    tmp_spCRS <- if (rgdal::new_proj_and_gdal()) {
+      sp::CRS(SRS_string = txt_epsg)
+    } else {
+      sp::CRS(proj4_epsg)
+    }
+    expect_equal(crs_units(tmp_spCRS), expected_unit)
 
     expect_equal(
-      crs_units(convert_points(locs, "sp", crs = proj4_epsg)),
+      crs_units(as_points(locs, "sp", crs = epsg)),
       expected_unit
     )
     expect_equal(
-      crs_units(convert_points(locs, "sf", crs = epsg)),
+      crs_units(as_points(locs, "sf", crs = epsg)),
       expected_unit
     )
     expect_equal(
-      crs_units(sf::st_as_sf(convert_points(locs, "sf", crs = epsg))),
+      crs_units(sf::st_as_sf(as_points(locs, "sf", crs = epsg))),
       expected_unit
     )
 

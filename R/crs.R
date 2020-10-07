@@ -3,7 +3,8 @@
 #' @param crs An object which is a \var{crs} or from which one can be derived.
 #'   \code{x} can
 #'   be numeric as a \var{EPSG} number;
-#'   a character string as a \var{wkt} or \var{proj4};
+#'   a character string as a \var{wkt};
+#'   a character string as a \var{proj4} (not recommended because outdated);
 #'   or of a class including
 #'     \code{\link[raster:Raster-class]{raster::Raster}},
 #'     \code{\link[sp:Spatial-class]{sp::Spatial}},
