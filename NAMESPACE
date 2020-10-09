@@ -2,6 +2,7 @@
 
 export(as_points)
 export(crs_units)
+export(epsg_for_utm)
 export(utm_zone)
 importFrom(methods,as)
 importFrom(stats,aggregate)

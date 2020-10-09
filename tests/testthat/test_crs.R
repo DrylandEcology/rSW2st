@@ -137,5 +137,10 @@ test_that("UTM", {
       utm_zone(locations[k, 1:2])[["utm_zone"]],
       locations[k, "expected_utm_zone"]
     )
+
+    expect_equal(
+      epsg_for_utm(locations[k, 1:2]),
+      locations[k, "expected_utm_epsg"]
+    )
   }
 })

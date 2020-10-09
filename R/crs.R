@@ -99,4 +99,38 @@ utm_zone <- function(x, crs = 4326) {
   )
 }
 
+
+
+#' \var{EPSG} code for the \var{UTM} zone based on geographic location(s)
+#'
+#' The function determines the \var{UTM} zone for the mid-point of \code{x}.
+#'
+#' @inheritParams as_points
+#'
+#' @return The \var{EPSG} code as integer value.
+#'
+#' @seealso \code{\link{utm_zone}}
+#'
+#' @references
+#' The python package \var{utm-zone} by Per Liedman available at
+#' \url{https://pypi.org/project/utm-zone}.
+#'
+#' @examples
+#' locations <- matrix(
+#'   data = c(-120.325, -111.245, 39.855, 36.753),
+#'   nrow = 2
+#' )
+#'
+#' epsg_for_utm(locations)
+#' sf::st_crs(epsg_for_utm(locations))
+#'
+#' @export
+epsg_for_utm <- function(x, crs = 4326) {
+  tmp <- utm_zone(x, crs)
+
+  if (tmp[["utm_NS"]] == "S") {
+    32700 + tmp[["utm_zone"]]
+  } else {
+    32600 + tmp[["utm_zone"]]
+  }
 }
