@@ -109,3 +109,33 @@ test_that("crs", {
     rgdal::set_thin_PROJ6_warnings(prev_warnings)
   }
 })
+
+
+
+test_that("UTM", {
+  tmp <- c(-120, -100, -90, 0, 15, 90, 135, 150)
+
+  locations <- data.frame(
+    longitude = rep(tmp, each = 2),
+    latitude = rep(c(-40, 40), times = length(tmp)),
+    expected_utm_zone =
+      c(11, 11, 14, 14, 16, 16, 31, 31, 33, 33, 46, 46, 53, 53, 56, 56),
+    expected_utm_epsg = c(
+      32711, 32611,
+      32714, 32614,
+      32716, 32616,
+      32731, 32631,
+      32733, 32633,
+      32746, 32646,
+      32753, 32653,
+      32756, 32656
+    )
+  )
+
+  for (k in seq_len(nrow(locations))) {
+    expect_equal(
+      utm_zone(locations[k, 1:2])[["utm_zone"]],
+      locations[k, "expected_utm_zone"]
+    )
+  }
+})

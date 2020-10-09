@@ -33,7 +33,20 @@ crs_units <- function(crs) {
 }
 
 
-#' Calculate the UTM zone based on geographic location
+
+
+
+#' \var{UTM} zone based on geographic location(s)
+#'
+#' The function determines the \var{UTM} number and south/north location
+#' for the mid-point of \code{x}.
+#'
+#' @inheritParams as_points
+#'
+#' @return A list with two elements: \describe{
+#'   \item{utm_zone}{The UTM zone number as integer value.}
+#'   \item{utm_NS}{North/South indicator as character "N" or "S"}.
+#' }
 #'
 #' @references Convert Latitude/Longitude to UTM
 #nolint start
@@ -41,32 +54,49 @@ crs_units <- function(crs) {
 #nolint end
 #'   (attributed to Chuck Gantz).
 #'
+#' @examples
+#' locations <- matrix(
+#'   data = c(-120.325, -111.245, 39.855, 36.753),
+#'   nrow = 2
+#' )
+#'
+#' utm_zone(locations)
+#' utm_zone(locations[1, ])
+#' utm_zone(locations[2, ])
+#'
 #' @export
-get_UTM_Zone <- function(longitude, latitude) {
-  Long <- mean(longitude)
-  Lat <- mean(latitude)
+utm_zone <- function(x, crs = 4326) {
+  x <- as_points(x, to_class = "sf", crs = crs)
+  x <- as_points(x, to_class = "sf", crs = 4326)
+  xy <- sf::st_coordinates(x)
+  mxy <- colMeans(xy)
 
   # Make sure longitude is between -180.00 .. 179.9
-  LongTemp <- Long - floor((Long + 180) / 360) * 360
+  long <- mxy[1] - floor((mxy[1] + 180) / 360) * 360
 
-  ZoneNumber <- floor((LongTemp + 180) / 6) + 1
+  utm_zone <- floor((long + 180) / 6) + 1
 
-  if (Lat >= 56 && Lat < 64 && LongTemp >= 3 && LongTemp < 12) {
-    ZoneNumber <- 32
+  if (mxy[2] >= 56 && mxy[2] < 64 && long >= 3 && long < 12) {
+    utm_zone <- 32
   }
 
   # Special zones for Svalbard
-  if (Lat >= 72 && Lat < 84) {
-    if (LongTemp >= 0 && LongTemp < 9) {
-      ZoneNumber <- 31
-    } else if (LongTemp >= 9 && LongTemp < 21) {
-      ZoneNumber <- 33
-    } else if (LongTemp >= 21 && LongTemp < 33) {
-      ZoneNumber <- 35
-    } else if (LongTemp >= 33 && LongTemp < 42) {
-      ZoneNumber <- 37
+  if (mxy[2] >= 72 && mxy[2] < 84) {
+    if (long >= 0 && long < 9) {
+      utm_zone <- 31
+    } else if (long >= 9 && long < 21) {
+      utm_zone <- 33
+    } else if (long >= 21 && long < 33) {
+      utm_zone <- 35
+    } else if (long >= 33 && long < 42) {
+      utm_zone <- 37
     }
   }
 
-  ZoneNumber
+  list(
+    utm_zone = as.integer(unname(utm_zone)),
+    utm_NS = if (mxy[2] > 0) "N" else "S"
+  )
+}
+
 }
