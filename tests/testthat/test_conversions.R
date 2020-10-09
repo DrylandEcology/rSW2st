@@ -110,4 +110,22 @@ test_that("as_points", {
   )
   expect_true(sf::st_crs(pts_sf_sfc) == sf::st_crs(pts_sfc))
   expect_true(sf::st_crs(pts_sf_sfc) == sf::st_crs(pts_sf))
+
+
+
+  #--- Check conversions from one-dimensional numerical vector
+  # A vector of length two is interpreted as a single point location
+  pts_sf1 <- as_points(locations[1, ], to_class = "sf")
+  expect_s3_class(pts_sf1, "sf")
+  expect_equal(
+    sf::st_coordinates(pts_sf1),
+    locations[1, ],
+    check.attributes = FALSE
+  )
+
+  # Longer/shorter vectors fail
+  expect_error(as_points(1, to_class = "sf"))
+  expect_error(as_points(c(1, 2, 3), to_class = "sf"))
+  expect_error(as_points(1, to_class = "sp"))
+  expect_error(as_points(c(1, 2, 3), to_class = "sp"))
 })

@@ -42,6 +42,9 @@
 #'  all.equal(locations, sf::st_coordinates(pts_sfc1), check.attributes = FALSE)
 #'  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
 #'
+#'  # A vector of length two is interpreted as a single point location
+#'  pts_sf11 <- as_points(locations[1, ], to_class = "sf")
+#'
 #' @export
 as_points <- function(
   x,
@@ -79,6 +82,13 @@ as_points <- function(
     )
 
   } else if (!(is_sp || is_sf)) {
+
+    if (is.null(dim(x)) && length(x) == 2) {
+      # Assume that this is supposed to be one point (and the object lost its
+      # 2-dim structure inadvertently, e.g., locations[1, , drop = TRUE])
+      x <- matrix(x, nrow = 1, ncol = 2)
+    }
+
     crs <- sf::st_crs(crs)
     switch(
       EXPR = to_class,

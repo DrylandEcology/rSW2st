@@ -65,4 +65,7 @@ Convert two-dimensional locations to a spatially explicit object
  all.equal(locations, sf::st_coordinates(pts_sfc1), check.attributes = FALSE)
  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
 
+ # A vector of length two is interpreted as a single point location
+ pts_sf11 <- as_points(locations[1, ], to_class = "sf")
+
 }
