@@ -20,6 +20,7 @@ Imports:
     rgdal,
     raster
 Suggests:
+    geosphere,
     testthat,
     spelling,
     lintr,

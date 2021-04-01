@@ -2,6 +2,7 @@
 
 export(as_points)
 export(calculate_cell_area)
+export(calculate_nominal_resolution)
 export(crs_units)
 export(epsg_for_utm)
 export(utm_zone)
