@@ -1,5 +1,3 @@
-context("coordinate reference system")
-
 test_that("crs", {
 
   # Attempt to handle GDAL3+/PROJ6+ warnings

@@ -1,6 +1,3 @@
-context("conversions")
-
-
 test_that("as_points", {
   #--- Check conversions from two-dimensional numerical matrix to sp/sf/sfc
   locations <- matrix(
