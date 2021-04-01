@@ -2,43 +2,55 @@
 % Please edit documentation in R/functions_geographical.R
 \name{calculate_nominal_resolution}
 \alias{calculate_nominal_resolution}
-\title{Calculate "nominal resolution" of grid}
+\title{Calculate "nominal resolution" of a grid}
 \usage{
-calculate_nominal_resolution(grid, sites, cell_areas_km2)
+calculate_nominal_resolution(grid, maskvalue = NA)
 }
 \arguments{
-\item{grid}{A raster object}
+\item{grid}{A raster object. Gridcells with values that are not equal to a
+\code{maskvalue} are included in the "nominal resolution" calculation.}
 
-\item{sites}{A raster object. A numeric array, matrix, or data.frame where
-each row is a site and the columns contain values for long and lat.}
-
-\item{cell_areas_km2}{A string of numeric values. Equal in length to the
-length of sites. Area each cell represents in km2.}
+\item{maskvalue}{A vector. Values to mask out from \code{grid}.}
+}
+\value{
+A character string with a "nominal resolution" value in kilometers.
 }
 \description{
-Calculate "nominal resolution" of grid
+Calculate "nominal resolution" of a grid
 }
 \examples{
-r <- raster::raster(
+r1 <- raster::raster(
   xmn = -120, xmx = -90,
   ymn = 30, ymx = 50,
-  crs ="+init=epsg:4326",
+  crs ="EPSG:4326",
   resolution = c(0.5, 0.5)
 )
-r[] <- seq_len(prod(dim(r)))
-xy <- raster::sampleRandom(r, size = 50, sp = TRUE)
-grid_cell_area <- calculate_cell_area(sites = xy, grid = r)
+ext <- raster::cellsFromExtent(r1, raster::extent(-110, -100, 35, 45))
+r1[ext] <- 1
 
-calculate_nominal_resolution(
-  grid = r,
-  sites = xy,
-  cell_areas_km2 = grid_cell_area[, "km2"]
+calculate_nominal_resolution(r1)
+
+r2 <- raster::raster(
+  xmn = -2480000, xmx = 90000,
+  ymn = 650000, ymx = 4020000,
+  crs = "EPSG:6350",
+  resolution = c(1e4, 1e4)
 )
+ext <- raster::cellsFromExtent(
+  r2,
+  raster::extent(-2080000, 0, 1000000, 3500000)
+)
+r2[ext] <- 1
+
+calculate_nominal_resolution(r2)
 
 }
 \references{
 CMIP6 Global Attributes, DRS, Filenames, Directory Structure,
   and CV’s 10 September 2018 (v6.2.7)
-  Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
-  \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}
+  \href{
+    https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi
+  }{
+    Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
+  }
 }

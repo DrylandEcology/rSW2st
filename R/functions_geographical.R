@@ -133,41 +133,52 @@ calculate_cell_area <- function(
 }
 
 
-#' Calculate "nominal resolution" of grid
+#' Calculate "nominal resolution" of a grid
 #'
-#' @param grid A raster object
-#' @param sites A raster object. A numeric array, matrix, or data.frame where
-#' each row is a site and the columns contain values for long and lat.
-#' @param cell_areas_km2 A string of numeric values. Equal in length to the
-#' length of sites. Area each cell represents in km2.
+#' @param grid A raster object. Gridcells with values that are not equal to a
+#'   \code{maskvalue} are included in the "nominal resolution" calculation.
+#' @param maskvalue A vector. Values to mask out from \code{grid}.
+#'
+#' @return A character string with a "nominal resolution" value in kilometers.
 #'
 #' @references CMIP6 Global Attributes, DRS, Filenames, Directory Structure,
 #'   and CV’s 10 September 2018 (v6.2.7)
-#'   Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
 #nolint start
-#'   \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}
+#'   \href{
+#'     https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi
+#'   }{
+#'     Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
+#'   }
 #nolint end
 #'
 #' @examples
-#' r <- raster::raster(
+#' r1 <- raster::raster(
 #'   xmn = -120, xmx = -90,
 #'   ymn = 30, ymx = 50,
-#'   crs ="+init=epsg:4326",
+#'   crs ="EPSG:4326",
 #'   resolution = c(0.5, 0.5)
 #' )
-#' r[] <- seq_len(prod(dim(r)))
-#' xy <- raster::sampleRandom(r, size = 50, sp = TRUE)
-#' grid_cell_area <- calculate_cell_area(sites = xy, grid = r)
+#' ext <- raster::cellsFromExtent(r1, raster::extent(-110, -100, 35, 45))
+#' r1[ext] <- 1
 #'
-#' calculate_nominal_resolution(
-#'   grid = r,
-#'   sites = xy,
-#'   cell_areas_km2 = grid_cell_area[, "km2"]
+#' calculate_nominal_resolution(r1)
+#'
+#' r2 <- raster::raster(
+#'   xmn = -2480000, xmx = 90000,
+#'   ymn = 650000, ymx = 4020000,
+#'   crs = "EPSG:6350",
+#'   resolution = c(1e4, 1e4)
 #' )
+#' ext <- raster::cellsFromExtent(
+#'   r2,
+#'   raster::extent(-2080000, 0, 1000000, 3500000)
+#' )
+#' r2[ext] <- 1
+#'
+#' calculate_nominal_resolution(r2)
 #'
 #' @export
-calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
-  stopifnot(requireNamespace("geosphere"))
+calculate_nominal_resolution <- function(grid, maskvalue = NA) {
   # For a land surface model calculated on its own grid,
   # include all land grid cells
 
@@ -177,7 +188,10 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
   res <- raster::res(grid)
 
   if (raster::isLonLat(grid)) {
-    xy <- sp::coordinates(sites)
+    stopifnot(requireNamespace("geosphere"))
+
+    has_values <- !(raster::getValues(grid) %in% maskvalue)
+    xy <- raster::coordinates(grid)[has_values, , drop = FALSE]
     xy_lowerleft <- xy - res / 2
     xy_upperright <- xy + res / 2
 
@@ -192,28 +206,34 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
 
     # Calculate the mean over all cells of dmax, weighting each by the
     # grid-cell's area (A)
-    mean_resolution_km <- stats::weighted.mean(dmax_km, cell_areas_km2[id_use])
+    cell_areas_km2 <- calculate_cell_area(
+      xy[id_use, , drop = FALSE],
+      grid = grid,
+      crs = sf::st_crs(grid)
+    )[, "km2"]
+    mean_resolution_km <- stats::weighted.mean(dmax_km, cell_areas_km2)
 
   } else {
-
-    mean_resolution_km <- dmax_km <- 1e-3 * sqrt(sum(res ^ 2))
+    tmp <- sqrt(sum(res ^ 2))
+    cu <- switch(
+      EXPR = crs_units(grid),
+      meter = , meters = , metre = , metres = , m = 1e-3,
+      kilometer = , kilometers = , kilometer = , kilometres = , km = 1,
+      stop("Unknown unit")
+    )
+    mean_resolution_km <- cu * tmp
   }
 
 
-
   # Nominal resolution
-  ifelse(mean_resolution_km < 0.72, "0.5 km",
-    ifelse(mean_resolution_km < 1.6, "1 km",
-      ifelse(mean_resolution_km < 3.6, "2.5 km",
-        ifelse(mean_resolution_km < 7.2, "5 km",
-          ifelse(mean_resolution_km < 16, "10 km",
-            ifelse(mean_resolution_km < 36, "25 km",
-              ifelse(mean_resolution_km < 72, "50 km",
-                ifelse(mean_resolution_km < 160, "100 km",
-                  ifelse(mean_resolution_km < 360, "250 km",
-                    ifelse(mean_resolution_km < 720, "500 km",
-                      ifelse(mean_resolution_km < 1600, "1000 km",
-                        ifelse(mean_resolution_km < 3600, "2500 km",
-                          ifelse(mean_resolution_km < 7200, "5000 km",
-                            "10000 km")))))))))))))
+  nr <- data.frame(
+    cuts =
+      c(0, 0.72, 1.6, 3.6, 7.2, 16, 36, 72, 160, 360, 720, 1600, 3600, 7200),
+    label = paste0(
+      c(0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
+      " km"
+    )
+  )
+
+  nr[findInterval(mean_resolution_km, nr[, "cuts"], left.open = TRUE), "label"]
 }
