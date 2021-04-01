@@ -4,7 +4,7 @@
 \alias{as_points}
 \title{Convert two-dimensional locations to a spatially explicit object}
 \usage{
-as_points(x, to_class = c("sf", "sfc", "sp"), crs = 4326)
+as_points(x, crs, to_class = c("sf", "sfc", "sp"))
 }
 \arguments{
 \item{x}{A numerical two-dimensional object
@@ -13,13 +13,6 @@ with longitude/X, latitude/Y as columns;
 a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object; or
 a \var{sf} object with a point geometry,
 i.e., an object with a class \var{sf} or \var{sfc}.}
-
-\item{to_class}{A character string. Convert either
-to \var{"sp"} for
-a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object;
-convert to \var{"sf"} for a \code{\link[sf:sf]{sf}} object; or
-convert to \var{"sfc"} for
-a \code{\link[sf:sfc_POINT]{sf::sfc_POINT}} object.}
 
 \item{crs}{An object which is a \var{crs} or from which one can be derived.
 \code{x} can
@@ -31,6 +24,13 @@ or of a class including
   \code{\link[sp:Spatial-class]{sp::Spatial}},
   \code{\link[sp:CRS-class]{sp::CRS}},
   or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+
+\item{to_class}{A character string. Convert either
+to \var{"sp"} for
+a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object;
+convert to \var{"sf"} for a \code{\link[sf:sf]{sf}} object; or
+convert to \var{"sfc"} for
+a \code{\link[sf:sfc_POINT]{sf::sfc_POINT}} object.}
 }
 \value{
 An object of the requested class.
@@ -40,8 +40,14 @@ Convert two-dimensional locations to a spatially explicit object
 }
 \section{Details}{
 
-  Argument \code{crs} is only used if \code{locations} is not already a
-  spatial object with a \code{crs}.
+  Argument \code{crs} is only used if \code{x} is not a spatial object
+  with an embedded \code{crs}; the argument is otherwise ignored and
+  should be missing.
+}
+
+\section{Notes}{
+
+  This function does not carry out \var{crs} transformation.
 }
 
 \examples{
@@ -50,9 +56,9 @@ Convert two-dimensional locations to a spatially explicit object
    nrow = 2
  )
 
- pts_sf1 <- as_points(locations, to_class = "sf")
- pts_sfc1 <- as_points(locations, to_class = "sfc")
- pts_sp1 <- as_points(locations, to_class = "sp")
+ pts_sf1 <- as_points(locations, crs = 4326, to_class = "sf")
+ pts_sfc1 <- as_points(locations, crs = 4326, to_class = "sfc")
+ pts_sp1 <- as_points(locations, crs = 4326, to_class = "sp")
 
  pts_sf2 <- as_points(pts_sp1, to_class = "sf")
  pts_sfc2 <- as_points(pts_sp1, to_class = "sfc")
@@ -66,6 +72,6 @@ Convert two-dimensional locations to a spatially explicit object
  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
 
  # A vector of length two is interpreted as a single point location
- pts_sf11 <- as_points(locations[1, ], to_class = "sf")
+ pts_sf11 <- as_points(locations[1, ], crs = 4326, to_class = "sf")
 
 }

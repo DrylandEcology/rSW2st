@@ -16,8 +16,12 @@
 #' @inheritParams rSW2st_crs
 #'
 #' @section Details:
-#'   Argument \code{crs} is only used if \code{locations} is not already a
-#'   spatial object with a \code{crs}.
+#'   Argument \code{crs} is only used if \code{x} is not a spatial object
+#'   with an embedded \code{crs}; the argument is otherwise ignored and
+#'   should be missing.
+#'
+#' @section Notes:
+#'   This function does not carry out \var{crs} transformation.
 #'
 #' @return An object of the requested class.
 #'
@@ -27,9 +31,9 @@
 #'    nrow = 2
 #'  )
 #'
-#'  pts_sf1 <- as_points(locations, to_class = "sf")
-#'  pts_sfc1 <- as_points(locations, to_class = "sfc")
-#'  pts_sp1 <- as_points(locations, to_class = "sp")
+#'  pts_sf1 <- as_points(locations, crs = 4326, to_class = "sf")
+#'  pts_sfc1 <- as_points(locations, crs = 4326, to_class = "sfc")
+#'  pts_sp1 <- as_points(locations, crs = 4326, to_class = "sp")
 #'
 #'  pts_sf2 <- as_points(pts_sp1, to_class = "sf")
 #'  pts_sfc2 <- as_points(pts_sp1, to_class = "sfc")
@@ -43,13 +47,13 @@
 #'  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
 #'
 #'  # A vector of length two is interpreted as a single point location
-#'  pts_sf11 <- as_points(locations[1, ], to_class = "sf")
+#'  pts_sf11 <- as_points(locations[1, ], crs = 4326, to_class = "sf")
 #'
 #' @export
 as_points <- function(
   x,
-  to_class = c("sf", "sfc", "sp"),
-  crs = 4326
+  crs,
+  to_class = c("sf", "sfc", "sp")
 ) {
 
   to_class <- match.arg(to_class)
@@ -89,7 +93,12 @@ as_points <- function(
       x <- matrix(x, nrow = 1, ncol = 2)
     }
 
+    if (missing(crs)) {
+      stop("`crs` is missing and `x` is not a spatial object.")
+    }
+
     crs <- sf::st_crs(crs)
+
     switch(
       EXPR = to_class,
       sp = sp::SpatialPoints(
