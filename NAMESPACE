@@ -3,6 +3,7 @@
 export(as_points)
 export(calculate_cell_area)
 export(calculate_nominal_resolution)
+export(create_raster_from_variables)
 export(crs_units)
 export(epsg_for_utm)
 export(utm_zone)
