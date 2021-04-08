@@ -59,3 +59,32 @@ test_that("create_raster_from_variables", {
   )
 
 })
+
+
+
+test_that("isoline_from_raster", {
+  r <- raster::raster(
+    xmn = 0, xmx = 10,
+    ymn = 0, ymx = 10,
+    crs ="EPSG:4326",
+    resolution = c(1, 1)
+  )
+  r <- raster::init(r, fun = "cell")
+
+  #--- All raster values >= threshold
+  threshold <- -5
+  ip1 <- isoline_from_raster(r, alpha = threshold)
+  expect_s4_class(ip1, "SpatialPolygonsDataFrame")
+  expect_gte(max(raster::extract(r, ip1)[[1]]), threshold)
+
+  #--- Some raster values >= threshold
+  threshold <- 87
+  ip2 <- isoline_from_raster(r, alpha = threshold)
+  expect_s4_class(ip2, "SpatialPolygonsDataFrame")
+  expect_gte(max(raster::extract(r, ip2)[[1]]), threshold)
+
+  #--- No raster values >= threshold
+  threshold <- 1000
+  expect_warning(ip3 <- isoline_from_raster(r, alpha = threshold))
+  expect_null(ip3)
+})
