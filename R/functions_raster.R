@@ -1,7 +1,8 @@
 
-#' Converts values associated with geographic locations into a \var{Raster*}
+#' Fills a raster grid with variable values associated with geographic locations
 #'
-#' @param data A vector or two-dimensional object.
+#' @param data A vector or two-dimensional object. Elements/rows correspond to
+#'   \code{site_locations}; columns (if present) represent variables.
 #' @param site_locations An object that described geographic locations of
 #'   \code{data} that can be sent to \code{\link[rSW2st]{as_points}}
 #' @param site_crs The \code{crs} of \code{site_locations}.
@@ -13,6 +14,24 @@
 #'   (if \code{data} is a vector) or
 #'   \code{\link[raster:RasterBrick-class]{raster::RasterBrick}}
 #'   (if \code{data} is two-dimensional).
+#'
+#' @examples
+#' r <- raster::raster(
+#'   xmn = 0, xmx = 10,
+#'   ymn = 0, ymx = 10,
+#'   crs ="EPSG:4326",
+#'   resolution = c(1, 1)
+#' )
+#'
+#' rv <- create_raster_from_variables(
+#'   data = 1:10,
+#'   site_locations = as_points(
+#'     0.5 + cbind(0:9, 0:9),
+#'     crs = 4326,
+#'     to_class = "sf"
+#'   ),
+#'   grid = r
+#' )
 #'
 #' @export
 create_raster_from_variables <- function(
@@ -36,24 +55,30 @@ create_raster_from_variables <- function(
   nl <- NCOL(data)
   cnames <- colnames(data)
 
-  if (!is.numeric(data)) {
+  # Attempt to convert data to a numeric type, if not, so that it can be
+  # converted to a raster object
+  if (!(is.numeric(data) || all(sapply(data, is.numeric)))) {
     if (nl > 1) {
       for (k in seq_len(nl)) {
-        tmp <- try(if (is.factor(data[, k])) {
-          as.integer(data[, k])
-        } else {
-          as.double(data[, k])
-        })
+        tmp <- try(
+          if (is.factor(data[, k])) {
+            as.integer(data[, k])
+          } else {
+            as.double(data[, k])
+          }
+        )
         stopifnot(!inherits(tmp, "try-error"))
         data[, k] <- tmp
       }
 
     } else {
-      data <- try(if (is.factor(data)) {
-        as.integer(data)
-      } else {
-        as.double(data)
-      })
+      data <- try(
+        if (is.factor(data)) {
+          as.integer(data)
+        } else {
+          as.double(data)
+        }
+      )
       stopifnot(!inherits(data, "try-error"))
     }
   }
@@ -109,7 +134,35 @@ create_raster_from_variables <- function(
 #' @references Relevant code adapted from \code{`raster:::dataType<-`}
 #' @noRd
 get_raster_datatype <- function(data) {
-  switch(EXPR = substr(toupper(typeof(data)), 1, 5),
+  supported_types <- c(
+    "DOUBL", "NUMER", "FLOAT", "SINGL", "REAL", "INTEG", "SMALL",
+    "BYTE", "LOGIC"
+  )
+
+  tmp <- substr(toupper(typeof(data)), 1, 5)
+  stopifnot(tmp %in% c(supported_types, "LIST"))
+
+  if (tmp == "LIST") {
+    tmp <- unique(sapply(data, function(x) substr(toupper(typeof(x)), 1, 5)))
+    stopifnot(tmp %in% supported_types)
+
+    tmp <- if (any(tmp == "DOUBL")) {
+      "DOUBL"
+    } else if (any(tmp %in% c("NUMER", "FLOAT", "SINGL", "REAL"))) {
+      "REAL"
+    } else if (any(tmp == "INTEG")) {
+      "INTEG"
+    } else if (any(tmp == "SMALL")) {
+      "SMALL"
+    } else if (any(tmp == "BYTE")) {
+      "BYTE"
+    } else if (any(tmp == "LOGIC")) {
+      "LOGIC"
+    }
+  }
+
+  switch(
+    EXPR = tmp,
     LOGIC = "LOG1S",
     BYTE = "INT1U",
     SMALL = "INT2S",

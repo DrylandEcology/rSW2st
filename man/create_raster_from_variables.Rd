@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_raster.R
 \name{create_raster_from_variables}
 \alias{create_raster_from_variables}
-\title{Converts values associated with geographic locations into a \var{Raster*}}
+\title{Fills a raster grid with variable values associated with geographic locations}
 \usage{
 create_raster_from_variables(
   data,
@@ -13,7 +13,8 @@ create_raster_from_variables(
 )
 }
 \arguments{
-\item{data}{A vector or two-dimensional object.}
+\item{data}{A vector or two-dimensional object. Elements/rows correspond to
+\code{site_locations}; columns (if present) represent variables.}
 
 \item{site_locations}{An object that described geographic locations of
 \code{data} that can be sent to \code{\link[rSW2st]{as_points}}}
@@ -33,5 +34,24 @@ A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
   (if \code{data} is two-dimensional).
 }
 \description{
-Converts values associated with geographic locations into a \var{Raster*}
+Fills a raster grid with variable values associated with geographic locations
+}
+\examples{
+r <- raster::raster(
+  xmn = 0, xmx = 10,
+  ymn = 0, ymx = 10,
+  crs ="EPSG:4326",
+  resolution = c(1, 1)
+)
+
+rv <- create_raster_from_variables(
+  data = 1:10,
+  site_locations = as_points(
+    0.5 + cbind(0:9, 0:9),
+    crs = 4326,
+    to_class = "sf"
+  ),
+  grid = r
+)
+
 }
