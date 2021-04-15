@@ -20,7 +20,9 @@ Imports:
     rgdal,
     raster
 Suggests:
+    automap,
     geosphere,
+    gstat,
     testthat (>= 3.0.0),
     spelling,
     lintr,
