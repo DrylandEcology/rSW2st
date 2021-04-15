@@ -4,7 +4,7 @@ test_that("gridcell areas", {
   r1 <- raster::raster(
     xmn = 0, xmx = 1,
     ymn = -90, ymx = 90,
-    crs ="EPSG:4326",
+    crs = "EPSG:4326",
     resolution = c(1, 1)
   )
 

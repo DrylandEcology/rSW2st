@@ -21,11 +21,10 @@ create_raster_from_variables(
 
 \item{grid}{A \var{Raster*} object used as template.}
 
-\item{site_crs}{The \code{crs} of \code{site_locations}.}
+\item{site_crs}{The \code{crs} of \code{site_locations} passed to
+\code{\link[rSW2st]{as_points}}.}
 
 \item{filename}{A character string. Passed to \code{\link[raster]{brick}}.}
-
-\item{grid_crs}{The \code{crs} of \code{grid}.}
 }
 \value{
 A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}

@@ -2,7 +2,7 @@ test_that("create_raster_from_variables", {
   r <- raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,
-    crs ="EPSG:4326",
+    crs = "EPSG:4326",
     resolution = c(1, 1)
   )
 
@@ -63,12 +63,12 @@ test_that("create_raster_from_variables", {
 
 
 test_that("isoline_from_raster", {
-  r <- raster::raster(
+  r <- suppressWarnings(raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,
-    crs ="EPSG:4326",
+    crs = "EPSG:4326",
     resolution = c(1, 1)
-  )
+  ))
   r <- raster::init(r, fun = "cell")
 
   #--- All raster values >= threshold
@@ -85,6 +85,9 @@ test_that("isoline_from_raster", {
 
   #--- No raster values >= threshold
   threshold <- 1000
-  expect_warning(ip3 <- isoline_from_raster(r, alpha = threshold))
+  expect_warning(
+    ip3 <- isoline_from_raster(r, alpha = threshold),
+    "no values in selection"
+  )
   expect_null(ip3)
 })

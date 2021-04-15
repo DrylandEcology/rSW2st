@@ -15,10 +15,10 @@ Depends:
     methods
 Imports:
     rSW2utils,
-    sf,
-    sp,
-    rgdal,
-    raster
+    sf (>= 0.9.8),
+    sp (>= 1.4.5),
+    rgdal (>= 1.5.23),
+    raster (>= 3.4.5)
 Suggests:
     automap,
     geosphere,

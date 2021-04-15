@@ -50,5 +50,5 @@ variogram_range(xy)
 
 }
 \seealso{
-\code{\link[automap]{automap::autofitVariogram}}
+\code{\link[automap]{autofitVariogram}}
 }

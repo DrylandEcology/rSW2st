@@ -1,10 +1,13 @@
 test_that("variogram_range", {
-  r <- raster::raster(
+  prev <- rgdal::get_rgdal_show_exportToProj4_warnings()
+  rgdal::set_rgdal_show_exportToProj4_warnings(FALSE)
+
+  r <- suppressWarnings(raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,
-    crs ="EPSG:6350",
+    crs = "EPSG:6350",
     resolution = c(1, 1)
-  )
+  ))
 
   xy <- as_points(
     0.5 + cbind(0:9, 0:9),
@@ -28,4 +31,6 @@ test_that("variogram_range", {
     variogram_range(x = xy, sub_samplepoints_N = 5, seed = 2017),
     tolerance = 1e-6
   )
+
+  rgdal::set_rgdal_show_exportToProj4_warnings(prev)
 })

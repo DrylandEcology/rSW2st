@@ -12,7 +12,7 @@
 #' @param seed Passed to \code{\link{set.seed}}; used only if
 #'   \code{sub_samplepoints_N} is a number.
 #'
-#' @seealso \code{\link[automap]{automap::autofitVariogram}}
+#' @seealso \code{\link[automap]{autofitVariogram}}
 #'
 #' @return A numeric value representing the variogram range
 #'   in units of \code{x}.

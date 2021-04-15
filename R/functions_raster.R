@@ -5,9 +5,9 @@
 #'   \code{site_locations}; columns (if present) represent variables.
 #' @param site_locations An object that described geographic locations of
 #'   \code{data} that can be sent to \code{\link[rSW2st]{as_points}}
-#' @param site_crs The \code{crs} of \code{site_locations}.
+#' @param site_crs The \code{crs} of \code{site_locations} passed to
+#'   \code{\link[rSW2st]{as_points}}.
 #' @param grid A \var{Raster*} object used as template.
-#' @param grid_crs The \code{crs} of \code{grid}.
 #' @param filename A character string. Passed to \code{\link[raster]{brick}}.
 #'
 #' @return A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
