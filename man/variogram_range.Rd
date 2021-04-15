@@ -2,14 +2,53 @@
 % Please edit documentation in R/functions_spatial.R
 \name{variogram_range}
 \alias{variogram_range}
-\title{Calculate range of variogram in kilometers}
+\title{Automatic calculation of a variogram range}
 \usage{
-variogram_range(x, project_to_utm = TRUE, sub_samplepoints_N = NULL)
+variogram_range(
+  x,
+  project_to_utm = TRUE,
+  sub_samplepoints_N = NULL,
+  crs,
+  seed = NULL
+)
 }
 \arguments{
 \item{x}{A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
-in \var{un}-projected coordinates (i.e., longitude/latitude)}
+or an object that can be passed to \code{\link{as_points}}.}
+
+\item{project_to_utm}{A logical value. If \code{TRUE}, then \code{x}
+will be projected to a suitable \var{UTM}; otherwise, \code{x} will
+be projected to \var{WGS84}.}
+
+\item{sub_samplepoints_N}{An integer value. If not \code{NULL},
+then a random sample of \code{x} will be taken of the specified size.}
+
+\item{crs}{An object which is a \var{crs} or from which one can be derived.
+\code{x} can
+be numeric as a \var{EPSG} number;
+a character string as a \var{wkt};
+a character string as a \var{proj4} (not recommended because outdated);
+or of a class including
+  \code{\link[raster:Raster-class]{raster::Raster}},
+  \code{\link[sp:Spatial-class]{sp::Spatial}},
+  \code{\link[sp:CRS-class]{sp::CRS}},
+  or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+
+\item{seed}{Passed to \code{\link{set.seed}}; used only if
+\code{sub_samplepoints_N} is a number.}
+}
+\value{
+A numeric value representing the variogram range
+  in units of \code{x}.
 }
 \description{
-Calculate range of variogram in kilometers
+Automatic calculation of a variogram range
+}
+\examples{
+xy <- as_points(0.5 + cbind(0:9, 0:9), crs = 6350, to_class = "sf")
+variogram_range(xy)
+
+}
+\seealso{
+\code{\link[automap]{automap::autofitVariogram}}
 }
