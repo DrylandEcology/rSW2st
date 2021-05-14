@@ -23,7 +23,7 @@ specified threshold
 r <- raster::raster(
   xmn = 0, xmx = 10,
   ymn = 0, ymx = 10,
-  crs ="EPSG:4326",
+  crs = "OGC:CRS84",
   resolution = c(1, 1)
 )
 r <- raster::init(r, fun = "cell")

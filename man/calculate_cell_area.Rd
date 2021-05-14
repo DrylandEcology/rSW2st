@@ -49,7 +49,7 @@ Calculate area extent of grid cells
 r <- raster::raster(
   xmn = 0, xmx = 1,
   ymn = -90, ymx = 90,
-  crs ="EPSG:4326",
+  crs = "OGC:CRS84",
   resolution = c(1, 1)
 )
 n <- prod(dim(r))

@@ -2,7 +2,7 @@ test_that("create_raster_from_variables", {
   r <- raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,
-    crs = "EPSG:4326",
+    crs = "OGC:CRS84",
     resolution = c(1, 1)
   )
 
@@ -10,7 +10,7 @@ test_that("create_raster_from_variables", {
   v1 <- 1:10
   xy <- as_points(
     0.5 + cbind(0:9, 0:9),
-    crs = 4326,
+    crs = "OGC:CRS84",
     to_class = "sf"
   )
 
@@ -66,7 +66,7 @@ test_that("isoline_from_raster", {
   r <- suppressWarnings(raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,
-    crs = "EPSG:4326",
+    crs = "OGC:CRS84",
     resolution = c(1, 1)
   ))
   r <- raster::init(r, fun = "cell")

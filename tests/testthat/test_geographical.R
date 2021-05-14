@@ -4,7 +4,7 @@ test_that("gridcell areas", {
   r1 <- raster::raster(
     xmn = 0, xmx = 1,
     ymn = -90, ymx = 90,
-    crs = "EPSG:4326",
+    crs = "OGC:CRS84",
     resolution = c(1, 1)
   )
 
@@ -53,7 +53,7 @@ test_that("nominal resolution", {
     r1 <- raster::raster(
       xmn = -110, xmx = -100,
       ymn = 30, ymx = 40,
-      crs = "EPSG:4326",
+      crs = "OGC:CRS84",
       resolution = rep(tests[k, "res"], 2)
     )
     ext <- raster::cellsFromExtent(r1, raster::extent(-107, -102, 32, 38))

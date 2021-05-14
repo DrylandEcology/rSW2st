@@ -68,7 +68,7 @@ variogram_range <- function(
     # --> variogram will calculate great circle distances(!)
     points_prj <- sp::spTransform(
       points,
-      CRSobj = as(sf::st_crs(4326), "CRS")
+      CRSobj = as(sf::st_crs("OGC:CRS84"), "CRS")
     )
   }
 

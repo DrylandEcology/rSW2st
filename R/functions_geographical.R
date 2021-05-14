@@ -18,7 +18,7 @@
 #' r <- raster::raster(
 #'   xmn = 0, xmx = 1,
 #'   ymn = -90, ymx = 90,
-#'   crs ="EPSG:4326",
+#'   crs = "OGC:CRS84",
 #'   resolution = c(1, 1)
 #' )
 #' n <- prod(dim(r))
@@ -152,7 +152,7 @@ calculate_cell_area <- function(
 #' r1 <- raster::raster(
 #'   xmn = -120, xmx = -90,
 #'   ymn = 30, ymx = 50,
-#'   crs ="EPSG:4326",
+#'   crs = "OGC:CRS84",
 #'   resolution = c(0.5, 0.5)
 #' )
 #' ext <- raster::cellsFromExtent(r1, raster::extent(-110, -100, 35, 45))

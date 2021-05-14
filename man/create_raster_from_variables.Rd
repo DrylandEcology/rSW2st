@@ -39,7 +39,7 @@ Fills a raster grid with variable values associated with geographic locations
 r <- raster::raster(
   xmn = 0, xmx = 10,
   ymn = 0, ymx = 10,
-  crs ="EPSG:4326",
+  crs = "OGC:CRS84",
   resolution = c(1, 1)
 )
 
@@ -47,7 +47,7 @@ rv <- create_raster_from_variables(
   data = 1:10,
   site_locations = as_points(
     0.5 + cbind(0:9, 0:9),
-    crs = 4326,
+    crs = "OGC:CRS84",
     to_class = "sf"
   ),
   grid = r
