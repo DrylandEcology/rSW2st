@@ -2,8 +2,9 @@
 #' Calculate area extent of grid cells
 #'
 #' @inheritParams as_points
-#' @param grid A \code{\link[raster:Raster-class]{raster::Raster}}
-#'   object used for coordinate system and cells.
+#' @param grid
+#'   A \code{\link[raster:Raster-class]{raster::Raster}} or
+#'   a \code{stars::stars} object for coordinate system and cells.
 #' @param tol A numerical value to inform the site to gridcell matching.
 #'
 #' @seealso \code{\link[geosphere]{areaPolygon}}
@@ -27,6 +28,7 @@
 #'
 #' ## Calculate area for a subset of cells in grid
 #' cell_areas <- calculate_cell_area(xy, grid = r)
+#' cell_areas <- calculate_cell_area(xy, grid = stars::st_as_stars(r))
 #'
 #' ## Calculate are for all cells in grid
 #' cell_areas2 <- calculate_cell_area(grid = r)
@@ -57,6 +59,8 @@ calculate_cell_area <- function(
 
   m2_to_km2 <- 1e-6
 
+  stopifnot(inherits(grid, c("Raster", "stars")))
+
   if (!missing(x)) {
     x <- as_points(x, to_class = "sf", crs = crs)
 
@@ -68,24 +72,40 @@ calculate_cell_area <- function(
     colnames(coords) <- c("x", "y")
 
   } else {
-    coords <- cbind(
-      x = raster::xFromCol(grid, seq_len(raster::ncol(grid))),
-      y = raster::yFromRow(grid, seq_len(raster::nrow(grid)))
-    )
+    coords <- if (inherits(grid, "Raster")) {
+      raster::coordinates(grid)
+
+    } else if (inherits(grid, "stars")) {
+      sf::st_coordinates(grid, center = TRUE)[, 1:2, drop = FALSE]
+    }
   }
 
   cells <- data.frame(coords, km2 = NA, rel = NA)
 
 
-  if (raster::isLonLat(grid)) {
+  if (sf::st_is_longlat(grid)) {
     # Use function `areaPolygon` which works on
     # angular coordinates (longitude/latitude) on an ellipsoid
     stopifnot(requireNamespace("geosphere"))
 
     unique_lats <- unique(cells[, "y"])
 
-    # Create empty raster except for cells at specified latitudes
-    rtmp <- etmp <- raster::init(grid, fun = function(x) rep(NA, x))
+    # Create empty 2d-raster except for cells at specified latitudes
+    rgrid <- if (inherits(grid, "Raster")) {
+      grid
+
+    } else if (inherits(grid, "stars")) {
+      as(
+        if (length(dim(grid)) > 2) {
+          grid[1, , , 1, drop = TRUE]
+        } else {
+          grid
+        },
+        Class = "Raster"
+      )
+    }
+
+    rtmp <- etmp <- raster::init(rgrid, fun = function(x) rep(NA, x))
     xy <- cbind(rep(raster::xmin(rtmp), length(unique_lats)), unique_lats)
     rtmp[raster::cellFromXY(rtmp, xy)] <- 1
 
@@ -113,7 +133,20 @@ calculate_cell_area <- function(
 
   } else {
     # Use Euclidean area for projected/flat grids
-    ar <- prod(raster::res(grid))
+    if (inherits(grid, "Raster")) {
+      tmp_res <- raster::res(grid)
+
+    } else if (inherits(grid, "stars")) {
+      tmp_res <- abs(unname(
+        sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+      ))[1:2]
+
+      if (anyNA(tmp_res)) {
+        stop("Can currently only handle regular, rectangular grids.")
+      }
+    }
+
+    ar <- prod(tmp_res)
 
     # Determine distance units: meters or kilometers?
     ar_km2 <- ar * switch(
@@ -135,7 +168,10 @@ calculate_cell_area <- function(
 
 #' Calculate "nominal resolution" of a grid
 #'
-#' @param grid A raster object. Gridcells with values that are not equal to a
+#' @param grid
+#'   A \code{\link[raster:Raster-class]{raster::Raster}} or
+#'   a \code{stars::stars} object.
+#'   Gridcells with values that are not equal to a
 #'   \code{maskvalue} are included in the "nominal resolution" calculation.
 #' @param maskvalue A vector. Values to mask out from \code{grid}.
 #'
@@ -159,6 +195,7 @@ calculate_cell_area <- function(
 #' r1[ext] <- 1
 #'
 #' calculate_nominal_resolution(r1)
+#' calculate_nominal_resolution(stars::st_as_stars(r1))
 #'
 #' r2 <- raster::raster(
 #'   xmn = -2480000, xmx = 90000,
@@ -182,13 +219,36 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
   # For each grid cell, calculate the distance (in km) between each pair of
   # cell vertices and select the maximum distance ("dmax").
   # For latxlon grid cells, for example, dmax would be the diagonal distance.
-  res <- raster::res(grid)
 
-  if (raster::isLonLat(grid)) {
+  if (inherits(grid, "Raster")) {
+    res <- raster::res(grid)
+
+  } else if (inherits(grid, "stars")) {
+    res <- abs(unname(
+      sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+    ))[1:2]
+
+    if (anyNA(res)) {
+      stop("Can currently only handle regular, rectangular grids.")
+    }
+
+  } else {
+    stop("`grid` of class ", shQuote(class(grid)), " is not implemented.")
+  }
+
+
+  if (sf::st_is_longlat(grid)) {
     stopifnot(requireNamespace("geosphere"))
 
-    has_values <- !(raster::getValues(grid) %in% maskvalue)
-    xy <- raster::coordinates(grid)[has_values, , drop = FALSE]
+    if (inherits(grid, "Raster")) {
+      has_values <- !(raster::getValues(grid) %in% maskvalue)
+      xy <- raster::coordinates(grid)[has_values, , drop = FALSE]
+
+    } else if (inherits(grid, "stars")) {
+      tmp <- as.data.frame(grid, center = TRUE)
+      xy <- tmp[complete.cases(tmp), 1:2, drop = FALSE]
+    }
+
     xy_lowerleft <- xy - res / 2
     xy_upperright <- xy + res / 2
 

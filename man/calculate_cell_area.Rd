@@ -19,8 +19,8 @@ a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object; or
 a \var{sf} object with a point geometry,
 i.e., an object with a class \var{sf} or \var{sfc}.}
 
-\item{grid}{A \code{\link[raster:Raster-class]{raster::Raster}}
-object used for coordinate system and cells.}
+\item{grid}{A \code{\link[raster:Raster-class]{raster::Raster}} or
+a \code{stars::stars} object for coordinate system and cells.}
 
 \item{crs}{An object which is a \var{crs} or from which one can be derived.
 \code{x} can
@@ -58,6 +58,7 @@ xy <- raster::sampleRegular(r, size = n, sp = TRUE)
 
 ## Calculate area for a subset of cells in grid
 cell_areas <- calculate_cell_area(xy, grid = r)
+cell_areas <- calculate_cell_area(xy, grid = stars::st_as_stars(r))
 
 ## Calculate are for all cells in grid
 cell_areas2 <- calculate_cell_area(grid = r)

@@ -7,7 +7,9 @@
 calculate_nominal_resolution(grid, maskvalue = NA)
 }
 \arguments{
-\item{grid}{A raster object. Gridcells with values that are not equal to a
+\item{grid}{A \code{\link[raster:Raster-class]{raster::Raster}} or
+a \code{stars::stars} object.
+Gridcells with values that are not equal to a
 \code{maskvalue} are included in the "nominal resolution" calculation.}
 
 \item{maskvalue}{A vector. Values to mask out from \code{grid}.}
@@ -29,6 +31,7 @@ ext <- raster::cellsFromExtent(r1, raster::extent(-110, -100, 35, 45))
 r1[ext] <- 1
 
 calculate_nominal_resolution(r1)
+calculate_nominal_resolution(stars::st_as_stars(r1))
 
 r2 <- raster::raster(
   xmn = -2480000, xmx = 90000,
