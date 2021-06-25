@@ -467,6 +467,13 @@ test_that("read_netCDF", {
 
         expect_true(length(dim(res[["data"]])) > 0)
 
+        expect_null(
+          read_netCDF(
+            fnc, km, var = "sine", xy_names = c("x", "y"),
+            load_values = FALSE
+          )[["data"]]
+        )
+
       } else if (km == "raster") {
         expect_s4_class(res, "RasterLayer")
         expect_true(length(dim(res)) > 0)

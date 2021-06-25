@@ -1642,6 +1642,9 @@ read_netCDF <- function(
 #'   collapsed. A degenerate variable dimension, in the case of a
 #'   \code{"xy"} data structure, is always collapsed. The dimension/s of the
 #'   \var{xy-space} is/are never collapsed.
+#' @param load_values A logical value. If \code{FALSE}, then data values are
+#'   not returned
+#'   (i.e., element "data" of the returned object will be \code{NULL}).
 #'
 #' @export
 read_netCDF_as_array <- function(
@@ -1653,6 +1656,7 @@ read_netCDF_as_array <- function(
   time_ids = -1,
   vertical_ids = -1,
   collapse_degen = TRUE,
+  load_values = TRUE,
   ...
 ) {
   stopifnot(requireNamespace("ncdf4"))
@@ -1855,115 +1859,120 @@ read_netCDF_as_array <- function(
   )
 
 
-  if (has_vertical_subset) {
-    id_vertical_dim <- as.integer(regexpr("z", nc_data_str))
-  }
-
-  if (has_time_subset) {
-    id_time_dim <- as.integer(regexpr("t", nc_data_str))
-  }
-
-
-  if (has_time_subset || has_vertical_subset) {
-    # This requires that all variables have identical xy-space dimensions!
-    varid <- nc_vars[1]
-    nc_count <- x[["var"]][[varid]][["varsize"]]
-    if (has_vertical_subset) nc_count[id_vertical_dim] <- 1
-    if (has_time_subset) nc_count[id_time_dim] <- 1
-
-    nc_start <- c(
-      rep(1, n_xy),
-      if (has_vertical) NA,
-      if (has_time) NA
-    )
-    res_dim <- c(
-      nc_count[seq_len(n_xy)],
-      if (has_vertical && !has_vertical_collapsed) length(vertical_ids),
-      if (has_time && !has_time_collapsed) length(time_ids)
-    )
-  }
-
-
-  #--- Read values
-  res <- lapply(
-    nc_vars,
-    function(varid) {
-      if (has_time_subset || has_vertical_subset) {
-        # Read a subset of values
-        tmp <- list()
-        tmp_extr <- expand.grid(t = time_ids, v = vertical_ids)
-
-        for (k in seq_len(nrow(tmp_extr))) {
-          tmp_start <- nc_start
-          if (has_vertical) tmp_start[id_vertical_dim] <- tmp_extr[k, "v"]
-          if (has_time) tmp_start[id_time_dim] <- tmp_extr[k, "t"]
-
-          tmp[[k]] <- ncdf4::ncvar_get(
-            nc = x,
-            varid = varid,
-            start = tmp_start,
-            count = nc_count,
-            collapse_degen = TRUE
-          )
-        }
-
-        tmp_collapse <-
-          has_vertical_collapsed && has_time_collapsed && length(tmp) == 1
-
-        #TODO: check that this works correctly if both time + vertical subset
-        tmp_res <- abind::abind(
-          tmp,
-          along = length(res_dim) + if (tmp_collapse) 0 else 1
-        )
-
-      } else {
-        # Read all values
-        tmp_res <- ncdf4::ncvar_get(
-          nc = x,
-          varid = varid,
-          collapse_degen = FALSE
-        )
-      }
-
-      # Drop degenerate dimensions, but never xy-space dimensions
-      tmp_degen <- which(dim(tmp_res) == 1)
-      tmp_degen <- tmp_degen[tmp_degen > n_xy]
-
-      if (collapse_degen && length(tmp_degen) > 0) {
-        tmp_res <- abind::adrop(tmp_res, drop = tmp_degen)
-      }
-
-      # Check data structure
-      if (length(dim(tmp_res)) != nchar(data_str)) {
-        warning(
-          "Dimensions of data extracted from netCDF (",
-          paste0(dim(tmp_res), collapse = ", "),
-          ") do not match `data_str` = ", shQuote(data_str)
-        )
-      }
-
-      tmp_res
+  if (load_values) {
+    if (has_vertical_subset) {
+      id_vertical_dim <- as.integer(regexpr("z", nc_data_str))
     }
-  )
+
+    if (has_time_subset) {
+      id_time_dim <- as.integer(regexpr("t", nc_data_str))
+    }
 
 
-  #--- Make sure output structure is as expected/documented
-  if (length(nc_vars) > 1) {
-    if (data_str == "xy" && collapse_degen) {
-      # Combine multiple variables to xy-v or s-v
-      res <- abind::abind(res, along = n_xy + 1)
+    if (has_time_subset || has_vertical_subset) {
+      # This requires that all variables have identical xy-space dimensions!
+      varid <- nc_vars[1]
+      nc_count <- x[["var"]][[varid]][["varsize"]]
+      if (has_vertical_subset) nc_count[id_vertical_dim] <- 1
+      if (has_time_subset) nc_count[id_time_dim] <- 1
 
-    } else {
-      warning(
-        "More than one variable and a time and/or vertical dimension: ",
-        "returned format of `data` is not standardized!"
+      nc_start <- c(
+        rep(1, n_xy),
+        if (has_vertical) NA,
+        if (has_time) NA
+      )
+      res_dim <- c(
+        nc_count[seq_len(n_xy)],
+        if (has_vertical && !has_vertical_collapsed) length(vertical_ids),
+        if (has_time && !has_time_collapsed) length(time_ids)
       )
     }
 
-  } else {
-    res <- res[[1]]
-  }
 
+    #--- Read values
+    res <- lapply(
+      nc_vars,
+      function(varid) {
+        if (has_time_subset || has_vertical_subset) {
+          # Read a subset of values
+          tmp <- list()
+          tmp_extr <- expand.grid(t = time_ids, v = vertical_ids)
+
+          for (k in seq_len(nrow(tmp_extr))) {
+            tmp_start <- nc_start
+            if (has_vertical) tmp_start[id_vertical_dim] <- tmp_extr[k, "v"]
+            if (has_time) tmp_start[id_time_dim] <- tmp_extr[k, "t"]
+
+            tmp[[k]] <- ncdf4::ncvar_get(
+              nc = x,
+              varid = varid,
+              start = tmp_start,
+              count = nc_count,
+              collapse_degen = TRUE
+            )
+          }
+
+          tmp_collapse <-
+            has_vertical_collapsed && has_time_collapsed && length(tmp) == 1
+
+          #TODO: check that this works correctly if both time + vertical subset
+          tmp_res <- abind::abind(
+            tmp,
+            along = length(res_dim) + if (tmp_collapse) 0 else 1
+          )
+
+        } else {
+          # Read all values
+          tmp_res <- ncdf4::ncvar_get(
+            nc = x,
+            varid = varid,
+            collapse_degen = FALSE
+          )
+        }
+
+        # Drop degenerate dimensions, but never xy-space dimensions
+        tmp_degen <- which(dim(tmp_res) == 1)
+        tmp_degen <- tmp_degen[tmp_degen > n_xy]
+
+        if (collapse_degen && length(tmp_degen) > 0) {
+          tmp_res <- abind::adrop(tmp_res, drop = tmp_degen)
+        }
+
+        # Check data structure
+        if (length(dim(tmp_res)) != nchar(data_str)) {
+          warning(
+            "Dimensions of data extracted from netCDF (",
+            paste0(dim(tmp_res), collapse = ", "),
+            ") do not match `data_str` = ", shQuote(data_str)
+          )
+        }
+
+        tmp_res
+      }
+    )
+
+
+    #--- Make sure output structure is as expected/documented
+    if (length(nc_vars) > 1) {
+      if (data_str == "xy" && collapse_degen) {
+        # Combine multiple variables to xy-v or s-v
+        res <- abind::abind(res, along = n_xy + 1)
+
+      } else {
+        warning(
+          "More than one variable and a time and/or vertical dimension: ",
+          "returned format of `data` is not standardized!"
+        )
+      }
+
+    } else {
+      res <- res[[1]]
+    }
+
+  } else {
+    # data values were not requested
+    res <- NULL
+  }
 
 
   #--- Prepare return object

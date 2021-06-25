@@ -26,6 +26,7 @@ read_netCDF_as_array(
   time_ids = -1,
   vertical_ids = -1,
   collapse_degen = TRUE,
+  load_values = TRUE,
   ...
 )
 
@@ -86,6 +87,10 @@ vertical steps; a value of \code{-1} means to read all.}
 collapsed. A degenerate variable dimension, in the case of a
 \code{"xy"} data structure, is always collapsed. The dimension/s of the
 \var{xy-space} is/are never collapsed.}
+
+\item{load_values}{A logical value. If \code{FALSE}, then data values are
+not returned
+(i.e., element "data" of the returned object will be \code{NULL}).}
 }
 \value{
 A named list including a data \var{array}
