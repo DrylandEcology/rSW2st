@@ -88,7 +88,9 @@ collapsed. A degenerate variable dimension, in the case of a
 \var{xy-space} is/are never collapsed.}
 }
 \value{
-An \var{array},
+A named list including a data \var{array}
+  (the list contains completed information to re-create the file with a
+  call to \code{\link{create_netCDF}}),
   a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}, or
   a \code{stars::stars} object.
 }
@@ -186,6 +188,16 @@ datasubset_xyt <- read_netCDF(
 ## Read CRS of netCDFs
 read_crs_from_netCDF(tmp_nc[["xyt"]])
 read_crs_from_netCDF(tmp_nc[["szt"]])
+
+## Read attributes of netCDFs
+read_attributes_from_netCDF(tmp_nc[["xyt"]], var = "sine")
+read_attributes_from_netCDF(
+  tmp_nc[["xyt"]],
+  group = "all",
+  var = "sine",
+  xy_names = c("x", "y")
+)
+read_attributes_from_netCDF(tmp_nc[["szt"]], group = "global")
 
 # Clean up
 unlink(unlist(tmp_nc))

@@ -318,7 +318,7 @@ create_netCDF(
 )
 
 data_xyt2 <- read_netCDF(tmp_nc[["xyt2"]], "array", xy_names = c("x", "y"))
-all.equal(data_xyt2, data_xyt)
+all.equal(data_xyt2[["data"]], data_xyt[["data"]])
 
 
 ## Write netCDF for discrete data
@@ -341,7 +341,7 @@ create_netCDF(
 
 
 data_szt2 <- read_netCDF(tmp_nc[["szt2"]], "array", xy_names = c("x", "y"))
-all.equal(data_szt2, data_szt)
+all.equal(data_szt2[["data"]], data_szt[["data"]])
 
 # Cleanup
 unlink(unlist(tmp_nc))

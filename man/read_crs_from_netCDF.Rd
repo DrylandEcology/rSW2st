@@ -26,3 +26,9 @@ An object of the \var{crs}-class of package \pkg{sf}.
 \description{
 Read \var{crs} projection from a \var{netCDF}
 }
+\section{Details}{
+
+  Example code is available in the documentation of
+  \code{\link{read_netCDF}}.
+}
+

@@ -452,8 +452,13 @@ test_that("read_netCDF", {
         expect_named(
           res,
           c(
-            "data", "data_str", "crs", "xyspace",
-            "vertical_values", "time_values",
+            "data", "data_str", "type_timeaxis", "crs", "xyspace",
+            "vertical_values", "vertical_bounds",
+            "time_values", "time_bounds",
+            paste0(
+              c("var", "xy", "crs", "time", "vertical", "global"),
+              "_attributes"
+            ),
             if (grepl("\\<nc_s[[:alpha:]]{0,3}(|-clim).nc", basename(fnc))) {
               "site"
             }
@@ -474,6 +479,22 @@ test_that("read_netCDF", {
       res_crs <- read_crs_from_netCDF(fnc)
       expect_s3_class(res_crs, "crs")
       expect_false(res_crs == sf::NA_crs_)
+
+      res_atts <- read_attributes_from_netCDF(
+        fnc,
+        group = "all",
+        var = "sine",
+        xy_names = c("x", "y"),
+        nc_name_crs = "crs"
+      )
+      expect_true(inherits(res_atts, "list"))
+      expect_named(
+        res_atts,
+        paste0(
+          c("var", "xy", "crs", "time", "vertical", "global"),
+          "_attributes"
+        )
+      )
     }
   }
 

@@ -291,7 +291,7 @@ NULL
 #' )
 #'
 #' data_xyt2 <- read_netCDF(tmp_nc[["xyt2"]], "array", xy_names = c("x", "y"))
-#' all.equal(data_xyt2, data_xyt)
+#' all.equal(data_xyt2[["data"]], data_xyt[["data"]])
 #'
 #'
 #' ## Write netCDF for discrete data
@@ -314,7 +314,7 @@ NULL
 #'
 #'
 #' data_szt2 <- read_netCDF(tmp_nc[["szt2"]], "array", xy_names = c("x", "y"))
-#' all.equal(data_szt2, data_szt)
+#' all.equal(data_szt2[["data"]], data_szt[["data"]])
 #'
 #' # Cleanup
 #' unlink(unlist(tmp_nc))
@@ -519,6 +519,16 @@ create_netCDF <- function(
     )
   }
 
+  if ("axis" %in% names(xy_attributes)) {
+    if (any(c("X", "Y") != toupper(xy_attributes[["axis"]]))) {
+      stop(
+        "`xy_attributes`: if `axis` is included, then its value must be ",
+        "`X` and `Y`."
+      )
+    }
+    xy_attributes[["axis"]] <- NULL
+  }
+
 
   #--- crs attributes setup & info
   if ("crs_wkt" %in% names(crs_attributes)) {
@@ -718,6 +728,27 @@ create_netCDF <- function(
       stop("Need unlim attribute in time attribute list")
     }
 
+    if ("axis" %in% names(time_attributes)) {
+      if ("T" != toupper(time_attributes[["axis"]])) {
+        stop(
+          "`time_attributes`: ",
+          "if `axis` is included, then its value must be `T`"
+        )
+      }
+      time_attributes[["axis"]] <- NULL
+    }
+
+    if (att_timebnds %in% names(time_attributes)) {
+      if (varid_timebnds != time_attributes[[att_timebnds]]) {
+        stop(
+          "`time_attributes`: ",
+          "if ", shQuote(att_timebnds), " is included, then its value must be ",
+          shQuote(varid_timebnds)
+        )
+      }
+      time_attributes[[att_timebnds]] <- NULL
+    }
+
     ns_att_time <- names(time_attributes)
   }
 
@@ -786,6 +817,26 @@ create_netCDF <- function(
 
     if (!("positive" %in% names(vertical_attributes))) {
       stop("Need `positive` attribute in vertical attribute list")
+    }
+
+    if ("axis" %in% names(vertical_attributes)) {
+      if ("Z" != toupper(vertical_attributes[["axis"]])) {
+        stop(
+          "`vertical_attributes`: ",
+          "if `axis` is included, then its value must be `Z`"
+        )
+      }
+      vertical_attributes[["axis"]] <- NULL
+    }
+
+    if ("bounds" %in% names(vertical_attributes)) {
+      if ("vertical_bnds" != vertical_attributes[["bounds"]]) {
+        stop(
+          "`vertical_attributes`: ",
+          "if `bounds` is included, then its value must be `vertical_bnds`"
+        )
+      }
+      vertical_attributes[["bounds"]] <- NULL
     }
 
     ns_att_vert <- names(vertical_attributes)
@@ -915,7 +966,7 @@ create_netCDF <- function(
 
   # vertical dimension
   if (has_Z_verticalAxis != "none") {
-    zdim <-  ncdf4::ncdim_def(
+    zdim <- ncdf4::ncdim_def(
       name = "vertical",
       units = vert_units,
       vals = vertical_values
@@ -1020,6 +1071,17 @@ create_netCDF <- function(
   #------ Define dimension bounds ------
   nc_dimvars <- if (is_gridded) {
     bnds_name <- paste0(xy_attributes[["name"]][1:2], "_bnds")
+
+    if ("bounds" %in% names(xy_attributes)) {
+      if (any(bnds_name != xy_attributes[["bounds"]])) {
+        stop(
+          "`xy_attributes`: ",
+          "if `bounds` is included, then its value must be ",
+          shQuote(bnds_name[1]), " and ", shQuote(bnds_name[2])
+        )
+      }
+      xy_attributes[["bounds"]] <- NULL
+    }
 
     list(
       ncdf4::ncvar_def(
@@ -1251,6 +1313,20 @@ create_netCDF <- function(
   if (!missing(global_attributes)) {
     ns_att_glob <- names(global_attributes)
 
+    tmp <- c("Conventions", "created_by", "creation_date")
+    if (has_T_timeAxis == "none") {
+      tmp <- c(tmp, "time_label", "time_title")
+    }
+    has_replaced_gatts <- tmp[tmp %in% ns_att_glob]
+    if (length(has_replaced_gatts) > 0) {
+      warning(
+        "`global_attributes` contained values for ",
+        paste0(shQuote(has_replaced_gatts), collapse = ", "),
+        "; they were replaced with an automatically generated value."
+      )
+      ns_att_glob <- setdiff(ns_att_glob, has_replaced_gatts)
+    }
+
     for (natt in ns_att_glob) {
       ncdf4::ncatt_put(
         nc,
@@ -1388,7 +1464,10 @@ populate_netCDF <- function(
 #'   Function \code{\link{create_netCDF}} hard codes \var{"crs_wkt"}.
 #' @param ... Additional arguments passed on to the specific functions.
 #'
-#' @return An \var{array},
+#' @return
+#'   A named list including a data \var{array}
+#'   (the list contains completed information to re-create the file with a
+#'   call to \code{\link{create_netCDF}}),
 #'   a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}, or
 #'   a \code{stars::stars} object.
 #'
@@ -1472,6 +1551,16 @@ populate_netCDF <- function(
 #' ## Read CRS of netCDFs
 #' read_crs_from_netCDF(tmp_nc[["xyt"]])
 #' read_crs_from_netCDF(tmp_nc[["szt"]])
+#'
+#' ## Read attributes of netCDFs
+#' read_attributes_from_netCDF(tmp_nc[["xyt"]], var = "sine")
+#' read_attributes_from_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   group = "all",
+#'   var = "sine",
+#'   xy_names = c("x", "y")
+#' )
+#' read_attributes_from_netCDF(tmp_nc[["szt"]], group = "global")
 #'
 #' # Clean up
 #' unlink(unlist(tmp_nc))
@@ -1575,7 +1664,7 @@ read_netCDF_as_array <- function(
 
 
   #--- Variables names
-  nc_vars <- names(x[["var"]])
+  nc_vars <- nc_vars_all <- names(x[["var"]])
   nc_dims <- names(x[["dim"]])
 
 
@@ -1659,6 +1748,17 @@ read_netCDF_as_array <- function(
     nc_time_values <- ncdf4::ncvar_get(nc = x, varid = "time")
     nc_time_N <- length(nc_time_values)
 
+    # time/climatology bounds
+    has_clim <- "climatology_bounds" %in% nc_vars_all
+    nc_time_bounds <- if (has_clim || "time_bnds" %in% nc_vars_all) {
+      t(ncdf4::ncvar_get(
+        nc = x,
+        varid = if (has_clim) "climatology_bounds" else "time_bnds"
+      ))
+    }
+
+    nc_type_timeaxis <- if (has_clim) "climatology" else "timeseries"
+
     # Requested time steps (subset)
     time_ids <- sort(unique(time_ids))
     has_time_subset <- all(time_ids > 0) && length(time_ids) > 0
@@ -1674,6 +1774,7 @@ read_netCDF_as_array <- function(
       has_time_subset <- !isTRUE(identical(time_ids, seq_along(nc_time_values)))
       if (has_time_subset) {
         nc_time_values <- nc_time_values[time_ids]
+        nc_time_bounds <- nc_time_bounds[time_ids, , drop = FALSE]
       }
     }
 
@@ -1684,7 +1785,8 @@ read_netCDF_as_array <- function(
   } else {
     has_time_subset <- FALSE
     has_time_collapsed <- TRUE
-    nc_time_values <- NULL
+    nc_time_values <- nc_time_bounds <- NULL
+    nc_type_timeaxis <- NA
   }
 
 
@@ -1694,6 +1796,11 @@ read_netCDF_as_array <- function(
   if (has_vertical) {
     nc_vertical_values <- ncdf4::ncvar_get(nc = x, varid = "vertical")
     nc_vertical_N <- length(nc_vertical_values)
+
+    # vertical bounds
+    nc_vertical_bounds <- if ("vertical_bnds" %in% nc_vars_all) {
+      t(ncdf4::ncvar_get(nc = x, varid = "vertical_bnds"))
+    }
 
     # Requested vertical steps (subset)
     vertical_ids <- sort(unique(vertical_ids))
@@ -1713,6 +1820,7 @@ read_netCDF_as_array <- function(
 
       if (has_vertical_subset) {
         nc_vertical_values <- nc_vertical_values[time_ids]
+        nc_vertical_bounds <- nc_vertical_bounds[time_ids, , drop = FALSE]
       }
     }
 
@@ -1726,7 +1834,7 @@ read_netCDF_as_array <- function(
   } else {
     has_vertical_subset <- FALSE
     has_vertical_collapsed <- TRUE
-    nc_vertical_values <- NULL
+    nc_vertical_values <- nc_vertical_bounds <- NULL
   }
 
 
@@ -1857,10 +1965,12 @@ read_netCDF_as_array <- function(
   }
 
 
+
   #--- Prepare return object
   tmp <- list(
     data = res,
     data_str = data_str,
+    type_timeaxis = nc_type_timeaxis,
     crs = read_crs_from_netCDF(
       x,
       nc_name_crs = nc_name_crs,
@@ -1868,7 +1978,20 @@ read_netCDF_as_array <- function(
     ),
     xyspace = xyspace,
     vertical_values = nc_vertical_values,
-    time_values = nc_time_values
+    vertical_bounds = nc_vertical_bounds,
+    time_values = nc_time_values,
+    time_bounds = nc_time_bounds
+  )
+
+  tmp <- c(
+    tmp,
+    read_attributes_from_netCDF(
+      x,
+      group = "all",
+      var = nc_vars,
+      xy_names = xy_names,
+      nc_name_crs = nc_name_crs
+    )
   )
 
   if (is_gridded) {
@@ -1980,6 +2103,10 @@ read_netCDF_as_stars <- function(
 #'
 #' @return An object of the \var{crs}-class of package \pkg{sf}.
 #'
+#' @section Details:
+#'   Example code is available in the documentation of
+#'   \code{\link{read_netCDF}}.
+#'
 #' @export
 read_crs_from_netCDF <- function(
   x,
@@ -2007,6 +2134,149 @@ read_crs_from_netCDF <- function(
 
   nc_crs
 }
+
+
+
+
+#' Read all attributes of a group from a \var{netCDF}
+#'
+#' @inheritParams read_netCDF
+#' @param group A character string. Specifies which attributes to extract.
+#' @param var A character string. The name or names of the variables from
+#'   which to extract attributes, used if the "var" \code{group} is requested.
+#'
+#' @return A named list
+#'
+#' @section Details:
+#'   Example code is available in the documentation of
+#'   \code{\link{read_netCDF}}.
+#
+#' @section Details: \itemize{
+#'   \item If attributes of a variable are requested (group is \var{"var"}),
+#'         then the variable name must be passed to \code{var}.
+#'   \item If \var{xy-space} attributes are requested (group is \var{"xy"}),
+#'         then the names of the x and y dimension must be passed to
+#'         \code{xy_names}.
+#'   \item If \var{crs} attributes are requested (group is \var{"crs"}),
+#'         then the name must be passed to \code{nc_name_crs}.
+#'   \item To obtain all attributes from each group, pass "all" to \code{group};
+#'         \code{var}, \code{xy_names}, \code{nc_name_crs}
+#'         must be correctly specified.
+#' }
+#'
+#' @export
+read_attributes_from_netCDF <- function(
+  x,
+  group = c("var", "xy", "crs", "time", "vertical", "global", "all"),
+  var = NULL,
+  xy_names = c("lon", "lat"),
+  nc_name_crs = "crs"
+) {
+  stopifnot(requireNamespace("ncdf4"))
+
+  group <- match.arg(group)
+
+  if (!inherits(x, "ncdf4")) {
+    x <- ncdf4::nc_open(filename = x, write = FALSE)
+    on.exit(ncdf4::nc_close(x))
+  }
+
+  if (group %in% c("var", "all") && is.null(var)) {
+    stop("Variable attributes requested but `var` was not provided.")
+  }
+
+  if (group == "all") {
+    # Put together attributes from all groups
+    tmp_has <- c(names(x[["var"]]), names(x[["dim"]]))
+    tmp_req <- c(
+      "var",
+      "xy",
+      if (nc_name_crs %in% tmp_has) nc_name_crs else NA,
+      if ("time" %in% tmp_has) "time" else NA,
+      if ("vertical" %in% tmp_has) "vertical" else NA,
+      "global"
+    )
+    tmp_nms <- paste0(
+      c("var", "xy", "crs", "time", "vertical", "global"),
+      "_attributes"
+    )
+
+    res <- stats::setNames(
+      lapply(
+        tmp_req,
+        function(att) {
+          if (is.na(att)) {
+            list()
+          } else {
+            read_attributes_from_netCDF(
+              x,
+              group = att,
+              var = var,
+              xy_names = xy_names,
+              nc_name_crs = nc_name_crs
+            )
+          }
+        }
+      ),
+      tmp_nms
+    )
+
+  } else if (group == "xy") {
+    # Put together \var{xy-space} attributes
+    res <- read_attributes_from_netCDF(x, group = "var", var = xy_names)
+
+  } else if (group == "var" && length(var) > 1) {
+    # Put together multiple variable attributes (vectorized)
+    tmp_vatts <- lapply(
+      var,
+      function(var) read_attributes_from_netCDF(x, var = var)
+    )
+
+    vatts <- names(tmp_vatts[[1]])
+    for (k in seq_along(tmp_vatts)[-1]) {
+      vatts <- intersect(vatts, names(tmp_vatts[[k]]))
+    }
+
+    res <- stats::setNames(
+      lapply(vatts, function(att) sapply(tmp_vatts, function(x) x[[att]])),
+      vatts
+    )
+
+  } else {
+    # Get attributes from any other group
+    varid <- switch(
+      EXPR = group,
+      var = var,
+      crs = nc_name_crs,
+      global = 0,
+      group
+    )
+
+    if (
+      group != "global" &&
+      !(varid %in% c(names(x[["var"]]), names(x[["dim"]])))
+    ) {
+      stop("Attributes of requested ", shQuote(varid), " cannot be located.")
+    }
+
+    res <- ncdf4::ncatt_get(nc = x, varid = varid, attname = NA)
+
+    if (group == "var") {
+      res <- c(res, list(name = varid))
+
+    } else if (group == "time") {
+      tmp <- x[["unlimdimid"]]
+
+      res <- c(
+        res,
+        list(unlim = if (tmp > 0) names(x[["dim"]])[tmp] == "time" else FALSE)
+      )
+    }
+  }
+
+  res
+}
+
 
 
 
