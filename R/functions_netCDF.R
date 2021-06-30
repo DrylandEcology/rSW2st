@@ -2129,11 +2129,13 @@ read_crs_from_netCDF <- function(
     on.exit(ncdf4::nc_close(x))
   }
 
-  nc_crs <- ncdf4::ncatt_get(
-    nc = x,
-    varid = nc_name_crs,
-    attname = nc_name_crs_wkt
-  )[["value"]]
+  nc_crs <- if (nc_name_crs %in% names(x[["var"]])) {
+    ncdf4::ncatt_get(
+      nc = x,
+      varid = nc_name_crs,
+      attname = nc_name_crs_wkt
+    )[["value"]]
+  }
 
   nc_crs <- try(sf::st_crs(nc_crs), silent = TRUE)
   if (!inherits(nc_crs, "crs") || is.na(nc_crs)) {
