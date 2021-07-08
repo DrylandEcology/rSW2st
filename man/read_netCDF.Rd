@@ -74,7 +74,7 @@ inheriting from \var{sf} or \var{Spatial*}.}
 \item{...}{Additional arguments passed on to the specific functions.}
 
 \item{xy_names}{A vector with two character strings. The names of the
-\var{x} and \var{y} spatial dimensions of the \var{netCDF} file.}
+\var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
 
 \item{time_ids}{An integer vector. The index to read a subset of
 time steps; a value of \code{-1} means to read all.}

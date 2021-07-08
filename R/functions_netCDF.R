@@ -10,7 +10,7 @@
 #'          object,
 #'    \item a \code{stars::stars} object,
 #'    \item a file name pointing to such a raster on disk;
-#'    \item a list, such as the one produced by \code{\link{xy_from_grid}}.
+#'    \item a list, such as the one produced by \code{\link{get_xyspace}}.
 #'    \item an object with coordinate values for all \var{gridcell} centers
 #'          that can be passed to \code{\link{as_points}};
 #'  }
@@ -33,6 +33,9 @@
 #'   \var{z} stands for a vertical dimension; and \var{t} stands for a
 #'   temporal dimension.
 #'
+#' @param xy_names A vector with two character strings. The names of the
+#'   \var{x} and \var{y} spatial dimensions of a \var{netCDF} file.
+#'
 #' @name rSW2st_netCDF
 #' @aliases netCDF netcdf
 NULL
@@ -52,7 +55,7 @@ NULL
 #'   \var{netCDF} file.
 #'   If \code{xyspace} does not contain a \var{crs},
 #'   then it is assumed that the \var{crs} is \var{crs_attributes[["crs_wkt"]]}.
-#'   If data are gridded, then passed to \code{\link{xy_from_grid}};
+#'   If data are gridded, then passed to \code{\link{get_xyspace}};
 #'   if non-gridded, then passed to \code{\link{as_points}}.
 #' @param data_dims A list as returned by \code{\link{get_data_dims}}.
 #'   If \code{NULL} and \code{data} is not missing, then calculated from
@@ -582,7 +585,7 @@ create_netCDF <- function(
   if (is_gridded) {
     # Note: xvals are organized from west to east, yvals from south to north
     xy_grid <- try(
-      xy_from_grid(xyspace, crs = crs_xyspace),
+      get_xyspace(xyspace, crs = crs_xyspace),
       silent = TRUE
     )
 
@@ -1456,7 +1459,18 @@ populate_netCDF <- function(
     on.exit(ncdf4::nc_close(x))
   }
 
-  stop("unfinished code.")
+  if (length(var_names) == 1 && data_str == "xyt") {
+    # check time_ids and match with data
+    ncdf4::ncvar_put(
+      nc = x,
+      varid = var_names[1],
+      vals = data,
+      start = c(1, 1, time_ids),
+      count = c(-1, -1, 1)
+    )
+  }
+
+  warning("unfinished code.")
 }
 
 
@@ -1648,8 +1662,6 @@ read_netCDF <- function(
 
 #' @rdname read_netCDF
 #'
-#' @param xy_names A vector with two character strings. The names of the
-#'   \var{x} and \var{y} spatial dimensions of the \var{netCDF} file.
 #' @param time_ids An integer vector. The index to read a subset of
 #'   time steps; a value of \code{-1} means to read all.
 #' @param vertical_ids An integer vector. The index to read a subset of
@@ -1743,19 +1755,7 @@ read_netCDF_as_array <- function(
 
 
   #--- Put together the xyspace (and site) object(s)
-  tmp <- list(
-    # `ncvar_get()` reads xy values whether they are dimensional values
-    # (is_gridded) or regular variables (!is_gridded)
-    x = ncdf4::ncvar_get(nc = x, varid = xy_names[1]),
-    y = ncdf4::ncvar_get(nc = x, varid = xy_names[2])
-  )
-
-  # TODO: account for bounds
-  # TODO: check/warn if not regular grid
-  xyspace <- c(
-    tmp,
-    list(res = if (is_gridded) sapply(tmp, function(x) unique(diff(x))) else NA)
-  )
+  xyspace <- get_xyspace(x, xy_names = xy_names)
 
   sites <- if (!is_gridded) {
     ncdf4::ncvar_get(nc = x, varid = "site")
@@ -2403,13 +2403,28 @@ get_data_dims <- function(
 
 
 
-#' Extract unique \var{x} and \var{y} spanning a gridded \var{xy-space}
+#' Extract \var{xy-space} values
 #'
+#' @param x An object that describes a gridded or discrete \var{xy-space}.
+#'  Regular, rectangular grids are the only currently supported grid.
+#'  This can be \itemize{
+#'    \item an object identifying a \var{netCDF} file, i.e.,
+#'          a character string as file name or
+#'          an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
+#'    \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+#'          object,
+#'    \item a \code{stars::stars} object,
+#'    \item a list, such as the one produced by \code{\link{get_xyspace}}.
+#'    \item an object with coordinate values for all \var{gridcell} centers
+#'          that can be passed to \code{\link{as_points}};
+#' }
 #' @inheritParams rSW2st_netCDF
 #' @inheritParams rSW2st_crs
 #' @param res A numeric vector of length two. The (absolute values of)
 #'   cell size/resolution/delta of the \var{x} and \var{y} dimensions
 #'   in units of the \var{crs}.
+#' @param tol A numeric value. The tolerance applied to determine if a grid
+#'   is regular and to calculate grid resolution.
 #'
 #' @section Notes:
 #' The argument \code{crs} is only used if \code{grid} is a \code{data.frame},
@@ -2419,7 +2434,7 @@ get_data_dims <- function(
 #' @section Notes:
 #' The argument \code{res} is only used in two cases: \itemize{
 #'   \item if \code{grid} is a list,
-#'         such as the one produced by \code{\link{xy_from_grid}}, but does
+#'         such as the one produced by \code{\link{get_xyspace}}, but does
 #'         not contain a named element \var{res}; or
 #'   \item if \code{grid} is an object with coordinate values for
 #'         all \var{gridcell} centers.
@@ -2428,8 +2443,11 @@ get_data_dims <- function(
 #'
 #' @return A list with three elements:
 #'  two vectors one each containing all unique values of the
-#'  \var{x} coordinate and the \var{y} coordinates of all \var{gricell} centers;
-#'  and a vector \var{res} with the (regular) \var{x} and \var{y} resolutions.
+#'  \var{x} coordinate and the \var{y} coordinates of
+#'  (i) all \var{gricell} centers, if gridded, or
+#'  (ii) all \var{sites}, if discrete;
+#'  and a vector \var{res} with the (regular) \var{x} and \var{y} resolutions,
+#'  if gridded (NA, if discrete).
 #'
 #' @examples
 #' # grid as raster object
@@ -2439,74 +2457,126 @@ get_data_dims <- function(
 #'   crs = "OGC:CRS84",
 #'   resolution = c(1, 1)
 #' )
-#' xy_from_grid(r)
+#' get_xyspace(r)
 #'
 #' # grid as data frame with coordinate values
 #' rdf <- raster::coordinates(r)
-#' xy_from_grid(rdf, crs = "OGC:CRS84", res = c(1, 1))
+#' get_xyspace(rdf, crs = "OGC:CRS84", res = c(1, 1))
 #'
 #' # a list with vectors for all x values and all y values (and resolution)
 #' rl <- list(
 #'   x = sort(unique(rdf[, 1])),
 #'   y = sort(unique(rdf[, 2]))
 #' )
-#' xy_from_grid(c(rl, list(res = c(1, 1))))
-#' xy_from_grid(rl, res = c(1, 1))
+#' get_xyspace(c(rl, list(res = c(1, 1))))
+#' get_xyspace(rl, res = c(1, 1))
 #'
 #' @export
-xy_from_grid <- function(grid, crs, res) {
-  if (is.character(grid)) {
-    # e.g., a filename to a raster
-    grid <- try(raster::raster(grid), silent = TRUE)
+get_xyspace <- function(
+  x,
+  crs,
+  res,
+  xy_names = c("lon", "lat"),
+  tol = sqrt(.Machine$double.eps)
+) {
+
+  if (inherits(x, "character")) {
+    x <- ncdf4::nc_open(filename = x, write = FALSE, readunlim = FALSE)
+    on.exit(ncdf4::nc_close(x))
   }
 
+  # TODO: convert function into S3 methods?
+  # TODO: account for bounds
+  # TODO: check/warn if gridded, but not regular
+  if (inherits(x, "ncdf4")) {
+    stopifnot(requireNamespace("ncdf4"))
+    is_gridded <- is_netCDF_gridded(x, xy_names = xy_names)
 
-  if (inherits(grid, "Raster")) {
-    xy_grid <- list(
-      x = raster::xFromCol(grid, seq_len(raster::ncol(grid))),
-      y = raster::yFromRow(grid, rev(seq_len(raster::nrow(grid)))),
-      res = raster::res(grid)
+    tmp_xy <- list(
+      # `ncvar_get()` reads xy values whether they are dimensional values
+      # (is_gridded) or regular variables (!is_gridded)
+      x = as.vector(ncdf4::ncvar_get(nc = x, varid = xy_names[1])),
+      y = as.vector(ncdf4::ncvar_get(nc = x, varid = xy_names[2]))
     )
 
-  } else if (inherits(grid, "stars")) {
+    tmp_res <- if (is_gridded) {
+      sapply(
+        tmp_xy,
+        function(x) {
+          tmp <- unique(diff(x))
+          if (length(tmp) > 1) {
+            if (any(abs(diff(tmp)) > tol)) {
+              stop(
+                "Object is gridded, but likely not regular: ",
+                "retrieved coordinate resolutions (a.k.a. deltas) are ",
+                paste0(tmp, collapse = ", ")
+              )
+            }
+
+            tmp[1]
+
+          } else {
+            tmp
+          }
+        }
+      )
+
+    } else {
+      rep(NA, 2)
+    }
+
+    xyspace <- c(
+      tmp_xy,
+      list(res = tmp_res)
+    )
+
+  } else if (inherits(x, "Raster")) {
+    xyspace <- list(
+      x = raster::xFromCol(x, seq_len(raster::ncol(x))),
+      y = raster::yFromRow(x, rev(seq_len(raster::nrow(x)))),
+      res = raster::res(x)
+    )
+
+  } else if (inherits(x, "stars")) {
     tmp_res <- abs(unname(
-      sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+      sapply(stars::st_dimensions(x), function(x) x[["delta"]])
     ))[1:2]
 
     if (anyNA(tmp_res)) {
       stop("Can currently only handle regular, rectangular grids.")
     }
 
-    xy_grid <- list(
-      x = sort(stars::st_get_dimension_values(grid, which = 1, center = TRUE)),
-      y = sort(stars::st_get_dimension_values(grid, which = 2, center = TRUE)),
+    xyspace <- list(
+      x = sort(stars::st_get_dimension_values(x, which = 1, center = TRUE)),
+      y = sort(stars::st_get_dimension_values(x, which = 2, center = TRUE)),
       res = tmp_res
     )
 
   } else {
     tmp <- try(
-      as_points(grid, to_class = "sf", crs = crs),
+      as_points(x, to_class = "sf", crs = crs),
       silent = TRUE
     )
 
     if (!inherits(tmp, "try-error")) {
       tmp <- sf::st_coordinates(tmp)[, 1:2, drop = FALSE]
-      xy_grid <- list(
+      xyspace <- list(
         x = sort(unique(tmp[, 1])),
         y = sort(unique(tmp[, 2])),
-        res = res
+        res = res[1:2]
       )
 
     } else {
-      xy_grid <- list(
-        x = sort(unique(grid[[1]])),
-        y = sort(unique(grid[[2]])),
-        res = if ("res" %in% names(grid)) grid[["res"]] else res
+      xyspace <- list(
+        x = sort(unique(x[[1]])),
+        y = sort(unique(x[[2]])),
+        res = if ("res" %in% names(x)) x[["res"]][1:2] else res[1:2]
       )
     }
   }
 
-  xy_grid
+  tmp_res <- unname(xyspace[["res"]])
+  c(xyspace[c("x", "y")], res = list(c(x = tmp_res[1], y = tmp_res[2])))
 }
 
 
@@ -2584,7 +2654,7 @@ convert_xyspace <- function(
 
 
   #--- xy-coordinates of grid
-  xy_grid <- xy_from_grid(grid, crs = locations_crs)
+  xy_grid <- get_xyspace(grid, crs = locations_crs)
   n_cells <- prod(lengths(xy_grid[1:2]))
 
 
@@ -2706,6 +2776,7 @@ convert_xyspace <- function(
 
   res
 }
+
 
 
 

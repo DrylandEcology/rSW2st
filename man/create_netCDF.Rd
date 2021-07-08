@@ -44,7 +44,7 @@ create_netCDF(
 \var{netCDF} file.
 If \code{xyspace} does not contain a \var{crs},
 then it is assumed that the \var{crs} is \var{crs_attributes[["crs_wkt"]]}.
-If data are gridded, then passed to \code{\link{xy_from_grid}};
+If data are gridded, then passed to \code{\link{get_xyspace}};
 if non-gridded, then passed to \code{\link{as_points}}.}
 
 \item{data}{A numeric array or vector (optional). A vector is converted

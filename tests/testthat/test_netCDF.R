@@ -74,8 +74,8 @@ test_that("get_data_dims", {
 
 
 
-#------ Tests for `xy_from_grid()` ------
-test_that("xy_from_grid", {
+#------ Tests for `get_xyspace()` ------
+test_that("get_xyspace", {
   gd <- c(nx = 120, ny = 45)
   crs_wgs84 <- "OGC:CRS84"
   res <- c(1, 1)
@@ -83,7 +83,7 @@ test_that("xy_from_grid", {
   #--- `grid` cases:
   list_grids <- list()
 
-  # 1) raster object or a filename of a raster object;
+  # 1) raster object;
   list_grids[["raster"]] <- raster::raster(
     xmn = 0.5, xmx = 0.5 + gd["nx"],
     ymn = 0.5, ymx = 0.5 + gd["ny"],
@@ -106,11 +106,28 @@ test_that("xy_from_grid", {
   # 5) a list with vectors for all x values and all y values and resolution
   list_grids[["list2"]] <- c(list_grids[["list1"]], list(res = res))
 
+  # 6) an open netCDF
+  fname_nc <- tempfile(fileext = ".nc")
 
-  # Loop over grid cases
+  create_netCDF(
+    filename = fname_nc,
+    xyspace = get_xyspace(list_grids[["stars"]]),
+    data = list_grids[["stars"]][[1]],
+    data_str = "xy",
+    var_attributes = list(name = "test", units = "1")
+  )
+
+  list_grids[["nc"]] <- ncdf4::nc_open(fname_nc)
+
+
+  # 7) a filename pointing to a netCDF on disk
+  list_grids[["nc_filename"]] <- fname_nc
+
+
+  #--- Loop over grid cases
   res_grids <- list()
   for (kg in names(list_grids)) {
-    res_grids[[kg]] <- xy_from_grid(
+    res_grids[[kg]] <- get_xyspace(
       list_grids[[kg]],
       crs = crs_wgs84,
       res = res
@@ -119,6 +136,11 @@ test_that("xy_from_grid", {
     # Check: type of grid specification does not matter
     expect_equal(res_grids[[1]], res_grids[[kg]])
   }
+
+
+  # Clean up
+  ncdf4::nc_close(list_grids[["nc"]])
+  unlink(fname_nc)
 })
 
 
@@ -165,7 +187,7 @@ test_that("convert_xyspace", {
 
 
   #--- Create expanded test data
-  xy_grid <- xy_from_grid(grid)
+  xy_grid <- get_xyspace(grid)
   xy_data <- locations
   # Create matrix indices so that they match the collapsed/sparse version
   ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1]] - x)))

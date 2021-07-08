@@ -21,7 +21,7 @@ This can be \itemize{
         object,
   \item a \code{stars::stars} object,
   \item a file name pointing to such a raster on disk;
-  \item a list, such as the one produced by \code{\link{xy_from_grid}}.
+  \item a list, such as the one produced by \code{\link{get_xyspace}}.
   \item an object with coordinate values for all \var{gridcell} centers
         that can be passed to \code{\link{as_points}};
 }

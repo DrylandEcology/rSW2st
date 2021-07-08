@@ -23,7 +23,7 @@ from \code{ncdf4::nc_open}.}
 which to extract attributes, used if the "var" \code{group} is requested.}
 
 \item{xy_names}{A vector with two character strings. The names of the
-\var{x} and \var{y} spatial dimensions of the \var{netCDF} file.}
+\var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
 
 \item{nc_name_crs}{A character string. The name of the \var{crs} variable
 in the \var{netCDF}.

@@ -16,7 +16,7 @@ This can be \itemize{
         object,
   \item a \code{stars::stars} object,
   \item a file name pointing to such a raster on disk;
-  \item a list, such as the one produced by \code{\link{xy_from_grid}}.
+  \item a list, such as the one produced by \code{\link{get_xyspace}}.
   \item an object with coordinate values for all \var{gridcell} centers
         that can be passed to \code{\link{as_points}};
 }
@@ -39,6 +39,9 @@ while \var{"s"} stands for \var{site} if the spatial structure are
 discrete points;
 \var{z} stands for a vertical dimension; and \var{t} stands for a
 temporal dimension.}
+
+\item{xy_names}{A vector with two character strings. The names of the
+\var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
 }
 \description{
 Interaction of \var{rSW2} objects with \var{netCDFs}
