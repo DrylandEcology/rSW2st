@@ -434,8 +434,19 @@ test_that("read_netCDF", {
     overwrite = TRUE
   )
 
+
   # Loop through netCDFs and check reading
-  for (fnc in tmp_nc) {
+  for (k in seq_along(tmp_nc)) {
+    fnc <- tmp_nc[[k]]
+
+    # Test for gridded/discrete netCDF type
+    expect_equal(
+      is_netCDF_gridded(fnc, xy_names = c("x", "y")),
+      substr(names(tmp_nc[k]), 1, 2) == "xy"
+    )
+
+
+    # Loop over methods
     for (km in tmp_methods) {
 
       if (km == "raster" && basename(fnc) == "nc_s.nc") {

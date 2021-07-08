@@ -1690,7 +1690,7 @@ read_netCDF_as_array <- function(
 
 
   #--- Dimensions
-  is_gridded <- !("site" %in% nc_dims)
+  is_gridded <- is_netCDF_gridded(x, xy_names = xy_names)
 
   has_xy <- if (is_gridded) {
     all(xy_names %in% nc_dims)
@@ -2306,6 +2306,32 @@ read_attributes_from_netCDF <- function(
 }
 
 
+#' Determine if a \var{netCDF} has a gridded or discrete \var{xy-space}
+#'
+#' @inheritParams read_netCDF
+#'
+#' @return A logical value
+#'
+#' @export
+is_netCDF_gridded <- function(
+  x,
+  xy_names = c("lon", "lat")
+) {
+  stopifnot(requireNamespace("ncdf4"))
+
+  if (!inherits(x, "ncdf4")) {
+    x <- ncdf4::nc_open(filename = x, write = FALSE, readunlim = FALSE)
+    on.exit(ncdf4::nc_close(x))
+  }
+
+  is_gridded <- c(
+    !("site" %in% names(x[["dim"]])),
+    all(xy_names %in% names(x[["dim"]])),
+    !all(xy_names %in% names(x[["var"]]))
+  )
+
+  is_gridded[1] && any(is_gridded[2:3])
+}
 
 
 #' \var{XYZT} or \var{SZT} data dimensions for interacting with \var{netCDFs}
