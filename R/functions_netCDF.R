@@ -919,6 +919,23 @@ create_netCDF <- function(
     }
   }
 
+  if ("_FillValue" %in% names(var_attributes)) {
+    if (verbose) {
+      warning("`_FillValue` variable attribute is automatically generated.")
+    }
+    var_attributes[["_FillValue"]] <- NULL
+  }
+
+  if ("missing_value" %in% names(var_attributes)) {
+    if (verbose) {
+      warning(
+        "`missing_value` variable attribute is replaced by ",
+        "automatically generated `_FillValue`."
+      )
+    }
+    var_attributes[["missing_value"]] <- NULL
+  }
+
   ns_att_vars <- names(var_attributes)
 
 
