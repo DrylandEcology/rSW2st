@@ -102,7 +102,7 @@ as_points <- function(
     switch(
       EXPR = to_class,
       sp = sp::SpatialPoints(
-        coords = x,
+        coords = unname(x),
         proj4string = as(crs, "CRS")
       ),
       sf = , #nolint
