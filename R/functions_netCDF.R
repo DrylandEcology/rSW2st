@@ -752,6 +752,24 @@ create_netCDF <- function(
       time_attributes[[att_timebnds]] <- NULL
     }
 
+    not_att_timebnds <- switch(
+      EXPR = type_timeaxis,
+      timeseries = "climatology",
+      climatology = "bounds"
+    )
+
+    if (not_att_timebnds %in% names(time_attributes)) {
+      warning(
+        "`time_attributes`: ",
+        "the attribute ", shQuote(not_att_timebnds), " is ignored ",
+        "because time represents a ", shQuote(type_timeaxis),
+        "; instead, the automatically generated attribute ",
+        shQuote(att_timebnds),
+        " encodes the bounds of the time axis."
+      )
+      time_attributes[[not_att_timebnds]] <- NULL
+    }
+
     ns_att_time <- names(time_attributes)
   }
 
