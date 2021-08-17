@@ -176,12 +176,16 @@ get_raster_datatype <- function(data) {
 #' Polygon around \var{gridcells} with a value larger than or equal to the
 #' specified threshold
 #'
-#' @param grid A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}.
+#' @param grid A two-dimensional
+#'   \code{\link[raster:RasterLayer-class]{raster::RasterLayer}} or
+#'   \code{stars} object.
 #' @param alpha A numeric value. Threshold value.
 #'
-#' @return A \code{\link[sp]{SpatialPolygons}} object.
+#' @return A \code{\link[sp]{SpatialPolygons}} object or a \code{sf} polygon,
+#'   respectively.
 #'
 #' @examples
+#' ## --- Using `raster` package
 #' r <- raster::raster(
 #'   xmn = 0, xmx = 10,
 #'   ymn = 0, ymx = 10,
@@ -196,9 +200,36 @@ get_raster_datatype <- function(data) {
 #' raster::plot(r)
 #' sp::plot(ip1, border = "black", add = TRUE)
 #' sp::plot(ip2, border = "blue", add = TRUE)
+#' dev.off()
+#'
+#'
+#' ## --- Using `stars` package
+#' rs <- stars::st_as_stars(r)
+#'
+#' ip1s <- isoline_from_raster(rs, alpha = 45)
+#' ip2s <- isoline_from_raster(rs, alpha = 87)
+#'
+#' plot(rs, reset = FALSE)
+#' plot(ip1s, col = NA, border = "black", add = TRUE)
+#' plot(ip2s, col = NA, border = "blue", add = TRUE)
+#' dev.off()
 #'
 #' @export
 isoline_from_raster <- function(grid, alpha) {
-  tmp <- raster::calc(grid, fun = function(x) ifelse(x >= alpha, 1L, NA))
-  raster::rasterToPolygons(tmp, dissolve = TRUE)
+  stopifnot(inherits(grid, c("Raster", "stars")))
+
+  if (inherits(grid, "Raster")) {
+    tmp <- raster::calc(grid, fun = function(x) ifelse(x >= alpha, 1L, NA))
+    raster::rasterToPolygons(tmp, dissolve = TRUE)
+
+  } else if (inherits(grid, "stars")) {
+    stopifnot(length(dim(grid)) == 2)
+
+    tmp <- stars::st_apply(
+      grid,
+      MARGIN = 1:2,
+      FUN = function(x) ifelse(x >= alpha, 1L, NA)
+    )
+    sf::st_make_valid(sf::st_as_sf(tmp, as_points = FALSE, merge = TRUE))
+  }
 }
