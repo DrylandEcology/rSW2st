@@ -219,6 +219,9 @@ isoline_from_raster <- function(grid, alpha) {
   stopifnot(inherits(grid, c("Raster", "stars")))
 
   if (inherits(grid, "Raster")) {
+    # Dissolving a raster to polygons requires "rgeos"
+    stopifnot(requireNamespace("rgeos"))
+
     tmp <- raster::calc(grid, fun = function(x) ifelse(x >= alpha, 1L, NA))
     raster::rasterToPolygons(tmp, dissolve = TRUE)
 

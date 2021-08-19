@@ -26,6 +26,7 @@ Suggests:
     gstat,
     ggplot2,
     ncdf4 (>= 1.17),
+    rgeos,
     testthat (>= 3.0.0),
     spelling,
     lintr,
