@@ -1455,10 +1455,45 @@ create_netCDF <- function(
 }
 
 
-# TODO: write code for populate_netCDF
-#' Write data to an existing \var{netCDF} file
-#' @noRd
+#' Add data to an existing \var{netCDF} file
+#'
+#' @inheritParams create_netCDF
+#' @inheritParams read_netCDF_as_array
+#' @param var_names A character vector of strings. The \var{netCDF} variable
+#'   names.
+#'
+#' @section Notes: This function is not yet implemented.
+#'
+#' @export
 populate_netCDF <- function(
+  filename,
+  data,
+  var_names,
+  data_str = c("xyzt", "xyt", "xyz", "xy", "szt", "st", "sz", "s"),
+  nc_name_crs = "crs",
+  nc_name_crs_wkt = "crs_wkt",
+  xy_names = c("lon", "lat"),
+  time_ids = -1,
+  vertical_ids = -1,
+  ...
+) {
+  populate_netCDF_dev(
+    filename = filename,
+    data = data,
+    var_names = var_names,
+    data_str = data_str,
+    nc_name_crs = nc_name_crs,
+    nc_name_crs_wkt = nc_name_crs_wkt,
+    xy_names = xy_names,
+    time_ids = time_ids,
+    vertical_ids = vertical_ids,
+    ...
+  )
+}
+
+
+# TODO: write code for populate_netCDF
+populate_netCDF_dev <- function(
   filename,
   data,
   var_names,
