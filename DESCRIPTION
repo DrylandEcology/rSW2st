@@ -1,6 +1,6 @@
 Package: rSW2st
-Title: Spatiotemporal tools for SOILWAT2 and STEPWAT2 simulation experiments
-Version: 0.0.0.9000
+Title: Spatiotemporal Tools for SOILWAT2 and STEPWAT2 Simulation Experiments
+Version: 0.1.0
 Authors@R: c(
   person(
     "Daniel", "Schlaepfer",
@@ -14,7 +14,7 @@ Depends:
     R (>= 3.5.0),
     methods
 Imports:
-    rSW2utils,
+    rSW2utils (>= 0.1.0),
     abind (>= 1.4.5),
     sf (>= 0.9.8),
     sp (>= 1.4.5),
