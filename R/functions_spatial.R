@@ -86,5 +86,7 @@ variogram_range <- function(
 
   if (abs(psill_sum) > sqrt(.Machine$double.eps)) {
     fittedVar[["var_model"]][2, "range"]
-  } else NaN
+  } else {
+    NaN
+  }
 }

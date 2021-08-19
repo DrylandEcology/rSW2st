@@ -28,11 +28,11 @@
 "_PACKAGE"
 
 
-##------ Package level variables
+## ------ Package level variables
 rSW2_glovars <- new.env()
 
 
-##------ Import from other packages
+## ------ Import from other packages
 #' @importFrom stats aggregate coef complete.cases cor cov fitted median
 #'   na.exclude na.omit predict quantile sd weighted.mean
 #' @importFrom methods as

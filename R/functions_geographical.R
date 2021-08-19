@@ -151,8 +151,8 @@ calculate_cell_area <- function(
     # Determine distance units: meters or kilometers?
     ar_km2 <- ar * switch(
       crs_units(grid),
-      meter =, meters =, metre =, metres =, m = m2_to_km2, # nolint
-      kilometer =, kilometers =, kilometre =, kilometres = , km2 = 1, # nolint
+      meter = , meters = , metre = , metres = , m = m2_to_km2, # nolint
+      kilometer = , kilometers = , kilometre = , kilometres = , km2 = 1, # nolint
       NA
     )
     cells[, "km2"] <- ar_km2
@@ -180,9 +180,9 @@ calculate_cell_area <- function(
 #' @references
 #'   \var{CMIP6 Global Attributes, DRS, Filenames, Directory Structure,
 #'   and CV’s}, 10 September 2018 (v6.2.7).
-#nolint start
+# nolint start
 #'   \href{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}{Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute}
-#nolint end
+# nolint end
 #'
 #' @examples
 #' r1 <- raster::raster(
@@ -271,7 +271,7 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
     mean_resolution_km <- stats::weighted.mean(dmax_km, cell_areas_km2)
 
   } else {
-    tmp <- sqrt(sum(res ^ 2))
+    tmp <- sqrt(sum(res^2))
     cu <- switch(
       EXPR = crs_units(grid),
       meter = , meters = , metre = , metres = , m = 1e-3, # nolint

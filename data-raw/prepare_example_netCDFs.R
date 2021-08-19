@@ -1,11 +1,11 @@
 #!/usr/bin/env Rscript
 
 #--- rSW2st: use development version
-library("methods")  # in case this code is run via 'Rscript'
-#stopifnot(requireNamespace("pkgbuild"))
+library("methods") # in case this code is run via 'Rscript'
+# stopifnot(requireNamespace("pkgbuild"))
 stopifnot(requireNamespace("pkgload"))
 
-#pkgbuild::clean_dll()
+# pkgbuild::clean_dll()
 pkgload::load_all()
 
 

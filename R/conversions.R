@@ -26,29 +26,28 @@
 #' @return An object of the requested class.
 #'
 #' @examples
-#'  locations <- matrix(
-#'    data = c(-120.325, -111.245, 39.855, 36.753),
-#'    nrow = 2
-#'  )
+#' locations <- matrix(
+#'   data = c(-120.325, -111.245, 39.855, 36.753),
+#'   nrow = 2
+#' )
 #'
-#'  pts_sf1 <- as_points(locations, crs = 4326, to_class = "sf")
-#'  pts_sfc1 <- as_points(locations, crs = 4326, to_class = "sfc")
-#'  pts_sp1 <- as_points(locations, crs = 4326, to_class = "sp")
+#' pts_sf1 <- as_points(locations, crs = 4326, to_class = "sf")
+#' pts_sfc1 <- as_points(locations, crs = 4326, to_class = "sfc")
+#' pts_sp1 <- as_points(locations, crs = 4326, to_class = "sp")
 #'
-#'  pts_sf2 <- as_points(pts_sp1, to_class = "sf")
-#'  pts_sfc2 <- as_points(pts_sp1, to_class = "sfc")
-#'  pts_sp2 <- as_points(pts_sf1, to_class = "sp")
+#' pts_sf2 <- as_points(pts_sp1, to_class = "sf")
+#' pts_sfc2 <- as_points(pts_sp1, to_class = "sfc")
+#' pts_sp2 <- as_points(pts_sf1, to_class = "sp")
 #'
-#'  all.equal(pts_sf1, pts_sf2, check.attributes = FALSE)
-#'  all.equal(pts_sfc1, pts_sfc2, check.attributes = FALSE)
-#'  all.equal(pts_sp1, pts_sp2)
-#'  all.equal(locations, sf::st_coordinates(pts_sf1), check.attributes = FALSE)
-#'  all.equal(locations, sf::st_coordinates(pts_sfc1), check.attributes = FALSE)
-#'  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
+#' all.equal(pts_sf1, pts_sf2, check.attributes = FALSE)
+#' all.equal(pts_sfc1, pts_sfc2, check.attributes = FALSE)
+#' all.equal(pts_sp1, pts_sp2)
+#' all.equal(locations, sf::st_coordinates(pts_sf1), check.attributes = FALSE)
+#' all.equal(locations, sf::st_coordinates(pts_sfc1), check.attributes = FALSE)
+#' all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
 #'
-#'  # A vector of length two is interpreted as a single point location
-#'  pts_sf11 <- as_points(locations[1, ], crs = 4326, to_class = "sf")
-#'
+#' # A vector of length two is interpreted as a single point location
+#' pts_sf11 <- as_points(locations[1, ], crs = 4326, to_class = "sf")
 #' @export
 as_points <- function(
   x,
@@ -105,7 +104,7 @@ as_points <- function(
         coords = unname(x),
         proj4string = as(crs, "CRS")
       ),
-      sf = , #nolint
+      sf = , # nolint
       sfc = sf::st_cast(
         x = sf::st_sfc(
           sf::st_multipoint(

@@ -49,9 +49,9 @@ crs_units <- function(crs) {
 #' }
 #'
 #' @references Convert Latitude/Longitude to UTM
-#nolint start
+# nolint start
 #'   \url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
-#nolint end
+# nolint end
 #'   (attributed to Chuck Gantz).
 #'
 #' @examples

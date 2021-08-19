@@ -297,7 +297,7 @@ test_that("convert_xyspace", {
       data = ref,
       locations = locations,
       locations_crs = crs_wgs84,
-      data_str = data_str_res, #TODO: this should be data_str_ref?
+      data_str = data_str_res, # TODO: this should be data_str_ref?
       direction = "expand"
     )
 
@@ -430,7 +430,7 @@ test_that("convert_xyspace", {
       data = res,
       locations = locations,
       locations_crs = crs_wgs84,
-      data_str = data_str_ref,  #TODO: this should be data_str_res?
+      data_str = data_str_ref, # TODO: this should be data_str_res?
       direction = "expand"
     )
 
@@ -502,7 +502,9 @@ test_that("read_netCDF", {
 
         expect_null(
           read_netCDF(
-            fnc, km, var = "sine", xy_names = c("x", "y"),
+            fnc, km,
+            var = "sine",
+            xy_names = c("x", "y"),
             load_values = FALSE
           )[["data"]]
         )

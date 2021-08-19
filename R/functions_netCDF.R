@@ -150,9 +150,9 @@ NULL
 #'   \item The discrete point/site situation creates a \var{site} dimension and
 #'     associated variable as well as \var{x} and \var{y} variables
 #'     for the spatial coordinate values of the sites; see
-#nolint start
+# nolint start
 #'     \href{http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data}{CF point-data}.
-#nolint end
+# nolint end
 #'     The code will add a \var{coordinates} attribute to the variable(s) and
 #'     a \var{featureType = "point"} global attribute.
 #'     The size of the \var{xy-space}, i.e., the number of sites, must agree
@@ -211,9 +211,9 @@ NULL
 #' @section Variables:
 #' Use \var{CMIP6} standard variable names, units, etc., where available.
 #' Standardized variable names can be searched in the
-#nolint start
+# nolint start
 #' \href{https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables}{CMIP6-cmor-tables}
-#nolint end
+# nolint end
 #'
 #' @section Chunking:
 #' The argument \code{nc_chunks} offers two auto-determined chunking schemes:
@@ -231,9 +231,9 @@ NULL
 #' equal to the number of the dimensions according to \code{data_dims}.
 #'
 #' @seealso \code{\link{populate_netCDF}}, \code{\link{read_netCDF}}
-#nolint start
+# nolint start
 #' @references \href{https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html}{CF conventions}
-#nolint end
+# nolint end
 #'
 #'
 #' @examples
@@ -683,10 +683,10 @@ create_netCDF <- function(
         stop(
           "Start and end required for each `time_values` ",
           "to define `time_bounds`"
-        )      }
+        )
+      }
 
       time_bounds <- matrix(time_bounds, nrow = n_time, ncol = 2, byrow = TRUE)
-
     } else {
       if (!identical(dim(time_bounds), c(as.integer(n_time), 2L))) {
         stop(
@@ -702,9 +702,9 @@ create_netCDF <- function(
       att_timebnds <- "bounds"
 
     } else if (type_timeaxis == "climatology") {
-      #nolint start
+      # nolint start
       # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#climatological-statistics
-      #nolint end
+      # nolint end
       varid_timebnds <- "climatology_bounds" # not climatology_bnds!
       att_timebnds <- "climatology"
     }
@@ -917,9 +917,9 @@ create_netCDF <- function(
   }
 
   if (!is_gridded) {
-    #nolint start
+    # nolint start
     # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data
-    #nolint end
+    # nolint end
     if (!("coordinates" %in% names(var_attributes))) {
       tmp <- paste(xy_attributes[["name"]][2], xy_attributes[["name"]][1])
       if (has_T_timeAxis != "none") tmp <- paste("time", tmp)
@@ -1950,7 +1950,7 @@ read_netCDF_as_array <- function(
           tmp_collapse <-
             has_vertical_collapsed && has_time_collapsed && length(tmp) == 1
 
-          #TODO: check that this works correctly if both time + vertical subset
+          # TODO: check that this works correctly if both time + vertical subset
           tmp_res <- abind::abind(
             tmp,
             along = length(res_dim) + if (tmp_collapse) 0 else 1
@@ -2888,11 +2888,11 @@ create_example_netCDFs <- function(
   )
 
 
-  #nolint start
+  # nolint start
   # USA Contiguous Albers Equal Area Conic USGS version
   # +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs
   # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_albers_equal_area
-  #nolint end
+  # nolint end
   nc_att_crs <- list(
     crs_wkt = sf::st_crs("EPSG:6350")$Wkt,
     grid_mapping_name = "albers_conical_equal_area",
@@ -3014,18 +3014,19 @@ create_example_netCDFs <- function(
 
 
   f <- function(x, y, z, t = 1) {
-    r <- sqrt(x ^ 2 + y ^ 2 + z ^ 3)
+    r <- sqrt(x^2 + y^2 + z^3)
     sin(r * t) / r
   }
 
   for (k1 in seq_len(nt)) {
-    for (k2 in seq_len(nz))
+    for (k2 in seq_len(nz)) {
       data_xyzt[, , k2, k1] <- outer(
         x, y,
         FUN = f,
         z = vertical_values[k2],
         t = k1 / (0.75 * nt)
       )
+    }
   }
 
 

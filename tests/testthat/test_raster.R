@@ -57,7 +57,6 @@ test_that("create_raster_from_variables", {
       rotation = TRUE, values = FALSE
     )
   )
-
 })
 
 
