@@ -2154,6 +2154,9 @@ read_netCDF_as_stars <- function(
   ...
 ) {
 
+  # `stars::read_ncdf()` uses "ncmeta" but it is a suggested package
+  stopifnot(requireNamespace("ncmeta", quietly = TRUE))
+
   r <- stars::read_ncdf(x, var = var, ...)
 
 
