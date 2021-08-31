@@ -1329,15 +1329,22 @@ create_netCDF <- function(
   #--- add global attributes
   ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.8")
 
+  tmp_version_netcdf <- try(
+    system2("nc-config", "--version", stdout = TRUE, stderr = TRUE),
+    silent = TRUE
+  )
+
   ncdf4::ncatt_put(
     nc,
     varid = 0,
     attname = "created_by",
     attval = paste0(
       R.version[["version.string"]],
-      ", R packages ",
+      ", R package ",
       "ncdf4 v", getNamespaceVersion("ncdf4"),
-      ", and ", system2("nc-config", "--version", stdout = TRUE, stderr = TRUE)
+      if (!inherits(tmp_version_netcdf, "try-error")) {
+        paste0(", and ", tmp_version_netcdf)
+      }
     )
   )
 
