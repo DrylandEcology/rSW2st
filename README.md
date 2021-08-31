@@ -10,7 +10,7 @@
 [6]: https://github.com/DrylandEcology/rSW2st/releases
 [7]: https://img.shields.io/github/license/DrylandEcology/rSW2st.svg
 [8]: https://www.gnu.org/licenses/gpl.html
-[9]: https://codecov.io/gh/DrylandEcology/rSW2st/branch/master/graph/badge.svg
+[9]: https://codecov.io/gh/DrylandEcology/rSW2st/branch/main/graph/badge.svg
 [10]: https://codecov.io/gh/DrylandEcology/rSW2st
 [11]: https://img.shields.io/github/downloads/DrylandEcology/rSW2st/total.svg
 [SOILWAT2]: https://github.com/DrylandEcology/SOILWAT2
@@ -76,7 +76,7 @@ remotes::install_github("DrylandEcology/rSW2data")
 <a name="get_documentation"></a>
 ### Documentation
 View package documentation in an interactive R session with
-`help(package = "rSW2data")`
+`help(package = "rSW2st")`
 
 
 <br>
