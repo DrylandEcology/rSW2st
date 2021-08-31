@@ -24,8 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # Not sure how to install spatial system dependencies in windows
-          # - {os: windows-latest, r: 'release'}
+          - {os: windows-latest, r: 'release'}
           - {os: macOS-latest, r: 'release'}
           - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
           - {os: ubuntu-20.04,   r: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest", http-user-agent: "R/4.1.0 (ubuntu-20.04) R (4.1.0 x86_64-pc-linux-gnu x86_64 linux-gnu) on GitHub Actions" }
@@ -67,20 +66,8 @@ jobs:
           done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
           
           # install spatial dependencies
-          sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
-          sudo apt update
-          sudo apt install \
-            libudunits2-dev \
-            libproj-dev \
-            libgeos-dev \
-            libgdal-dev \
-            libnetcdf-dev
-            
-      - name: Install macOS system dependencies
-        if: runner.os == 'macOS'
-        run: |
-          brew install pkg-config udunits gdal proj geos netcdf
-          
+          sudo apt install libudunits2-dev libproj-dev libgeos-dev libgdal-dev libnetcdf-dev
+
       - name: Install dependencies
         run: |
           remotes::install_deps(dependencies = TRUE)
