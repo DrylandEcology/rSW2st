@@ -1,19 +1,18 @@
+# rSW2st: Spatiotemporal Tools for SOILWAT2 and STEPWAT2 Simulation Experiments
 
-| Unix | Windows | Release | License | Coverage |
-| :---- | :---- | :---- | :---- | :---- |
-[ ![Travis build status][1]][2] | [![Appveyor build status][3]][4] | [ ![github release][5]][6] | [![license][7]][8] | [![codecov status][9]][10] |
+<!-- badges: start -->
+[ ![R build status][1]][2] [ ![github release][5]][6] [![license][7]][8] [![codecov status][9]][10]
+<!-- badges: end -->
 
-[1]: https://travis-ci.org/DrylandEcology/rSW2data.svg?branch=master
-[2]: https://travis-ci.org/DrylandEcology/rSW2data
-[3]: https://ci.appveyor.com/api/projects/status/8flt0gx8q1uupdqb/branch/master?svg=true
-[4]: https://ci.appveyor.com/project/DrylandEcologyGit/rSW2data
-[5]: https://img.shields.io/github/release/DrylandEcology/rSW2data.svg?label=current+release
-[6]: https://github.com/DrylandEcology/rSW2data/releases
-[7]: https://img.shields.io/github/license/DrylandEcology/rSW2data.svg
+[1]: https://github.com/DrylandEcology/rSW2st/actions/workflows/check-standard.yml/badge.svg?branch=main
+[2]: https://github.com/DrylandEcology/rSW2st/actions
+[5]: https://img.shields.io/github/release/DrylandEcology/rSW2st.svg?label=current+release
+[6]: https://github.com/DrylandEcology/rSW2st/releases
+[7]: https://img.shields.io/github/license/DrylandEcology/rSW2st.svg
 [8]: https://www.gnu.org/licenses/gpl.html
-[9]: https://codecov.io/gh/DrylandEcology/rSW2data/branch/master/graph/badge.svg
-[10]: https://codecov.io/gh/DrylandEcology/rSW2data
-[11]: https://img.shields.io/github/downloads/DrylandEcology/rSW2data/total.svg
+[9]: https://codecov.io/gh/DrylandEcology/rSW2st/branch/main/graph/badge.svg
+[10]: https://codecov.io/gh/DrylandEcology/rSW2st
+[11]: https://img.shields.io/github/downloads/DrylandEcology/rSW2st/total.svg
 [SOILWAT2]: https://github.com/DrylandEcology/SOILWAT2
 [STEPWAT2]: https://github.com/DrylandEcology/STEPWAT2
 [rSFSTEP2]: https://github.com/DrylandEcology/rSFSTEP2
@@ -26,25 +25,23 @@
 [pull request]: https://github.com/DrylandEcology/rSW2data/pulls
 [guidelines]: https://github.com/DrylandEcology/workflow_guidelines
 [semantic versioning]: https://semver.org/
-[testthat]: https://github.com/hadley/testthat
-[roxygen2 formatting]: https://cran.r-project.org/web/packages/roxygen2/vignettes/formatting.html
-[r-pkgs man]: http://r-pkgs.had.co.nz/man.html
-[r-pkgs tests]: http://r-pkgs.had.co.nz/tests.html
+[testthat]: https://github.com/r-lib/testthat
+[roxygen2]: https://cran.r-project.org/package=roxygen2
+[r-pkgs man]: https://r-pkgs.org/man.html
+[r-pkgs tests]: https://r-pkgs.org/tests.html
 
 
 <br>
 
-# rSW2data
-
-Collection of functions to access external data sources and to
-provide input data for [rSOILWAT2][], [rSFSW2][], and [rSFSTEP2][]
-simulation experiments.
+Collection of general purpose functions that operate on
+spatially and temporally explicit objects to support
+[rSOILWAT2][], [rSFSW2][], and [rSFSTEP2][] simulation experiments.
 
 
 <br>
 
 Please cite the package if you publish results based on code carried
-out with our package, see `citation("rSW2data")`, and we would like to hear
+out with our package, see `citation("rSW2st")`, and we would like to hear
 about your publication.
 
 <br>
@@ -79,7 +76,7 @@ remotes::install_github("DrylandEcology/rSW2data")
 <a name="get_documentation"></a>
 ### Documentation
 View package documentation in an interactive R session with
-`help(package = "rSW2data")`
+`help(package = "rSW2st")`
 
 
 <br>
@@ -110,7 +107,7 @@ project you agree to abide by its terms.
 #### Code documentation
   * This is based on the section
     ['Object documentation' of the book 'R packages' by Wickham][r-pkgs man]
-  * Use [roxygen2 formatting][] to write inline code documentation of functions
+  * Use [roxygen2][] to write inline code documentation of functions
   * Use regular R-style comments to additionally document code
   * Update help pages and the `NAMESPACE` file with the command
     `devtools::document()`
@@ -133,9 +130,9 @@ project you agree to abide by its terms.
       `devtools::check(cran = TRUE, env_vars = c(NOT_CRAN = "true"))` or
       `R CMD build . && NOT_CRAN = "true" R CMD check *.tar.gz`
     * Package checks include unit tests, code style, and spelling
-    * Checks will be run on the continuous integration frameworks
-      'travis' and 'appveyor' when commits are pushed
-    * Development/feature branches can only be merged into master if they pass
+    * These checks will be run on the continuous integration frameworks
+      via a workflow in `Github Action` for pull requests
+    * Development/feature branches can only be merged into main if they pass
       all checks
 
 <br>
