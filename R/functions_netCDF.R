@@ -1722,8 +1722,12 @@ read_netCDF <- function(
 
 #' @rdname read_netCDF
 #'
+#' @param time_name A character string. The dimension name corresponding
+#'   to the time axis.
 #' @param time_ids An integer vector. The index to read a subset of
 #'   time steps; a value of \code{-1} means to read all.
+#' @param vertical_name A character string. The dimension name corresponding
+#'   to the vertical axis.
 #' @param vertical_ids An integer vector. The index to read a subset of
 #'   vertical steps; a value of \code{-1} means to read all.
 #' @param collapse_degen A logical value. If \code{TRUE}, then degenerate, i.e.,
@@ -1742,7 +1746,9 @@ read_netCDF_as_array <- function(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   xy_names = c("lon", "lat"),
+  time_name = "time",
   time_ids = -1,
+  vertical_name = "vertical",
   vertical_ids = -1,
   collapse_degen = TRUE,
   load_values = TRUE,
@@ -1823,18 +1829,19 @@ read_netCDF_as_array <- function(
 
 
   #--- Set up time
-  has_time <- "time" %in% nc_dims
+  has_time <- time_name %in% nc_dims
 
   if (has_time) {
-    nc_time_values <- ncdf4::ncvar_get(nc = x, varid = "time")
+    nc_time_values <- ncdf4::ncvar_get(nc = x, varid = time_name)
     nc_time_N <- length(nc_time_values)
 
     # time/climatology bounds
     has_clim <- "climatology_bounds" %in% nc_vars_all
-    nc_time_bounds <- if (has_clim || "time_bnds" %in% nc_vars_all) {
+    time_bnds_name <- paste0(time_name, "_bnds")
+    nc_time_bounds <- if (has_clim || time_bnds_name %in% nc_vars_all) {
       t(ncdf4::ncvar_get(
         nc = x,
-        varid = if (has_clim) "climatology_bounds" else "time_bnds"
+        varid = if (has_clim) "climatology_bounds" else time_bnds_name
       ))
     }
 
@@ -1872,15 +1879,16 @@ read_netCDF_as_array <- function(
 
 
   #--- Set up the vertical axis
-  has_vertical <- "vertical" %in% nc_dims
+  has_vertical <- vertical_name %in% nc_dims
 
   if (has_vertical) {
-    nc_vertical_values <- ncdf4::ncvar_get(nc = x, varid = "vertical")
+    nc_vertical_values <- ncdf4::ncvar_get(nc = x, varid = vertical_name)
     nc_vertical_N <- length(nc_vertical_values)
 
     # vertical bounds
-    nc_vertical_bounds <- if ("vertical_bnds" %in% nc_vars_all) {
-      t(ncdf4::ncvar_get(nc = x, varid = "vertical_bnds"))
+    vertical_bnds_name <- paste0(vertical_name, "_bnds")
+    nc_vertical_bounds <- if (vertical_bnds_name %in% nc_vars_all) {
+      t(ncdf4::ncvar_get(nc = x, varid = vertical_bnds_name))
     }
 
     # Requested vertical steps (subset)
@@ -2232,6 +2240,7 @@ read_crs_from_netCDF <- function(
 #' Read all attributes of a group from a \var{netCDF}
 #'
 #' @inheritParams read_netCDF
+#' @inheritParams read_netCDF_as_array
 #' @param group A character string. Specifies which attributes to extract.
 #' @param var A character string. The name or names of the variables from
 #'   which to extract attributes, used if the "var" \code{group} is requested.
@@ -2258,9 +2267,11 @@ read_crs_from_netCDF <- function(
 #' @export
 read_attributes_from_netCDF <- function(
   x,
-  group = c("var", "xy", "crs", "time", "vertical", "global", "all"),
+  group = c("var", "xy", "crs", time_name, vertical_name, "global", "all"),
   var = NULL,
   xy_names = c("lon", "lat"),
+  time_name = "time",
+  vertical_name = "vertical",
   nc_name_crs = "crs"
 ) {
   stopifnot(requireNamespace("ncdf4"))
@@ -2283,12 +2294,12 @@ read_attributes_from_netCDF <- function(
       "var",
       "xy",
       if (nc_name_crs %in% tmp_has) nc_name_crs else NA,
-      if ("time" %in% tmp_has) "time" else NA,
-      if ("vertical" %in% tmp_has) "vertical" else NA,
+      if (time_name %in% tmp_has) time_name else NA,
+      if (vertical_name %in% tmp_has) vertical_name else NA,
       "global"
     )
     tmp_nms <- paste0(
-      c("var", "xy", "crs", "time", "vertical", "global"),
+      c("var", "xy", "crs", time_name, vertical_name, "global"),
       "_attributes"
     )
 
@@ -2355,12 +2366,14 @@ read_attributes_from_netCDF <- function(
     if (group == "var") {
       res <- c(res, list(name = varid))
 
-    } else if (group == "time") {
+    } else if (group == time_name) {
       tmp <- x[["unlimdimid"]]
 
       res <- c(
         res,
-        list(unlim = if (tmp > 0) names(x[["dim"]])[tmp] == "time" else FALSE)
+        list(
+          unlim = if (tmp > 0) names(x[["dim"]])[tmp] == time_name else FALSE
+        )
       )
     }
   }

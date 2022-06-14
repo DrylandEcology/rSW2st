@@ -8,9 +8,7 @@
 spatially and temporally explicit objects
 to support \pkg{SOILWAT2} and \pkg{STEPWAT2} simulation experiments.}
 \description{
-Collection of general purpose functions that operate on
-  spatially and temporally explicit objects
-  to support SOILWAT2/STEPWAT2 simulation experiments.
+Collection of general purpose functions that operate on spatially and temporally explicit objects to support SOILWAT2/STEPWAT2 simulation experiments.
 }
 \seealso{
 Useful links:
