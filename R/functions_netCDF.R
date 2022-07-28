@@ -150,7 +150,7 @@ NULL
 #'   \item The discrete point/site situation creates a \var{site} dimension and
 #'     associated variable as well as \var{x} and \var{y} variables
 #'     for the spatial coordinate values of the sites; see
-# nolint start
+# nolint start: line_length_linter.
 #'     \href{http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data}{CF point-data}.
 # nolint end
 #'     The code will add a \var{coordinates} attribute to the variable(s) and
@@ -211,7 +211,7 @@ NULL
 #' @section Variables:
 #' Use \var{CMIP6} standard variable names, units, etc., where available.
 #' Standardized variable names can be searched in the
-# nolint start
+# nolint start: line_length_linter.
 #' \href{https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables}{CMIP6-cmor-tables}
 # nolint end
 #'
@@ -231,7 +231,7 @@ NULL
 #' equal to the number of the dimensions according to \code{data_dims}.
 #'
 #' @seealso \code{\link{populate_netCDF}}, \code{\link{read_netCDF}}
-# nolint start
+# nolint start: line_length_linter.
 #' @references \href{https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html}{CF conventions}
 # nolint end
 #'
@@ -710,7 +710,7 @@ create_netCDF <- function(
       att_timebnds <- "bounds"
 
     } else if (type_timeaxis == "climatology") {
-      # nolint start
+      # nolint start: line_length_linter.
       # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#climatological-statistics
       # nolint end
       varid_timebnds <- "climatology_bounds" # not climatology_bnds!
@@ -925,7 +925,7 @@ create_netCDF <- function(
   }
 
   if (!is_gridded) {
-    # nolint start
+    # nolint start: line_length_linter.
     # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data
     # nolint end
     if (!("coordinates" %in% names(var_attributes))) {
@@ -3028,9 +3028,9 @@ create_example_netCDFs <- function(
   )
 
 
-  # nolint start
+  # nolint start: line_length_linter.
   # USA Contiguous Albers Equal Area Conic USGS version
-  # +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs
+  # proj4string was +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs
   # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_albers_equal_area
   # nolint end
   nc_att_crs <- list(

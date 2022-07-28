@@ -104,7 +104,7 @@ as_points <- function(
         coords = unname(x),
         proj4string = as(crs, "CRS")
       ),
-      sf = , # nolint
+      sf = ,
       sfc = sf::st_cast(
         x = sf::st_sfc(
           sf::st_multipoint(

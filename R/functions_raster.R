@@ -177,7 +177,7 @@ get_raster_datatype <- function(data) {
     BYTE = "INT1U",
     SMALL = "INT2S",
     INTEG = "INT4S",
-    NUMER = , FLOAT = , SINGL = , REAL = "FLT4S", # nolint
+    NUMER = , FLOAT = , SINGL = , REAL = "FLT4S",
     DOUBL = "FLT8S"
   )
 }
