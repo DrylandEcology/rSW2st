@@ -92,7 +92,7 @@ as_points <- function(
       x <- matrix(x, nrow = 1, ncol = 2)
     }
 
-    if (missing(crs)) {
+    if (missing(crs) || is.null(crs)) {
       stop("`crs` is missing and `x` is not a spatial object.")
     }
 
