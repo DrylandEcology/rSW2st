@@ -28,7 +28,8 @@ test_that("crs", {
       NAD27_USA = "metre",
       NAD83_USA = "degree",
       NAD83_2011_USA = "degree"
-    )
+    ),
+    stringsAsFactors = FALSE
   )
 
   locs <- matrix(c(1, 1), ncol = 2)

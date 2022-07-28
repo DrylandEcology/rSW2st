@@ -76,7 +76,8 @@ test_that("nominal resolution", {
   #--- Geographic CRS
   tests <- data.frame(
     res = c(1 / 24, 1 / 16, 1 / 2, 1, 2),
-    nr = c("5 km", "10 km", "50 km", "100 km", "250 km")
+    nr = c("5 km", "10 km", "50 km", "100 km", "250 km"),
+    stringsAsFactors = FALSE
   )
 
   for (k in seq_len(nrow(tests))) {
@@ -104,7 +105,8 @@ test_that("nominal resolution", {
   #--- Projected CRS: CONUS Albers Equal Area (USGS)
   tests <- data.frame(
     res = c(1e3, 1e4, 2e4, 1e5, 5e5),
-    nr = c("1 km", "10 km", "25 km", "100 km", "500 km")
+    nr = c("1 km", "10 km", "25 km", "100 km", "500 km"),
+    stringsAsFactors = FALSE
   )
 
   for (k in seq_len(nrow(tests))) {
