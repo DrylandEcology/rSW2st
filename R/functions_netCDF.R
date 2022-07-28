@@ -2402,7 +2402,7 @@ is_netCDF_gridded <- function(
 #' @inheritParams rSW2st_netCDF
 #' @param dims An integer vector.
 #'
-#' @return A named list with six elements for
+#' @return A named integer vector with six elements for
 #'   \describe{
 #'     \item{ns}{sites, for a spatial representation of data as sites}
 #'     \item{nx}{x coordinate, for a gridded spatial representation}
@@ -2432,32 +2432,78 @@ get_data_dims <- function(
   data_str <- match.arg(data_str)
 
   if (is.null(dims)) {
-    dims <- rep(0, 4)
+    dims <- rep(0L, 4L)
   } else {
-    dims <- unname(dims)
+    dims <- as.integer(dims) # strips names
   }
 
 
   switch(
     EXPR = data_str,
     `xyzt` = c(
-      ns = 0, nx = dims[1], ny = dims[2], nz = dims[3], nt = dims[4], nv = 0
+      ns = 0L,
+      nx = dims[1L],
+      ny = dims[2L],
+      nz = dims[3L],
+      nt = dims[4L],
+      nv = 0L
     ),
-    `xyt` = c(ns = 0, nx = dims[1], ny = dims[2], nz = 0, nt = dims[3], nv = 0),
-    `xyz` = c(ns = 0, nx = dims[1], ny = dims[2], nz = dims[3], nt = 0, nv = 0),
+    `xyt` = c(
+      ns = 0L,
+      nx = dims[1L],
+      ny = dims[2L],
+      nz = 0L,
+      nt = dims[3L],
+      nv = 0L
+    ),
+    `xyz` = c(
+      ns = 0L,
+      nx = dims[1L],
+      ny = dims[2L],
+      nz = dims[3L],
+      nt = 0L,
+      nv = 0L
+    ),
     `xy` = c(
-      ns = 0, nx = dims[1], ny = dims[2], nz = 0, nt = 0,
-      nv = if (length(dims) >= 3) dims[3] else 0
+      ns = 0L,
+      nx = dims[1L],
+      ny = dims[2L],
+      nz = 0L,
+      nt = 0L,
+      nv = if (length(dims) >= 3L) dims[3L] else 0L
     ),
 
     `szt` = c(
-      ns = dims[1], nx = 0, ny = 0, nz = dims[2], nt = dims[3], nv = 0
+      ns = dims[1L],
+      nx = 0L,
+      ny = 0L,
+      nz = dims[2L],
+      nt = dims[3L],
+      nv = 0L
     ),
-    `st` = c(ns = dims[1], nx = 0, ny = 0, nz = 0, nt = dims[2], nv = 0),
-    `sz` = c(ns = dims[1], nx = 0, ny = 0, nz = dims[2], nt = 0, nv = 0),
+    `st` = c(
+      ns = dims[1L],
+      nx = 0L,
+      ny = 0L,
+      nz = 0L,
+      nt = dims[2L],
+      nv = 0L
+    ),
+    `sz` = c(
+      ns = dims[1L],
+      nx = 0L,
+      ny = 0L,
+      nz = dims[2L],
+      nt = 0L,
+      nv = 0L
+    ),
     `s` = c(
-      ns = dims[1], nx = 0, ny = 0, nz = 0, nt = 0,
-      nv = if (length(dims) >= 2) dims[2] else 0
+      ns = dims[1L],
+      nx = 0L,
+      ny = 0L,
+      nz = 0L,
+      nt = 0L,
+      nv = if (length(dims) >= 2L) dims[2L] else 0L
     ),
 
     stop("Data structure ", shQuote(data_str), " not implemented.")
