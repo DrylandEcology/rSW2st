@@ -1473,7 +1473,7 @@ create_netCDF <- function(
         varid = var_names[k],
         vals = values,
         start = var_start,
-        count = var_count,
+        count = var_count
       )
     }
 
