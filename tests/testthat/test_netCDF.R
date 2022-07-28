@@ -134,7 +134,7 @@ test_that("get_xyspace", {
     )
 
     # Check: type of grid specification does not matter
-    expect_equal(res_grids[[1]], res_grids[[kg]])
+    expect_identical(res_grids[[1]], res_grids[[kg]])
   }
 
 
@@ -147,9 +147,9 @@ test_that("get_xyspace", {
 
 #------ Tests for `convert_xyspace()` ------
 test_that("convert_xyspace", {
-  dd <- c(nx = 13, ny = 7, nz = 2, nt = 3)
-  d0 <- c(3, 5)
-  gd <- c(nx = dd[["nx"]] + 2 * d0[1], ny = dd[["ny"]] + 2 * d0[2])
+  dd <- c(nx = 13L, ny = 7L, nz = 2L, nt = 3L)
+  d0 <- c(3L, 5L)
+  gd <- c(nx = dd[["nx"]] + 2L * d0[1], ny = dd[["ny"]] + 2L * d0[2])
 
 
   #--- grid with full xy-space
@@ -309,10 +309,10 @@ test_that("convert_xyspace", {
     )
 
     # Check: same number of values as original data
-    expect_equal(sum(!is.na(res)), sum(!is.na(ref)))
+    expect_identical(sum(!is.na(res)), sum(!is.na(ref)))
 
     # Check: data dimensions
-    expect_equal(
+    expect_identical(
       get_data_dims(data_str_res, dim(res))[c("nx", "ny")],
       gd
     )
@@ -389,10 +389,10 @@ test_that("convert_xyspace", {
     )
 
     # Check: same number of values as original data
-    expect_equal(sum(!is.na(res)), sum(!is.na(ref)))
+    expect_identical(sum(!is.na(res)), sum(!is.na(ref)))
 
     # Check: data dimensions
-    expect_equal(
+    expect_identical(
       get_data_dims(data_str_res, dim(res))["ns"],
       n_loc
     )
@@ -462,7 +462,7 @@ test_that("read_netCDF", {
     fnc <- tmp_nc[[k]]
 
     # Test for gridded/discrete netCDF type
-    expect_equal(
+    expect_identical(
       is_netCDF_gridded(fnc, xy_names = c("x", "y")),
       substr(names(tmp_nc[k]), 1, 2) == "xy"
     )

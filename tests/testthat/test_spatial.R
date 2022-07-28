@@ -21,7 +21,7 @@ test_that("variogram_range", {
     grid = r
   )
 
-  expect_equal(
+  expect_identical(
     variogram_range(x = rv1),
     variogram_range(x = xy)
   )
