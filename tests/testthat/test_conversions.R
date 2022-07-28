@@ -28,7 +28,9 @@ test_that("as_points", {
     locations,
     ignore_attr = "dimnames"
   )
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_df_sf) == sf::st_crs(pts_sf))
+  # nolint end
 
   pts_df_sfc <- as_points(locations_df, crs = 4326, to_class = "sfc")
   expect_s3_class(pts_df_sfc, "sfc")
@@ -37,7 +39,9 @@ test_that("as_points", {
     locations,
     ignore_attr = "dimnames"
   )
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_df_sfc) == sf::st_crs(pts_sfc))
+  # nolint end
 
   pts_df_sp <- as_points(locations_df, crs = 4326, to_class = "sp")
   expect_s4_class(pts_df_sp, "SpatialPoints")
@@ -53,8 +57,10 @@ test_that("as_points", {
     locations,
     ignore_attr = "dimnames"
   )
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_sp_sf) == sf::st_crs(pts_sf))
   expect_true(sf::st_crs(pts_sp_sf) == sf::st_crs(pts_sp))
+  # nolint end
 
   pts_sp_sfc <- as_points(pts_sp, to_class = "sfc")
   expect_s3_class(pts_sp_sfc, "sfc")
@@ -63,8 +69,10 @@ test_that("as_points", {
     locations,
     ignore_attr = "dimnames"
   )
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_sp_sfc) == sf::st_crs(pts_sfc))
   expect_true(sf::st_crs(pts_sp_sfc) == sf::st_crs(pts_sp))
+  # nolint end
 
 
 
@@ -72,8 +80,10 @@ test_that("as_points", {
   pts_sfc_sp <- as_points(pts_sfc, to_class = "sp")
   expect_s4_class(pts_sfc_sp, "SpatialPoints")
   expect_equal(sp::coordinates(pts_sfc_sp), locations, ignore_attr = "dimnames")
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_sfc_sp) == sf::st_crs(pts_sp))
   expect_true(sf::st_crs(pts_sfc_sp) == sf::st_crs(pts_sfc))
+  # nolint end
 
   pts_sfc_sf <- as_points(pts_sfc, to_class = "sf")
   expect_s3_class(pts_sfc_sf, "sf")
@@ -82,8 +92,10 @@ test_that("as_points", {
     locations,
     ignore_attr = "dimnames"
   )
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_sfc_sf) == sf::st_crs(pts_sf))
   expect_true(sf::st_crs(pts_sfc_sf) == sf::st_crs(pts_sfc))
+  # nolint end
 
 
 
@@ -91,8 +103,10 @@ test_that("as_points", {
   pts_sf_sp <- as_points(pts_sf, to_class = "sp")
   expect_s4_class(pts_sf_sp, "SpatialPoints")
   expect_equal(sp::coordinates(pts_sf_sp), locations, ignore_attr = "dimnames")
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_sf_sp) == sf::st_crs(pts_sp))
   expect_true(sf::st_crs(pts_sf_sp) == sf::st_crs(pts_sf))
+  # nolint end
 
   pts_sf_sfc <- as_points(pts_sf, to_class = "sfc")
   expect_s3_class(pts_sf_sfc, "sfc")
@@ -101,9 +115,10 @@ test_that("as_points", {
     locations,
     ignore_attr = "dimnames"
   )
+  # nolint start: expect_comparison_linter.
   expect_true(sf::st_crs(pts_sf_sfc) == sf::st_crs(pts_sfc))
   expect_true(sf::st_crs(pts_sf_sfc) == sf::st_crs(pts_sf))
-
+  # nolint end
 
 
   #--- Check conversions from one-dimensional numerical vector

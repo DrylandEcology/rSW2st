@@ -498,7 +498,7 @@ test_that("read_netCDF", {
           )
         )
 
-        expect_true(length(dim(res[["data"]])) > 0)
+        expect_gt(length(dim(res[["data"]])), 0L)
 
         expect_null(
           read_netCDF(
@@ -511,11 +511,11 @@ test_that("read_netCDF", {
 
       } else if (km == "raster") {
         expect_s4_class(res, "RasterLayer")
-        expect_true(length(dim(res)) > 0)
+        expect_gt(length(dim(res)), 0L)
 
       } else if (km == "stars") {
         expect_s3_class(res, "stars")
-        expect_true(length(dim(res)) > 0)
+        expect_gt(length(dim(res)), 0L)
       }
 
       res_crs <- read_crs_from_netCDF(fnc)
