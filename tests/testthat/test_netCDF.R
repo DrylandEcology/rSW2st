@@ -464,7 +464,7 @@ test_that("read_netCDF", {
     # Test for gridded/discrete netCDF type
     expect_identical(
       is_netCDF_gridded(fnc, xy_names = c("x", "y")),
-      substr(names(tmp_nc[k]), 1, 2) == "xy"
+      startsWith(names(tmp_nc[k]), "xy")
     )
 
 

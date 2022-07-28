@@ -429,7 +429,7 @@ create_netCDF <- function(
   #   ii) one variable and time OR vertical axis ("xyt", "xyz", "st", "sz")
   #   iii) one/multiple variables and no time/vertical axis ("xy", "s")
   data_str <- match.arg(data_str)
-  is_gridded <- isTRUE(substr(data_str, 1, 2) == "xy")
+  is_gridded <- startsWith(data_str, "xy")
 
 
   #--- Check data dimensions/structure
