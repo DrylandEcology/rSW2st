@@ -517,7 +517,7 @@ create_netCDF <- function(
   }
 
   tmp_xy_atts <- c("name", "standard_name", "long_name", "units")
-  if (any(!(tmp_xy_atts %in% names(xy_attributes)))) {
+  if (!all(tmp_xy_atts %in% names(xy_attributes))) {
     stop(
       "`xy_attributes` must include ",
       toString(shQuote(tmp_xy_atts))
