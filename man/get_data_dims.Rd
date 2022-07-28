@@ -21,7 +21,7 @@ temporal dimension.}
 \item{dims}{An integer vector.}
 }
 \value{
-A named list with six elements for
+A named integer vector with six elements for
   \describe{
     \item{ns}{sites, for a spatial representation of data as sites}
     \item{nx}{x coordinate, for a gridded spatial representation}

@@ -54,7 +54,7 @@ calculate_cell_area <- function(
   x,
   grid,
   crs = sf::st_crs(x),
-  tol = sqrt(.Machine$double.eps)
+  tol = sqrt(.Machine[["double.eps"]])
 ) {
 
   m2_to_km2 <- 1e-6
@@ -123,7 +123,7 @@ calculate_cell_area <- function(
     rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
     if (is.na(rid)) {
       dxy <- - raster::res(etmp) - c(raster::xmin(etmp), raster::ymin(etmp))
-      etmp <- raster::shift(etmp, dx = dxy[1], dy = dxy[2])
+      etmp <- raster::shift(etmp, dx = dxy[[1L]], dy = dxy[[2L]])
       rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
     }
 
@@ -138,7 +138,11 @@ calculate_cell_area <- function(
 
     } else if (inherits(grid, "stars")) {
       tmp_res <- abs(unname(
-        sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+        vapply(
+          stars::st_dimensions(grid),
+          function(x) x[["delta"]],
+          FUN.VALUE = NA_real_
+        )
       ))[1:2]
 
       if (anyNA(tmp_res)) {
@@ -151,8 +155,8 @@ calculate_cell_area <- function(
     # Determine distance units: meters or kilometers?
     ar_km2 <- ar * switch(
       crs_units(grid),
-      meter = , meters = , metre = , metres = , m = m2_to_km2, # nolint
-      kilometer = , kilometers = , kilometre = , kilometres = , km2 = 1, # nolint
+      meter = , meters = , metre = , metres = , m = m2_to_km2,
+      kilometer = , kilometers = , kilometre = , kilometres = , km2 = 1,
       NA
     )
     cells[, "km2"] <- ar_km2
@@ -180,7 +184,7 @@ calculate_cell_area <- function(
 #' @references
 #'   \var{CMIP6 Global Attributes, DRS, Filenames, Directory Structure,
 #'   and CV’s}, 10 September 2018 (v6.2.7).
-# nolint start
+# nolint start: line_length_linter.
 #'   \href{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}{Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute}
 # nolint end
 #'
@@ -225,7 +229,11 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
 
   } else if (inherits(grid, "stars")) {
     res <- abs(unname(
-      sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+      vapply(
+        stars::st_dimensions(grid),
+        function(x) x[["delta"]],
+        FUN.VALUE = NA_real_
+      )
     ))[1:2]
 
     if (anyNA(res)) {
@@ -274,8 +282,8 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
     tmp <- sqrt(sum(res^2))
     cu <- switch(
       EXPR = crs_units(grid),
-      meter = , meters = , metre = , metres = , m = 1e-3, # nolint
-      kilometer = , kilometers = , kilometer = , kilometres = , km = 1, # nolint
+      meter = , meters = , metre = , metres = , m = 1e-3,
+      kilometer = , kilometers = , kilometre = , kilometres = , km = 1,
       stop("Unknown unit")
     )
     mean_resolution_km <- cu * tmp

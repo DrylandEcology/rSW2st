@@ -1,11 +1,10 @@
 #!/usr/bin/env Rscript
 
 #--- rSW2st: use development version
-library("methods") # in case this code is run via 'Rscript'
-# stopifnot(requireNamespace("pkgbuild"))
+# load "methods" in case this code is run via 'Rscript'
+library("methods") # nolint: undesirable_function_linter, unused_import_linter.
 stopifnot(requireNamespace("pkgload"))
 
-# pkgbuild::clean_dll()
 pkgload::load_all()
 
 
