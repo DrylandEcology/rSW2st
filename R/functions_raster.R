@@ -57,7 +57,7 @@ create_raster_from_variables <- function(
 
   # Attempt to convert data to a numeric type, if not, so that it can be
   # converted to a raster object
-  if (!(is.numeric(data) || all(sapply(data, is.numeric)))) {
+  if (!(is.numeric(data) || all(vapply(data, is.numeric, FUN.VALUE = NA)))) {
     if (nl > 1) {
       for (k in seq_len(nl)) {
         tmp <- try(
@@ -91,7 +91,11 @@ create_raster_from_variables <- function(
   ids <- NULL
   rl <- list()
   if (nl > 1) {
-    filenameks <- sapply(seq_len(nl), raster::rasterTmpFile)
+    filenameks <- vapply(
+      seq_len(nl),
+      raster::rasterTmpFile,
+      FUN.VALUE = NA_character_
+    )
   }
 
   for (k in seq_len(nl)) {
@@ -143,7 +147,13 @@ get_raster_datatype <- function(data) {
   stopifnot(tmp %in% c(supported_types, "LIST"))
 
   if (tmp == "LIST") {
-    tmp <- unique(sapply(data, function(x) substr(toupper(typeof(x)), 1, 5)))
+    tmp <- unique(
+      vapply(
+        data,
+        function(x) substr(toupper(typeof(x)), 1, 5),
+        FUN.VALUE = NA_character_
+      )
+    )
     stopifnot(tmp %in% supported_types)
 
     tmp <- if (any(tmp == "DOUBL")) {

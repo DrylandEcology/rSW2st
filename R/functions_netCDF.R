@@ -613,7 +613,11 @@ create_netCDF <- function(
 
     # Grid resolution/bounds
     grid_res <- lapply(xy_grid, function(x) unique(diff(x)))
-    check_res <- sapply(grid_res, function(x) diff(range(x)))
+    check_res <- vapply(
+      grid_res,
+      function(x) diff(range(x)),
+      FUN.VALUE = NA_real_
+    )
 
     if (any(check_res > sqrt(.Machine[["double.eps"]]))) {
       stop(
@@ -2350,7 +2354,10 @@ read_attributes_from_netCDF <- function(
     }
 
     res <- stats::setNames(
-      lapply(vatts, function(att) sapply(tmp_vatts, function(x) x[[att]])),
+      lapply(
+        vatts,
+        function(att) unlist(lapply(tmp_vatts, function(x) x[[att]]))
+      ),
       vatts
     )
 
@@ -2638,7 +2645,7 @@ get_xyspace <- function(
     )
 
     tmp_res <- if (is_gridded) {
-      sapply(
+      vapply(
         tmp_xy,
         function(x) {
           tmp <- unique(diff(x))
@@ -2656,7 +2663,8 @@ get_xyspace <- function(
           } else {
             tmp
           }
-        }
+        },
+        FUN.VALUE = NA_real_
       )
 
     } else {
@@ -2677,7 +2685,11 @@ get_xyspace <- function(
 
   } else if (inherits(x, "stars")) {
     tmp_res <- abs(unname(
-      sapply(stars::st_dimensions(x), function(x) x[["delta"]])
+      vapply(
+        stars::st_dimensions(x),
+        function(x) x[["delta"]],
+        FUN.VALUE = NA_real_
+      )
     ))[1:2]
 
     if (anyNA(tmp_res)) {
@@ -2811,8 +2823,16 @@ convert_xyspace <- function(
 
   #--- Map locations (xy_data) to gridcells (xy_grid)
   # i.e, identify the gridcell x-rows/y-columns for each location
-  ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1L]] - x)))
-  ids_y <- sapply(xy_data[, 2], function(x) which.min(abs(xy_grid[[2L]] - x)))
+  ids_x <- vapply(
+    xy_data[, 1],
+    function(x) which.min(abs(xy_grid[[1L]] - x)),
+    FUN.VALUE = NA_integer_
+  )
+  ids_y <- vapply(
+    xy_data[, 2],
+    function(x) which.min(abs(xy_grid[[2L]] - x)),
+    FUN.VALUE = NA_integer_
+  )
 
   if (any(ids_outside)) {
     warning(
@@ -2820,8 +2840,8 @@ convert_xyspace <- function(
       "; they will return NA."
     )
 
-    ids_x[ids_outside] <- NA
-    ids_y[ids_outside] <- NA
+    ids_x[ids_outside] <- NA_integer_
+    ids_y[ids_outside] <- NA_integer_
   }
 
   if (anyDuplicated(cbind(ids_x, ids_y)) > 0) {
@@ -2855,7 +2875,7 @@ convert_xyspace <- function(
 
     res <- array(
       dim = unname(c(lengths(xy_grid)[1:2], data_dims[-1])),
-      dimnames = sapply(tmp_dn, function(x) NULL)
+      dimnames = lapply(tmp_dn, function(x) NULL)
     )
 
     if (data_str %in% c("xyt", "xyz", "xy")) {

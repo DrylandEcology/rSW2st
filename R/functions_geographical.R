@@ -138,7 +138,11 @@ calculate_cell_area <- function(
 
     } else if (inherits(grid, "stars")) {
       tmp_res <- abs(unname(
-        sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+        vapply(
+          stars::st_dimensions(grid),
+          function(x) x[["delta"]],
+          FUN.VALUE = NA_real_
+        )
       ))[1:2]
 
       if (anyNA(tmp_res)) {
@@ -225,7 +229,11 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
 
   } else if (inherits(grid, "stars")) {
     res <- abs(unname(
-      sapply(stars::st_dimensions(grid), function(x) x[["delta"]])
+      vapply(
+        stars::st_dimensions(grid),
+        function(x) x[["delta"]],
+        FUN.VALUE = NA_real_
+      )
     ))[1:2]
 
     if (anyNA(res)) {

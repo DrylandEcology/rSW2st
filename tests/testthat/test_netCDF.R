@@ -190,8 +190,16 @@ test_that("convert_xyspace", {
   xy_grid <- get_xyspace(grid)
   xy_data <- locations
   # Create matrix indices so that they match the collapsed/sparse version
-  ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1L]] - x)))
-  ids_y <- sapply(xy_data[, 2], function(x) which.min(abs(xy_grid[[2L]] - x)))
+  ids_x <- vapply(
+    xy_data[, 1],
+    function(x) which.min(abs(xy_grid[[1L]] - x)),
+    FUN.VALUE = NA_integer_
+  )
+  ids_y <- vapply(
+    xy_data[, 2],
+    function(x) which.min(abs(xy_grid[[2L]] - x)),
+    FUN.VALUE = NA_integer_
+  )
 
   tmp_full <- array(
     dim = c(lengths(xy_grid[c("x", "y")]), dd[["nz"]], dd[["nt"]])
