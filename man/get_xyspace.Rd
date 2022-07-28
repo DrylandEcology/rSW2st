@@ -9,7 +9,7 @@ get_xyspace(
   crs,
   res,
   xy_names = c("lon", "lat"),
-  tol = sqrt(.Machine$double.eps)
+  tol = sqrt(.Machine[["double.eps"]])
 )
 }
 \arguments{

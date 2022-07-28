@@ -8,7 +8,7 @@ variogram_range(
   x,
   project_to_utm = TRUE,
   sub_samplepoints_N = NULL,
-  crs,
+  crs = NULL,
   seed = NULL
 )
 }
