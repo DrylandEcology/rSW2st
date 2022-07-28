@@ -472,6 +472,7 @@ create_netCDF <- function(
     data_dims[["ns"]] > 0 || data_dims[["nx"]] > 0 && data_dims[["ny"]] > 0
   )
 
+  # nolint start: consecutive_stopifnot_linter.
   # Check that data structure is possible given data dimensions
   tmp <- switch(
     EXPR = data_str,
@@ -500,6 +501,7 @@ create_netCDF <- function(
       data_dims[["nv"]] >= 0
     )
   )
+  # nolint end
 
 
 
