@@ -54,7 +54,7 @@ calculate_cell_area <- function(
   x,
   grid,
   crs = sf::st_crs(x),
-  tol = sqrt(.Machine$double.eps)
+  tol = sqrt(.Machine[["double.eps"]])
 ) {
 
   m2_to_km2 <- 1e-6
@@ -123,7 +123,7 @@ calculate_cell_area <- function(
     rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
     if (is.na(rid)) {
       dxy <- - raster::res(etmp) - c(raster::xmin(etmp), raster::ymin(etmp))
-      etmp <- raster::shift(etmp, dx = dxy[1], dy = dxy[2])
+      etmp <- raster::shift(etmp, dx = dxy[[1L]], dy = dxy[[2L]])
       rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
     }
 

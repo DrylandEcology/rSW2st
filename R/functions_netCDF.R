@@ -346,7 +346,7 @@ create_netCDF <- function(
     units = c("degrees_east", "degrees_north")
   ),
   crs_attributes = list(
-    crs_wkt = sf::st_crs("OGC:CRS84")$Wkt,
+    crs_wkt = sf::st_crs("OGC:CRS84")$Wkt, # nolint: extraction_operator_linter.
     grid_mapping_name = "latitude_longitude",
     longitude_of_prime_meridian = 0.0,
     semi_major_axis = 6378137.0,
@@ -469,7 +469,7 @@ create_netCDF <- function(
   stopifnot(
     c("ns", "nx", "ny", "nt", "nz", "nv") %in% names(data_dims),
     !anyNA(data_dims),
-    data_dims["ns"] > 0 || data_dims["nx"] > 0 && data_dims["ny"] > 0
+    data_dims[["ns"]] > 0 || data_dims[["nx"]] > 0 && data_dims[["ny"]] > 0
   )
 
   # Check that data structure is possible given data dimensions
@@ -477,27 +477,27 @@ create_netCDF <- function(
     EXPR = data_str,
 
     `xyzt` = stopifnot(
-      data_dims["nt"] > 0,
-      data_dims["nz"] > 0,
-      data_dims["nv"] == 0
+      data_dims[["nt"]] > 0,
+      data_dims[["nz"]] > 0,
+      data_dims[["nv"]] == 0
     ),
 
     `xyt` = stopifnot(
-      data_dims["nt"] > 0,
-      data_dims["nz"] == 0,
-      data_dims["nv"] == 0
+      data_dims[["nt"]] > 0,
+      data_dims[["nz"]] == 0,
+      data_dims[["nv"]] == 0
     ),
 
     `xyz` = stopifnot(
-      data_dims["nt"] == 0,
-      data_dims["nz"] > 0,
-      data_dims["nv"] == 0
+      data_dims[["nt"]] == 0,
+      data_dims[["nz"]] > 0,
+      data_dims[["nv"]] == 0
     ),
 
     `xy` = stopifnot(
-      data_dims["nt"] == 0,
-      data_dims["nz"] == 0,
-      data_dims["nv"] >= 0
+      data_dims[["nt"]] == 0,
+      data_dims[["nz"]] == 0,
+      data_dims[["nv"]] >= 0
     )
   )
 
@@ -571,12 +571,14 @@ create_netCDF <- function(
 
   # check that CRS definition matches CRS of xyspace (grid or locations)
   if (crs_xyspace != crs_wkt) {
+    # nolint start: extraction_operator_linter.
     msg <- paste0(
       "The CRS given in `crs_attributes[[\"crs_wkt\"]]` needs to ",
       "match the CRS of the `xyspace` object. Currently, ",
       "`crs_attributes[[\"crs_wkt\"]]` is ", shQuote(crs_wkt$Wkt),
       " and the CRS of `xyspace` is ", shQuote(crs_xyspace$Wkt)
     )
+    # nolint end
 
     if (check_crs) stop(msg) else if (verbose) warning(msg)
   }
@@ -594,12 +596,12 @@ create_netCDF <- function(
     }
 
     # xy values
-    xvals <- xy_grid[[1]]
-    yvals <- xy_grid[[2]]
+    xvals <- xy_grid[[1L]]
+    yvals <- xy_grid[[2L]]
     n_xvals <- length(xvals)
     n_yvals <- length(yvals)
 
-    if (data_dims["nx"] > n_xvals || data_dims["ny"] > n_yvals) {
+    if (data_dims[["nx"]] > n_xvals || data_dims[["ny"]] > n_yvals) {
       stop(
         "For gridded data, `data_dims[\"nx\"]` and `data_dims[\"ny\"]` ",
         "must be smaller or equal to the number of unique x or, respectively, ",
@@ -611,7 +613,7 @@ create_netCDF <- function(
     grid_res <- lapply(xy_grid, function(x) unique(diff(x)))
     check_res <- sapply(grid_res, function(x) diff(range(x)))
 
-    if (any(check_res > sqrt(.Machine$double.eps))) {
+    if (any(check_res > sqrt(.Machine[["double.eps"]]))) {
       stop(
         "Coordinate intervals of `xyspace` are not constant ",
         "as is required for a grid."
@@ -619,9 +621,9 @@ create_netCDF <- function(
     }
 
     # Calculate x and y bounds
-    grid_halfres <- c(grid_res[[1]][1], grid_res[[2]][1]) / 2
-    x_bounds <- rbind(xvals - grid_halfres[1], xvals + grid_halfres[1])
-    y_bounds <- rbind(yvals - grid_halfres[2], yvals + grid_halfres[2])
+    grid_halfres <- c(grid_res[[1L]][[1L]], grid_res[[2L]][[1L]]) / 2
+    x_bounds <- rbind(xvals - grid_halfres[[1L]], xvals + grid_halfres[[1L]])
+    y_bounds <- rbind(yvals - grid_halfres[[2L]], yvals + grid_halfres[[2L]])
 
   } else {
     locs <- try(
@@ -638,7 +640,7 @@ create_netCDF <- function(
     xvals <- tmp_coord[, 1]
     yvals <- tmp_coord[, 2]
 
-    if (data_dims["ns"] > n_sites) {
+    if (data_dims[["ns"]] > n_sites) {
       stop(
         "`data_dims[\"ns\"]` must be smaller or equal to ",
         "the number of sites in `xyspace` for discrete data sites or points."
@@ -653,7 +655,7 @@ create_netCDF <- function(
 
   n_time <- length(time_values)
 
-  has_T_timeAxis <- if (data_dims["nt"] > 0) {
+  has_T_timeAxis <- if (data_dims[["nt"]] > 0) {
     "explicit"
   } else if (n_time > 0) {
     "implicit"
@@ -663,7 +665,7 @@ create_netCDF <- function(
 
   if (has_T_timeAxis %in% c("explicit", "implicit")) {
     #--- Check time values/dimension match
-    if (has_T_timeAxis == "explicit" && data_dims["nt"] != n_time) {
+    if (has_T_timeAxis == "explicit" && data_dims[["nt"]] != n_time) {
       stop(
         "`data_dims[\"nt\"]` must match ",
         "the number of elements in `time_values`."
@@ -777,7 +779,7 @@ create_netCDF <- function(
   #------ vertical axis ------
   n_vertical <- length(vertical_values)
 
-  has_Z_verticalAxis <- if (data_dims["nz"] > 0) {
+  has_Z_verticalAxis <- if (data_dims[["nz"]] > 0) {
     "explicit"
   } else if (n_vertical > 0) {
     "implicit"
@@ -788,7 +790,7 @@ create_netCDF <- function(
   if (has_Z_verticalAxis %in% c("explicit", "implicit")) {
 
     #--- Check time values/dimension match
-    if (has_Z_verticalAxis == "explicit" && data_dims["nz"] != n_vertical) {
+    if (has_Z_verticalAxis == "explicit" && data_dims[["nz"]] != n_vertical) {
       stop(
         "`data_dims[\"nz\"]` must match ",
         "the number of elements in `vertical_values`."
@@ -865,7 +867,7 @@ create_netCDF <- function(
 
 
   #------ Variables ------
-  n_vars <- max(1, data_dims["nv"]) # at least one implicit variable
+  n_vars <- max(1, data_dims[["nv"]]) # at least one implicit variable
 
   if (any(lengths(var_attributes) != n_vars)) {
     stop("All variable attributes need a value for each variable.")
@@ -896,8 +898,8 @@ create_netCDF <- function(
       "crs:",
       # here, guessing axis order to be 1, 2
       # (that would be correct for OGC:CRS84, but not for EPSG:4326)
-      xy_attributes[["name"]][1],
-      xy_attributes[["name"]][2]
+      xy_attributes[["name"]][[1L]],
+      xy_attributes[["name"]][[2L]]
     )
 
     if (verbose) {
@@ -921,7 +923,7 @@ create_netCDF <- function(
     # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data
     # nolint end
     if (!("coordinates" %in% names(var_attributes))) {
-      tmp <- paste(xy_attributes[["name"]][2], xy_attributes[["name"]][1])
+      tmp <- paste(xy_attributes[["name"]][[2L]], xy_attributes[["name"]][[1L]])
       if (has_T_timeAxis != "none") tmp <- paste("time", tmp)
       if (has_Z_verticalAxis != "none") tmp <- paste(tmp, "vertical")
       var_attributes[["coordinates"]] <- tmp
@@ -973,15 +975,15 @@ create_netCDF <- function(
   # x and y dimension
   if (is_gridded) {
     xdim <- ncdf4::ncdim_def(
-      name = xy_attributes[["name"]][1],
-      longname = xy_attributes[["long_name"]][1],
-      units = xy_attributes[["units"]][1],
+      name = xy_attributes[["name"]][[1L]],
+      longname = xy_attributes[["long_name"]][[1L]],
+      units = xy_attributes[["units"]][[1L]],
       vals = xvals
     )
     ydim <- ncdf4::ncdim_def(
-      name = xy_attributes[["name"]][2],
-      longname = xy_attributes[["long_name"]][2],
-      units = xy_attributes[["units"]][2],
+      name = xy_attributes[["name"]][[2L]],
+      longname = xy_attributes[["long_name"]][[2L]],
+      units = xy_attributes[["units"]][[2L]],
       vals = yvals
     )
 
@@ -1071,9 +1073,9 @@ create_netCDF <- function(
   #------ Define x and y as variables if not gridded ------
   if (!is_gridded) {
     xvar <- ncdf4::ncvar_def(
-      name = xy_attributes[["name"]][1],
-      longname = xy_attributes[["long_name"]][1],
-      units = xy_attributes[["units"]][1],
+      name = xy_attributes[["name"]][[1L]],
+      longname = xy_attributes[["long_name"]][[1L]],
+      units = xy_attributes[["units"]][[1L]],
       dim = list(idim),
       compression = nc_deflate,
       chunksizes = n_sites,
@@ -1082,9 +1084,9 @@ create_netCDF <- function(
     )
 
     yvar <- ncdf4::ncvar_def(
-      name = xy_attributes[["name"]][2],
-      longname = xy_attributes[["long_name"]][2],
-      units = xy_attributes[["units"]][2],
+      name = xy_attributes[["name"]][[2L]],
+      longname = xy_attributes[["long_name"]][[2L]],
+      units = xy_attributes[["units"]][[2L]],
       dim = list(idim),
       compression = nc_deflate,
       chunksizes = n_sites,
@@ -1115,7 +1117,7 @@ create_netCDF <- function(
         stop(
           "`xy_attributes`: ",
           "if `bounds` is included, then its value must be ",
-          shQuote(bnds_name[1]), " and ", shQuote(bnds_name[2])
+          shQuote(bnds_name[[1L]]), " and ", shQuote(bnds_name[[2L]])
         )
       }
       xy_attributes[["bounds"]] <- NULL
@@ -1123,7 +1125,7 @@ create_netCDF <- function(
 
     list(
       ncdf4::ncvar_def(
-        name = bnds_name[1],
+        name = bnds_name[[1L]],
         units = "",
         dim = list(bnddim, xdim),
         missval = NULL,
@@ -1133,7 +1135,7 @@ create_netCDF <- function(
       ),
 
       ncdf4::ncvar_def(
-        name = bnds_name[2],
+        name = bnds_name[[2L]],
         units = "",
         dim = list(bnddim, ydim),
         missval = NULL,
@@ -1195,7 +1197,7 @@ create_netCDF <- function(
     #--- Write xy-bounds
     ncdf4::ncvar_put(
       nc,
-      varid = bnds_name[1],
+      varid = bnds_name[[1L]],
       vals = x_bounds,
       start = c(1, 1),
       count = c(2L, n_xvals)
@@ -1203,7 +1205,7 @@ create_netCDF <- function(
 
     ncdf4::ncvar_put(
       nc,
-      varid = bnds_name[2],
+      varid = bnds_name[[2L]],
       vals = y_bounds,
       start = c(1, 1),
       count = c(2L, n_yvals)
@@ -1213,7 +1215,7 @@ create_netCDF <- function(
     #--- Write xy-coordinates to associated variables
     ncdf4::ncvar_put(
       nc,
-      varid = xy_attributes[["name"]][1],
+      varid = xy_attributes[["name"]][[1L]],
       vals = xvals,
       start = 1,
       count = n_sites
@@ -1221,7 +1223,7 @@ create_netCDF <- function(
 
     ncdf4::ncvar_put(
       nc,
-      varid = xy_attributes[["name"]][2],
+      varid = xy_attributes[["name"]][[2L]],
       vals = yvals,
       start = 1,
       count = n_sites
@@ -1266,10 +1268,20 @@ create_netCDF <- function(
 
   #--- add dimension attributes
   if (is_gridded) {
-    ncdf4::ncatt_put(nc, xy_attributes[["name"]][1], "axis", "X")
-    ncdf4::ncatt_put(nc, xy_attributes[["name"]][1], "bounds", bnds_name[1])
-    ncdf4::ncatt_put(nc, xy_attributes[["name"]][2], "axis", "Y")
-    ncdf4::ncatt_put(nc, xy_attributes[["name"]][2], "bounds", bnds_name[2])
+    ncdf4::ncatt_put(nc, xy_attributes[["name"]][[1L]], "axis", "X")
+    ncdf4::ncatt_put(
+      nc,
+      xy_attributes[["name"]][[1L]],
+      "bounds",
+      bnds_name[[1L]]
+    )
+    ncdf4::ncatt_put(nc, xy_attributes[["name"]][[2L]], "axis", "Y")
+    ncdf4::ncatt_put(
+      nc,
+      xy_attributes[["name"]][[2L]],
+      "bounds",
+      bnds_name[[2L]]
+    )
   }
 
   if (has_Z_verticalAxis != "none") {
@@ -1323,7 +1335,12 @@ create_netCDF <- function(
     )
   }
 
-  ncdf4::ncatt_put(nc, "crs", attname = "crs_wkt", attval = crs_wkt$Wkt)
+  ncdf4::ncatt_put(
+    nc,
+    "crs",
+    attname = "crs_wkt",
+    attval = crs_wkt$Wkt # nolint: extraction_operator_linter.
+  )
 
 
   #--- add global attributes
@@ -1407,9 +1424,11 @@ create_netCDF <- function(
 
   #------ The end --------------------------------------------------------------
   if (verbose) {
+    # nolint start: extraction_operator_linter.
     message(
       "The netCDF has ", nc$nvars, " variables and ", nc$ndim, " dimensions"
     )
+    # nolint end
   }
 
   invisible(TRUE)
@@ -1457,7 +1476,7 @@ create_netCDF <- function(
     }
 
   } else {
-    ncdf4::ncvar_put(nc = x, varid = var_names[1], vals = data)
+    ncdf4::ncvar_put(nc = x, varid = var_names[[1L]], vals = data)
   }
 }
 
@@ -1523,7 +1542,7 @@ populate_netCDF_dev <- function(
     # check time_ids and match with data
     ncdf4::ncvar_put(
       nc = x,
-      varid = var_names[1],
+      varid = var_names[[1L]],
       vals = data,
       start = c(1, 1, time_ids),
       count = c(-1, -1, 1)
@@ -1948,7 +1967,7 @@ read_netCDF_as_array <- function(
 
     if (has_time_subset || has_vertical_subset) {
       # This requires that all variables have identical xy-space dimensions!
-      varid <- nc_vars[1]
+      varid <- nc_vars[[1L]]
       nc_count <- x[["var"]][[varid]][["varsize"]]
       if (has_vertical_subset) nc_count[id_vertical_dim] <- 1
       if (has_time_subset) nc_count[id_time_dim] <- 1
@@ -2043,7 +2062,7 @@ read_netCDF_as_array <- function(
       }
 
     } else {
-      res <- res[[1]]
+      res <- res[[1L]]
     }
 
   } else {
@@ -2116,7 +2135,7 @@ read_netCDF_as_raster <- function(
     inherits(r_crs, "CRS") &&
     !is.na(r_crs) &&
     isTRUE(try(
-      rgdal::checkCRSArgs_ng(raster::crs(r, asText = TRUE))[[1]]
+      rgdal::checkCRSArgs_ng(raster::crs(r, asText = TRUE))[[1L]]
     ))
 
   if (!r_has_crs) {
@@ -2128,12 +2147,12 @@ read_netCDF_as_raster <- function(
 
     # TODO: update to use WKT2
     # once `raster` internal workflow is updated to use WKT2 instead of PROJ.4
-    nc_crs <- raster::crs(nc_crs$Wkt)
+    nc_crs <- raster::crs(nc_crs$Wkt) # nolint: extraction_operator_linter.
     if (
       inherits(nc_crs, "CRS") &&
       !is.na(nc_crs) &&
       isTRUE(try(
-        rgdal::checkCRSArgs_ng(raster::crs(nc_crs, asText = TRUE))[[1]]
+        rgdal::checkCRSArgs_ng(raster::crs(nc_crs, asText = TRUE))[[1L]]
       ))
     ) {
       raster::crs(r) <- nc_crs
@@ -2323,7 +2342,7 @@ read_attributes_from_netCDF <- function(
       function(var) read_attributes_from_netCDF(x, var = var)
     )
 
-    vatts <- names(tmp_vatts[[1]])
+    vatts <- names(tmp_vatts[[1L]])
     for (k in seq_along(tmp_vatts)[-1]) {
       vatts <- intersect(vatts, names(tmp_vatts[[k]]))
     }
@@ -2393,7 +2412,7 @@ is_netCDF_gridded <- function(
     !all(xy_names %in% names(x[["var"]]))
   )
 
-  is_gridded[1] && any(is_gridded[2:3])
+  is_gridded[[1L]] && any(is_gridded[2:3])
 }
 
 
@@ -2431,79 +2450,87 @@ get_data_dims <- function(
 ) {
   data_str <- match.arg(data_str)
 
-  if (is.null(dims)) {
-    dims <- rep(0L, 4L)
+  dims <- if (is.null(dims)) {
+    rep(0L, 4L)
   } else {
-    dims <- as.integer(dims) # strips names
+    as.integer(dims) # strips names
+  }
+
+  # Fix missing elements to NA
+  nd <- length(dims)
+  nstr <- nchar(data_str)
+  if (nstr > 1L && nd < nstr) {
+    dims[(nd + 1L):nstr] <- NA_integer_
   }
 
 
+  # Compose result
   switch(
     EXPR = data_str,
     `xyzt` = c(
       ns = 0L,
-      nx = dims[1L],
-      ny = dims[2L],
-      nz = dims[3L],
-      nt = dims[4L],
+      nx = dims[[1L]],
+      ny = dims[[2L]],
+      nz = dims[[3L]],
+      nt = dims[[4L]],
       nv = 0L
     ),
     `xyt` = c(
       ns = 0L,
-      nx = dims[1L],
-      ny = dims[2L],
+      nx = dims[[1L]],
+      ny = dims[[2L]],
       nz = 0L,
-      nt = dims[3L],
+      nt = dims[[3L]],
       nv = 0L
     ),
     `xyz` = c(
       ns = 0L,
-      nx = dims[1L],
-      ny = dims[2L],
-      nz = dims[3L],
+      nx = dims[[1L]],
+      ny = dims[[2L]],
+      nz = dims[[3L]],
       nt = 0L,
       nv = 0L
     ),
     `xy` = c(
       ns = 0L,
-      nx = dims[1L],
-      ny = dims[2L],
+      nx = dims[[1L]],
+      ny = dims[[2L]],
       nz = 0L,
       nt = 0L,
-      nv = if (length(dims) >= 3L) dims[3L] else 0L
+      nv = if (nd >= 3L) dims[[3L]] else 0L
     ),
 
     `szt` = c(
-      ns = dims[1L],
+      ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
-      nz = dims[2L],
-      nt = dims[3L],
+      nz = dims[[2L]],
+      nt = dims[[3L]],
       nv = 0L
     ),
     `st` = c(
-      ns = dims[1L],
+      ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
       nz = 0L,
-      nt = dims[2L],
+      nt = dims[[2L]],
       nv = 0L
     ),
     `sz` = c(
-      ns = dims[1L],
+      ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
-      nz = dims[2L],
+      nz = dims[[2L]],
       nt = 0L,
       nv = 0L
     ),
     `s` = c(
-      ns = dims[1L],
+      ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
       nz = 0L,
       nt = 0L,
-      nv = if (length(dims) >= 2L) dims[2L] else 0L
+      nv = if (nd >= 2L) dims[[2L]] else 0L
     ),
 
     stop("Data structure ", shQuote(data_str), " not implemented.")
@@ -2586,7 +2613,7 @@ get_xyspace <- function(
   crs,
   res,
   xy_names = c("lon", "lat"),
-  tol = sqrt(.Machine$double.eps)
+  tol = sqrt(.Machine[["double.eps"]])
 ) {
 
   if (inherits(x, "character")) {
@@ -2604,8 +2631,8 @@ get_xyspace <- function(
     tmp_xy <- list(
       # `ncvar_get()` reads xy values whether they are dimensional values
       # (is_gridded) or regular variables (!is_gridded)
-      x = as.vector(ncdf4::ncvar_get(nc = x, varid = xy_names[1])),
-      y = as.vector(ncdf4::ncvar_get(nc = x, varid = xy_names[2]))
+      x = as.vector(ncdf4::ncvar_get(nc = x, varid = xy_names[[1L]])),
+      y = as.vector(ncdf4::ncvar_get(nc = x, varid = xy_names[[2L]]))
     )
 
     tmp_res <- if (is_gridded) {
@@ -2622,7 +2649,7 @@ get_xyspace <- function(
               )
             }
 
-            tmp[1]
+            tmp[[1L]]
 
           } else {
             tmp
@@ -2677,15 +2704,15 @@ get_xyspace <- function(
 
     } else {
       xyspace <- list(
-        x = sort(unique(x[[1]])),
-        y = sort(unique(x[[2]])),
+        x = sort(unique(x[[1L]])),
+        y = sort(unique(x[[2L]])),
         res = if ("res" %in% names(x)) x[["res"]][1:2] else res[1:2]
       )
     }
   }
 
   tmp_res <- unname(xyspace[["res"]])
-  c(xyspace[c("x", "y")], res = list(c(x = tmp_res[1], y = tmp_res[2])))
+  c(xyspace[c("x", "y")], res = list(c(x = tmp_res[[1L]], y = tmp_res[[2L]])))
 }
 
 
@@ -2774,16 +2801,16 @@ convert_xyspace <- function(
 
   # Check if locations are outside grid
   ids_outside <-
-    xy_data[, 1] < (min(xy_grid[[1]]) - xy_grid[["res"]][1] / 2) |
-    xy_data[, 1] > (max(xy_grid[[1]]) + xy_grid[["res"]][1] / 2) |
-    xy_data[, 2] < (min(xy_grid[[2]]) - xy_grid[["res"]][2] / 2) |
-    xy_data[, 2] > (max(xy_grid[[2]]) + xy_grid[["res"]][2] / 2)
+    xy_data[, 1] < (min(xy_grid[[1L]]) - xy_grid[["res"]][[1L]] / 2) |
+    xy_data[, 1] > (max(xy_grid[[1L]]) + xy_grid[["res"]][[1L]] / 2) |
+    xy_data[, 2] < (min(xy_grid[[2L]]) - xy_grid[["res"]][[2L]] / 2) |
+    xy_data[, 2] > (max(xy_grid[[2L]]) + xy_grid[["res"]][[2L]] / 2)
 
 
   #--- Map locations (xy_data) to gridcells (xy_grid)
   # i.e, identify the gridcell x-rows/y-columns for each location
-  ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1]] - x)))
-  ids_y <- sapply(xy_data[, 2], function(x) which.min(abs(xy_grid[[2]] - x)))
+  ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1L]] - x)))
+  ids_y <- sapply(xy_data[, 2], function(x) which.min(abs(xy_grid[[2L]] - x)))
 
   if (any(ids_outside)) {
     warning(
@@ -2804,14 +2831,14 @@ convert_xyspace <- function(
 
   if (direction == "expand") {
     #------ Expand one xy-dimension into separate x- and y-dimensions
-    if (data_dims[1] > n_cells) {
+    if (data_dims[[1L]] > n_cells) {
       stop(
         "`nrow(data)` must be smaller or equal to ",
         "the number of cells in `grid`."
       )
     }
 
-    if (data_dims[1] != n_loc) {
+    if (data_dims[[1L]] != n_loc) {
       stop(
         "The number of locations must match `nrow(data)`."
       )
@@ -2819,7 +2846,7 @@ convert_xyspace <- function(
 
 
     #--- Expand data
-    tmp_dn <- strsplit(data_str, split = "")[[1]]
+    tmp_dn <- strsplit(data_str, split = "")[[1L]]
     if (length(tmp_dn) < length(data_dims) && data_str == "xy") {
       tmp_dn <- c(tmp_dn, "v")
     }
@@ -2830,12 +2857,12 @@ convert_xyspace <- function(
     )
 
     if (data_str %in% c("xyt", "xyz", "xy")) {
-      ids_tzv <- rep(seq_len(data_dims[2]), each = n_loc)
+      ids_tzv <- rep(seq_len(data_dims[[2L]]), each = n_loc)
       res[cbind(ids_x, ids_y, ids_tzv)] <- as.matrix(data)
 
     } else if (data_str %in% "xyzt") {
-      ids_t <- rep(seq_len(data_dims[2]), each = n_loc)
-      ids_z <- rep(seq_len(data_dims[3]), each = prod(data_dims[1:2]))
+      ids_t <- rep(seq_len(data_dims[[2L]]), each = n_loc)
+      ids_z <- rep(seq_len(data_dims[[3L]]), each = prod(data_dims[1:2]))
       res[cbind(ids_x, ids_y, ids_t, ids_z)] <- data
 
     } else {
@@ -2859,15 +2886,15 @@ convert_xyspace <- function(
 
     } else if (length(data_dims) == 3) {
       if (data_str %in% c("xyt", "xyz", "xy")) {
-        ids_tzv <- rep(seq_len(data_dims[3]), each = n_loc)
+        ids_tzv <- rep(seq_len(data_dims[[3L]]), each = n_loc)
         res <- data[cbind(ids_x, ids_y, ids_tzv)]
-        attr(res, "dim") <- c(n_loc, data_dims[3])
+        attr(res, "dim") <- c(n_loc, data_dims[[3L]])
       }
 
     } else if (length(data_dims) == 4) {
       if (data_str %in% "xyzt") {
-        ids_t <- rep(seq_len(data_dims[3]), each = n_loc)
-        ids_z <- rep(seq_len(data_dims[4]), each = n_loc * data_dims[3])
+        ids_t <- rep(seq_len(data_dims[[3L]]), each = n_loc)
+        ids_z <- rep(seq_len(data_dims[[4L]]), each = n_loc * data_dims[[3L]])
         res <- data[cbind(ids_x, ids_y, ids_t, ids_z)]
         attr(res, "dim") <- c(n_loc, data_dims[3:4])
       }
@@ -2985,7 +3012,7 @@ create_example_netCDFs <- function(
   # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_albers_equal_area
   # nolint end
   nc_att_crs <- list(
-    crs_wkt = sf::st_crs("EPSG:6350")$Wkt,
+    crs_wkt = sf::st_crs("EPSG:6350")$Wkt, # nolint: extraction_operator_linter.
     grid_mapping_name = "albers_conical_equal_area",
     standard_parallel = c(29.5, 45.5),
     longitude_of_central_meridian = -96.0,
@@ -3013,7 +3040,7 @@ create_example_netCDFs <- function(
       rSW2st::as_points(
         c(
           nc_att_crs[["longitude_of_central_meridian"]],
-          nc_att_crs[["standard_parallel"]][2]
+          nc_att_crs[["standard_parallel"]][[2L]]
         ),
         crs = "OGC:CRS84",
         to_class = "sf"
@@ -3025,16 +3052,16 @@ create_example_netCDFs <- function(
   dxy <- c(20, 30)
   nxy <- 2 * dxy + 1
 
-  x <- seq(-dxy[1], dxy[1], length = nxy[1])
-  y <- seq(-dxy[2], dxy[2], length = nxy[2])
+  x <- seq(-dxy[[1L]], dxy[[1L]], length = nxy[[1L]])
+  y <- seq(-dxy[[2L]], dxy[[2L]], length = nxy[[2L]])
 
 
 
   raster_xy <- suppressWarnings(raster::raster(
-    xmn = orig[1] + min(x) - 0.5,
-    xmx = orig[1] + max(x) + 0.5,
-    ymn = orig[2] + min(y) - 0.5,
-    ymx = orig[2] + max(y) + 0.5,
+    xmn = orig[[1L]] + min(x) - 0.5,
+    xmx = orig[[1L]] + max(x) + 0.5,
+    ymn = orig[[2L]] + min(y) - 0.5,
+    ymx = orig[[2L]] + max(y) + 0.5,
     crs = nc_att_crs[["crs_wkt"]],
     resolution = c(1, 1)
   ))

@@ -11,7 +11,7 @@ test_that("get_data_dims", {
   check_data_dims <- function(x, check_na = TRUE, vars_zero = "nv") {
     expect_named(x, c("ns", "nx", "ny", "nz", "nt", "nv"))
     if (check_na) expect_false(anyNA(x))
-    expect_true(x["nx"] > 0 && x["ny"] > 0 || x["ns"] > 0)
+    expect_true(x[["nx"]] > 0 && x[["ny"]] > 0 || x[["ns"]] > 0)
     for (var in vars_zero) {
       expect_equal(x[var], 0, ignore_attr = "names")
     }
@@ -85,8 +85,8 @@ test_that("get_xyspace", {
 
   # 1) raster object;
   list_grids[["raster"]] <- raster::raster(
-    xmn = 0.5, xmx = 0.5 + gd["nx"],
-    ymn = 0.5, ymx = 0.5 + gd["ny"],
+    xmn = 0.5, xmx = 0.5 + gd[["nx"]],
+    ymn = 0.5, ymx = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = res
   )
@@ -112,7 +112,7 @@ test_that("get_xyspace", {
   create_netCDF(
     filename = fname_nc,
     xyspace = get_xyspace(list_grids[["stars"]]),
-    data = list_grids[["stars"]][[1]],
+    data = list_grids[["stars"]][[1L]],
     data_str = "xy",
     var_attributes = list(name = "test", units = "1")
   )
@@ -134,7 +134,7 @@ test_that("get_xyspace", {
     )
 
     # Check: type of grid specification does not matter
-    expect_identical(res_grids[[1]], res_grids[[kg]])
+    expect_identical(res_grids[[1L]], res_grids[[kg]])
   }
 
 
@@ -149,14 +149,14 @@ test_that("get_xyspace", {
 test_that("convert_xyspace", {
   dd <- c(nx = 13L, ny = 7L, nz = 2L, nt = 3L)
   d0 <- c(3L, 5L)
-  gd <- c(nx = dd[["nx"]] + 2L * d0[1], ny = dd[["ny"]] + 2L * d0[2])
+  gd <- c(nx = dd[["nx"]] + 2L * d0[[1L]], ny = dd[["ny"]] + 2L * d0[[2L]])
 
 
   #--- grid with full xy-space
   crs_wgs84 <- "OGC:CRS84"
   grid <- raster::raster(
-    xmn = 0.5, xmx = 0.5 + gd["nx"],
-    ymn = 0.5, ymx = 0.5 + gd["ny"],
+    xmn = 0.5, xmx = 0.5 + gd[["nx"]],
+    ymn = 0.5, ymx = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = c(1, 1)
   )
@@ -164,24 +164,24 @@ test_that("convert_xyspace", {
 
   #--- `data`
   locations <- cbind(
-    x = d0[1] + seq_len(dd["nx"]),
-    y = rep(d0[2] + seq_len(dd["ny"]), each = dd["nx"])
+    x = d0[[1L]] + seq_len(dd[["nx"]]),
+    y = rep(d0[[2L]] + seq_len(dd[["ny"]]), each = dd[["nx"]])
   )
-  n_loc <- c(ns = nrow(locations))
+  n_loc <- nrow(locations)
 
   # Create indices of three locations to check correct transfer of values
   loc_checks <- list(
     c(
-      tmp <- c(gx = d0[1] + 1, gy = d0[2] + 3),
-      loc = which(locations[, 1] == tmp[1] & locations[, 2] == tmp[2])
+      tmp <- c(gx = d0[[1L]] + 1, gy = d0[[2L]] + 3),
+      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
     ),
     c(
-      tmp <- c(gx = d0[1] + dd[["nx"]] - 10, gy = d0[2] + dd[["ny"]] - 3),
-      loc = which(locations[, 1] == tmp[1] & locations[, 2] == tmp[2])
+      tmp <- c(gx = d0[[1L]] + dd[["nx"]] - 10, gy = d0[[2L]] + dd[["ny"]] - 3),
+      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
     ),
     c(
-      tmp <- c(gx = d0[1] + dd[["nx"]] - 1, gy = d0[2] + dd[["ny"]] - 1),
-      loc = which(locations[, 1] == tmp[1] & locations[, 2] == tmp[2])
+      tmp <- c(gx = d0[[1L]] + dd[["nx"]] - 1, gy = d0[[2L]] + dd[["ny"]] - 1),
+      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
     )
   )
 
@@ -190,42 +190,42 @@ test_that("convert_xyspace", {
   xy_grid <- get_xyspace(grid)
   xy_data <- locations
   # Create matrix indices so that they match the collapsed/sparse version
-  ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1]] - x)))
-  ids_y <- sapply(xy_data[, 2], function(x) which.min(abs(xy_grid[[2]] - x)))
+  ids_x <- sapply(xy_data[, 1], function(x) which.min(abs(xy_grid[[1L]] - x)))
+  ids_y <- sapply(xy_data[, 2], function(x) which.min(abs(xy_grid[[2L]] - x)))
 
   tmp_full <- array(
-    dim = c(lengths(xy_grid[c("x", "y")]), dd["nz"], dd["nt"])
+    dim = c(lengths(xy_grid[c("x", "y")]), dd[["nz"]], dd[["nt"]])
   )
   ids11 <- cbind(ids_x, ids_y, 1, 1)
-  tmp_full[ids11] <- seq_len(dd["nx"] * dd["ny"])
+  tmp_full[ids11] <- seq_len(dd[["nx"]] * dd[["ny"]])
   tmp_full[cbind(ids_x, ids_y, 2, 1)] <- 1000 + tmp_full[ids11]
   tmp_full[cbind(ids_x, ids_y, 1, 2)] <- 1
   tmp_full[cbind(ids_x, ids_y, 2, 2)] <- 1000
   tmp_full[cbind(ids_x, ids_y, 1, 3)] <- - tmp_full[ids11]
   tmp_full[cbind(ids_x, ids_y, 2, 3)] <- -1000 - tmp_full[ids11]
   # Add some NAs
-  for (k in seq_len(dd["nt"])) {
+  for (k in seq_len(dd[["nt"]])) {
     for (t2 in 1:2) {
       k0 <- if (t2 == 1) {
         (k + 1) * dd[["nx"]] + 4 + 3:4
       } else {
         k * dd[["nx"]] + 4 + 3:4
       }
-      idsk <- cbind(ids_x[k0], ids_y[k0], rep(seq_len(dd["nz"]), each = 2), k)
+      idsk <- cbind(ids_x[k0], ids_y[k0], rep(seq_len(dd[["nz"]]), each = 2), k)
       tmp_full[idsk] <- NA
     }
   }
 
   #--- Create collapsed test data (but corresponding to expanded cases)
-  tmp_sparse <- array(dim = c(dd["nx"] * dd["ny"], dd["nz"], dd["nt"]))
-  tmp_sparse[, 1, 1] <- seq_len(dd["nx"] * dd["ny"])
+  tmp_sparse <- array(dim = c(dd[["nx"]] * dd[["ny"]], dd[["nz"]], dd[["nt"]]))
+  tmp_sparse[, 1, 1] <- seq_len(dd[["nx"]] * dd[["ny"]])
   tmp_sparse[, 2, 1] <- 1000 + tmp_sparse[, 1, 1]
   tmp_sparse[, 1, 2] <- 1
   tmp_sparse[, 2, 2] <- 1000
   tmp_sparse[, 1, 3] <- - tmp_sparse[, 1, 1]
   tmp_sparse[, 2, 3] <- -1000 - tmp_sparse[, 1, 1]
   # Add some NAs
-  for (k in seq_len(dd["nt"])) {
+  for (k in seq_len(dd[["nt"]])) {
     tmp_sparse[(k + 1) * dd[["nx"]] + 4 + 3:4, , k] <- NA
     tmp_sparse[k * dd[["nx"]] + 4 + 3:4, , k] <- NA
   }
@@ -233,8 +233,8 @@ test_that("convert_xyspace", {
   if (FALSE) {
     # Visualize test data
     tmp <- data.frame(
-      Var1 = seq_len(dd["nx"]),
-      Var2 = rep(seq_len(dd["ny"]), each = dd["nx"]),
+      Var1 = seq_len(dd[["nx"]]),
+      Var2 = rep(seq_len(dd[["ny"]]), each = dd[["nx"]]),
       value = tmp_sparse[, 2, 3]
     )
     ggplot2::ggplot(tmp) +
@@ -321,8 +321,8 @@ test_that("convert_xyspace", {
     for (kc in seq_along(loc_checks)) {
       if (data_str_res == "xyzt") {
         expect_equal(
-          res[loc_checks[[kc]]["gx"], loc_checks[[kc]]["gy"], , ],
-          ref[loc_checks[[kc]]["loc"], , ],
+          res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], , ],
+          ref[loc_checks[[kc]][["loc"]], , ],
           ignore_attr = "names"
         )
 
@@ -331,15 +331,15 @@ test_that("convert_xyspace", {
         !is.null(dim(ref))
       ) {
         expect_equal(
-          res[loc_checks[[kc]]["gx"], loc_checks[[kc]]["gy"], ],
-          ref[loc_checks[[kc]]["loc"], ],
+          res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], ],
+          ref[loc_checks[[kc]][["loc"]], ],
           ignore_attr = "names"
         )
 
       } else {
         expect_equal(
-          res[loc_checks[[kc]]["gx"], loc_checks[[kc]]["gy"], 1],
-          ref[loc_checks[[kc]]["loc"]],
+          res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], 1],
+          ref[loc_checks[[kc]][["loc"]]],
           ignore_attr = "names"
         )
       }
@@ -393,7 +393,7 @@ test_that("convert_xyspace", {
 
     # Check: data dimensions
     expect_identical(
-      get_data_dims(data_str_res, dim(res))["ns"],
+      get_data_dims(data_str_res, dim(res))[["ns"]],
       n_loc
     )
 
@@ -401,22 +401,22 @@ test_that("convert_xyspace", {
     for (kc in seq_along(loc_checks)) {
       if (data_str_res == "szt") {
         expect_equal(
-          res[loc_checks[[kc]]["loc"], , ],
-          ref[loc_checks[[kc]]["gx"], loc_checks[[kc]]["gy"], , ],
+          res[loc_checks[[kc]][["loc"]], , ],
+          ref[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], , ],
           ignore_attr = "names"
         )
 
       } else if (data_str_res %in% c("sz", "st", "s") && length(dim(ref)) > 2) {
         expect_equal(
-          res[loc_checks[[kc]]["loc"], ],
-          ref[loc_checks[[kc]]["gx"], loc_checks[[kc]]["gy"], ],
+          res[loc_checks[[kc]][["loc"]], ],
+          ref[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], ],
           ignore_attr = "names"
         )
 
       } else {
         expect_equal(
-          res[loc_checks[[kc]]["loc"], 1],
-          ref[loc_checks[[kc]]["gx"], loc_checks[[kc]]["gy"]],
+          res[loc_checks[[kc]][["loc"]], 1],
+          ref[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]]],
           ignore_attr = "names"
         )
       }

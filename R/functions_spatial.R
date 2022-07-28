@@ -84,7 +84,7 @@ variogram_range <- function(
   # estimate is only valid if some variation in data (i.e., sill > 0)
   psill_sum <- sum(fittedVar[["var_model"]][, "psill"])
 
-  if (abs(psill_sum) > sqrt(.Machine$double.eps)) {
+  if (abs(psill_sum) > sqrt(.Machine[["double.eps"]])) {
     fittedVar[["var_model"]][2, "range"]
   } else {
     NaN

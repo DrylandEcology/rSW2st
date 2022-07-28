@@ -117,7 +117,7 @@ create_raster_from_variables <- function(
     unlink(filenameks)
 
   } else {
-    r <- rl[[1]]
+    r <- rl[[1L]]
   }
 
 

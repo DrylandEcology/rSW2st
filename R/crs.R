@@ -29,7 +29,7 @@ NULL
 #'
 #' @export
 crs_units <- function(crs) {
-  sf::st_crs(crs)$units_gdal
+  sf::st_crs(crs)$units_gdal # nolint: extraction_operator_linter.
 }
 
 
@@ -72,16 +72,16 @@ utm_zone <- function(x, crs = 4326) {
   mxy <- colMeans(xy)
 
   # Make sure longitude is between -180.00 .. 179.9
-  long <- mxy[1] - floor((mxy[1] + 180) / 360) * 360
+  long <- mxy[[1L]] - floor((mxy[[1L]] + 180) / 360) * 360
 
   utm_zone <- floor((long + 180) / 6) + 1
 
-  if (mxy[2] >= 56 && mxy[2] < 64 && long >= 3 && long < 12) {
+  if (mxy[[2L]] >= 56 && mxy[[2L]] < 64 && long >= 3 && long < 12) {
     utm_zone <- 32
   }
 
   # Special zones for Svalbard
-  if (mxy[2] >= 72 && mxy[2] < 84) {
+  if (mxy[[2L]] >= 72 && mxy[[2L]] < 84) {
     if (long >= 0 && long < 9) {
       utm_zone <- 31
     } else if (long >= 9 && long < 21) {
@@ -95,7 +95,7 @@ utm_zone <- function(x, crs = 4326) {
 
   list(
     utm_zone = as.integer(unname(utm_zone)),
-    utm_NS = if (mxy[2] > 0) "N" else "S"
+    utm_NS = if (mxy[[2L]] > 0) "N" else "S"
   )
 }
 

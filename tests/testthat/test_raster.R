@@ -74,13 +74,13 @@ test_that("isoline_from_raster", {
   threshold <- -5
   ip1 <- isoline_from_raster(r, alpha = threshold)
   expect_s4_class(ip1, "SpatialPolygonsDataFrame")
-  expect_gte(max(raster::extract(r, ip1)[[1]]), threshold)
+  expect_gte(max(raster::extract(r, ip1)[[1L]]), threshold)
 
   #--- Some raster grid values >= threshold
   threshold <- 87
   ip2 <- isoline_from_raster(r, alpha = threshold)
   expect_s4_class(ip2, "SpatialPolygonsDataFrame")
-  expect_gte(max(raster::extract(r, ip2)[[1]]), threshold)
+  expect_gte(max(raster::extract(r, ip2)[[1L]]), threshold)
 
   #--- No raster grid values >= threshold
   threshold <- 1000
@@ -97,13 +97,13 @@ test_that("isoline_from_raster", {
   threshold <- -5
   ip1 <- isoline_from_raster(rs, alpha = threshold)
   expect_s3_class(ip1, "sf")
-  expect_gte(max(rs[ip1][[1]], na.rm = TRUE), threshold)
+  expect_gte(max(rs[ip1][[1L]], na.rm = TRUE), threshold)
 
   #--- Some stars grid values >= threshold
   threshold <- 87
   ip2 <- isoline_from_raster(rs, alpha = threshold)
   expect_s3_class(ip2, "sf")
-  expect_gte(max(rs[ip2][[1]], na.rm = TRUE), threshold)
+  expect_gte(max(rs[ip2][[1L]], na.rm = TRUE), threshold)
 
   #--- No stars grid values >= threshold
   threshold <- 1000

@@ -9,7 +9,7 @@ test_that("gridcell areas", {
   )
 
   n <- prod(dim(r1))
-  r1[] <- seq_len(n)
+  r1[] <- seq_len(n) # nolint: extraction_operator_linter.
   xy <- raster::sampleRegular(r1, size = n, sp = TRUE)
 
   ## Calculate area for a subset of cells in grid
@@ -56,7 +56,7 @@ test_that("gridcell areas", {
   ))
 
   n <- prod(dim(r2))
-  r2[] <- seq_len(n)
+  r2[] <- seq_len(n) # nolint: extraction_operator_linter.
   xy <- raster::sampleRegular(r2, size = 200, sp = TRUE)
 
   ## Calculate area for a subset of cells in grid
