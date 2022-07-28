@@ -910,7 +910,7 @@ create_netCDF <- function(
     }
 
   } else {
-    if (isTRUE(!grepl("\\<crs", var_attributes[["grid_mapping"]]))) {
+    if (!startsWith(var_attributes[["grid_mapping"]], "crs")) {
       warning(
         "Variable attribute for `grid_mapping` should be 'crs: ...', but is ",
         shQuote(var_attributes[["grid_mapping"]])
@@ -1957,11 +1957,11 @@ read_netCDF_as_array <- function(
 
   if (load_values) {
     if (has_vertical_subset) {
-      id_vertical_dim <- as.integer(regexpr("z", nc_data_str))
+      id_vertical_dim <- as.integer(regexpr("z", nc_data_str, fixed = TRUE))
     }
 
     if (has_time_subset) {
-      id_time_dim <- as.integer(regexpr("t", nc_data_str))
+      id_time_dim <- as.integer(regexpr("t", nc_data_str, fixed = TRUE))
     }
 
 
@@ -2846,7 +2846,7 @@ convert_xyspace <- function(
 
 
     #--- Expand data
-    tmp_dn <- strsplit(data_str, split = "")[[1L]]
+    tmp_dn <- strsplit(data_str, split = "", fixed = TRUE)[[1L]]
     if (length(tmp_dn) < length(data_dims) && data_str == "xy") {
       tmp_dn <- c(tmp_dn, "v")
     }
