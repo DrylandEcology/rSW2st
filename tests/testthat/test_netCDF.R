@@ -480,7 +480,9 @@ test_that("read_netCDF", {
 
       if (km == "array") {
         expect_type(res, "list")
+        # nolint start: expect_s3_class_linter.
         expect_true(inherits(res[["data"]], "array"))
+        # nolint end
 
         expect_named(
           res,
@@ -529,7 +531,7 @@ test_that("read_netCDF", {
         xy_names = c("x", "y"),
         nc_name_crs = "crs"
       )
-      expect_true(inherits(res_atts, "list"))
+      expect_type(res_atts, "list")
       expect_named(
         res_atts,
         paste0(
