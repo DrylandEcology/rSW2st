@@ -518,7 +518,7 @@ create_netCDF <- function(
   if (any(!(tmp_xy_atts %in% names(xy_attributes)))) {
     stop(
       "`xy_attributes` must include ",
-      paste0(shQuote(tmp_xy_atts), collapse = ", ")
+      toString(shQuote(tmp_xy_atts))
     )
   }
 
@@ -1383,7 +1383,7 @@ create_netCDF <- function(
     if (length(has_replaced_gatts) > 0) {
       warning(
         "`global_attributes` contained values for ",
-        paste0(shQuote(has_replaced_gatts), collapse = ", "),
+        toString(shQuote(has_replaced_gatts)),
         "; they were replaced with an automatically generated value."
       )
       ns_att_glob <- setdiff(ns_att_glob, has_replaced_gatts)
@@ -1793,11 +1793,11 @@ read_netCDF_as_array <- function(
   if (!has_xy) {
     stop(
       "Argument `xy_names` (",
-      paste0(shQuote(xy_names), collapse = ", "),
+      toString(shQuote(xy_names)),
       ") does not describe the xy-dimensions of the ",
       if (is_gridded) "gridded " else "discrete ",
       "`netCDF` which has: ",
-      paste0(shQuote(nc_dims), collapse = ", ")
+      toString(shQuote(nc_dims))
     )
   }
 
@@ -1825,10 +1825,10 @@ read_netCDF_as_array <- function(
   } else {
     stop(
       "Argument `var` (",
-      paste0(shQuote(var), collapse = ", "),
+      toString(shQuote(var)),
       ") does not request variables contained in the `netCDF` ",
       "which has: ",
-      paste0(shQuote(nc_vars), collapse = ", ")
+      toString(shQuote(nc_vars))
     )
   }
 
@@ -2038,7 +2038,7 @@ read_netCDF_as_array <- function(
         if (length(dim(tmp_res)) != nchar(data_str)) {
           warning(
             "Dimensions of data extracted from netCDF (",
-            paste0(dim(tmp_res), collapse = ", "),
+            toString(dim(tmp_res)),
             ") do not match `data_str` = ", shQuote(data_str)
           )
         }
@@ -2645,7 +2645,7 @@ get_xyspace <- function(
               stop(
                 "Object is gridded, but likely not regular: ",
                 "retrieved coordinate resolutions (a.k.a. deltas) are ",
-                paste0(tmp, collapse = ", ")
+                toString(tmp)
               )
             }
 
@@ -2868,7 +2868,7 @@ convert_xyspace <- function(
     } else {
       stop(
         "No implementation for `data` to expand space; ",
-        "`data` has dimensions: ", paste(data_dims, collapse = ", "),
+        "`data` has dimensions: ", toString(data_dims),
         " and structure ", shQuote(data_str)
       )
     }
@@ -2903,7 +2903,7 @@ convert_xyspace <- function(
     if (is.null(res)) {
       stop(
         "No implementation for `data` to collapse space; ",
-        "`data` has dimensions: ", paste(data_dims, collapse = ", "),
+        "`data` has dimensions: ", toString(data_dims),
         " and structure ", shQuote(data_str)
       )
     }
