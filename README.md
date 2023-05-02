@@ -4,7 +4,7 @@
 [ ![R build status][1]][2] [ ![github release][5]][6] [![license][7]][8] [![codecov status][9]][10]
 <!-- badges: end -->
 
-[1]: https://github.com/DrylandEcology/rSW2st/actions/workflows/check-standard.yml/badge.svg?branch=main
+[1]: https://github.com/DrylandEcology/rSW2st/actions/workflows/check-standard.yaml/badge.svg?branch=main
 [2]: https://github.com/DrylandEcology/rSW2st/actions
 [5]: https://img.shields.io/github/release/DrylandEcology/rSW2st.svg?label=current+release
 [6]: https://github.com/DrylandEcology/rSW2st/releases
