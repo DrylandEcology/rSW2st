@@ -8,7 +8,7 @@ calculate_cell_area(
   x,
   grid,
   crs = sf::st_crs(x),
-  tol = sqrt(.Machine$double.eps)
+  tol = sqrt(.Machine[["double.eps"]])
 )
 }
 \arguments{
