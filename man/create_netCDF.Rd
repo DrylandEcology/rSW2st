@@ -22,8 +22,8 @@ create_netCDF(
   check_crs = TRUE,
   time_values = NULL,
   type_timeaxis = c("timeseries", "climatology"),
-  time_attributes = list(units = "days since 1900-01-01", calendar = "standard", unlim
-    = FALSE),
+  time_attributes = list(units = "days since 1900-01-01", calendar = "standard", unlim =
+    FALSE),
   time_bounds = matrix(NA, nrow = length(time_values), ncol = 2),
   vertical_values = NULL,
   vertical_attributes = list(units = "", positive = "down"),
