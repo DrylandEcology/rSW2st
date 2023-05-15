@@ -7,6 +7,8 @@
   lint workflow switched from package tests to Github Action (#5).
 * `isoline_from_raster()` is now based on the `stars` and `sf` packages
   (removing a dependency on `rgeos`; addressing #3; @dschlaep).
+* `variogram_range()` is now based on the `stars` and `sf` packages
+  (removing a dependency on `rgdal`; addressing #3; @dschlaep).
 * `read_netCDF_as_array()` gains arguments `"time_name"` and `"vertical_name"`
   with previous hard-coded values as defaults ("time" and "vertical")
   (#14; @dschlaep)
