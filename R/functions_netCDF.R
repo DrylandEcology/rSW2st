@@ -2148,9 +2148,7 @@ read_netCDF_as_raster <- function(
   r_has_crs <-
     inherits(r_crs, "CRS") &&
     !is.na(r_crs) &&
-    isTRUE(try(
-      rgdal::checkCRSArgs_ng(raster::crs(r, asText = TRUE))[[1L]]
-    ))
+    isTRUE(try(inherits(sf::st_crs(r_crs)), "crs"))
 
   if (!r_has_crs) {
     nc_crs <- read_crs_from_netCDF(
@@ -2165,9 +2163,7 @@ read_netCDF_as_raster <- function(
     if (
       inherits(nc_crs, "CRS") &&
       !is.na(nc_crs) &&
-      isTRUE(try(
-        rgdal::checkCRSArgs_ng(raster::crs(nc_crs, asText = TRUE))[[1L]]
-      ))
+      isTRUE(try(inherits(sf::st_crs(nc_crs)), "crs"))
     ) {
       raster::crs(r) <- nc_crs
     } else {
