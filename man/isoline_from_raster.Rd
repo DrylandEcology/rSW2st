@@ -9,47 +9,37 @@ isoline_from_raster(grid, alpha)
 }
 \arguments{
 \item{grid}{A two-dimensional
-\code{\link[raster:RasterLayer-class]{raster::RasterLayer}} or
+\code{\link[raster:RasterLayer-class]{raster::RasterLayer}},
+\code{\link[terra:SpatRaster-class]{terra::SpatRaster}}, or
 \code{stars} object.}
 
 \item{alpha}{A numeric value. Threshold value.}
 }
 \value{
-A \code{\link[sp]{SpatialPolygons}} object or a \code{sf} polygon,
-  respectively.
+A \code{sf} polygon
 }
 \description{
 Polygon around \var{gridcells} with a value larger than or equal to the
 specified threshold
 }
 \examples{
-## --- Using `raster` package
-r <- raster::raster(
-  xmn = 0, xmx = 10,
-  ymn = 0, ymx = 10,
-  crs = "OGC:CRS84",
-  resolution = c(1, 1)
+r <- stars::st_as_stars(
+  data.frame(
+    x = rep(1:10, times = 10),
+    y = rep(10:1, each = 10),
+    value = 1:100
+  ),
+  dims = c("x", "y")
 )
-r <- raster::init(r, fun = "cell")
 
 ip1 <- isoline_from_raster(r, alpha = 45)
 ip2 <- isoline_from_raster(r, alpha = 87)
 
-raster::plot(r)
-sp::plot(ip1, border = "black", add = TRUE)
-sp::plot(ip2, border = "blue", add = TRUE)
-dev.off()
-
-
-## --- Using `stars` package
-rs <- stars::st_as_stars(r)
-
-ip1s <- isoline_from_raster(rs, alpha = 45)
-ip2s <- isoline_from_raster(rs, alpha = 87)
-
-plot(rs, reset = FALSE)
-plot(ip1s, col = NA, border = "black", add = TRUE)
-plot(ip2s, col = NA, border = "blue", add = TRUE)
-dev.off()
+if (requireNamespace("grDevices")) {
+  plot(r, reset = FALSE)
+  plot(ip1, col = NA, border = "black", add = TRUE)
+  plot(ip2, col = NA, border = "blue", add = TRUE)
+  grDevices::dev.off()
+}
 
 }

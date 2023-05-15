@@ -187,62 +187,47 @@ get_raster_datatype <- function(data) {
 #' specified threshold
 #'
 #' @param grid A two-dimensional
-#'   \code{\link[raster:RasterLayer-class]{raster::RasterLayer}} or
+#'   \code{\link[raster:RasterLayer-class]{raster::RasterLayer}},
+#'   \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}, or
 #'   \code{stars} object.
 #' @param alpha A numeric value. Threshold value.
 #'
-#' @return A \code{\link[sp]{SpatialPolygons}} object or a \code{sf} polygon,
-#'   respectively.
+#' @return A \code{sf} polygon
 #'
 #' @examples
-#' ## --- Using `raster` package
-#' r <- raster::raster(
-#'   xmn = 0, xmx = 10,
-#'   ymn = 0, ymx = 10,
-#'   crs = "OGC:CRS84",
-#'   resolution = c(1, 1)
+#' r <- stars::st_as_stars(
+#'   data.frame(
+#'     x = rep(1:10, times = 10),
+#'     y = rep(10:1, each = 10),
+#'     value = 1:100
+#'   ),
+#'   dims = c("x", "y")
 #' )
-#' r <- raster::init(r, fun = "cell")
 #'
 #' ip1 <- isoline_from_raster(r, alpha = 45)
 #' ip2 <- isoline_from_raster(r, alpha = 87)
 #'
-#' raster::plot(r)
-#' sp::plot(ip1, border = "black", add = TRUE)
-#' sp::plot(ip2, border = "blue", add = TRUE)
-#' dev.off()
-#'
-#'
-#' ## --- Using `stars` package
-#' rs <- stars::st_as_stars(r)
-#'
-#' ip1s <- isoline_from_raster(rs, alpha = 45)
-#' ip2s <- isoline_from_raster(rs, alpha = 87)
-#'
-#' plot(rs, reset = FALSE)
-#' plot(ip1s, col = NA, border = "black", add = TRUE)
-#' plot(ip2s, col = NA, border = "blue", add = TRUE)
-#' dev.off()
+#' if (requireNamespace("grDevices")) {
+#'   plot(r, reset = FALSE)
+#'   plot(ip1, col = NA, border = "black", add = TRUE)
+#'   plot(ip2, col = NA, border = "blue", add = TRUE)
+#'   grDevices::dev.off()
+#' }
 #'
 #' @export
 isoline_from_raster <- function(grid, alpha) {
-  stopifnot(inherits(grid, c("Raster", "stars")))
+  stopifnot(inherits(grid, c("Raster", "SpatRaster", "stars")))
 
-  if (inherits(grid, "Raster")) {
-    # Dissolving a raster to polygons requires "rgeos"
-    stopifnot(requireNamespace("rgeos"))
-
-    tmp <- raster::calc(grid, fun = function(x) ifelse(x >= alpha, 1L, NA))
-    raster::rasterToPolygons(tmp, dissolve = TRUE)
-
-  } else if (inherits(grid, "stars")) {
-    stopifnot(length(dim(grid)) == 2)
-
-    tmp <- stars::st_apply(
-      grid,
-      MARGIN = 1:2,
-      FUN = function(x) ifelse(x >= alpha, 1L, NA)
-    )
-    sf::st_make_valid(sf::st_as_sf(tmp, as_points = FALSE, merge = TRUE))
+  if (inherits(grid, c("Raster", "SpatRaster"))) {
+    grid <- stars::st_as_stars(grid)
   }
+
+  stopifnot(length(dim(grid)) >= 2)
+
+  tmp <- stars::st_apply(
+    grid,
+    MARGIN = 1:2,
+    FUN = function(x) ifelse(x >= alpha, 1L, NA)
+  )
+  sf::st_make_valid(sf::st_as_sf(tmp, as_points = FALSE, merge = TRUE))
 }
