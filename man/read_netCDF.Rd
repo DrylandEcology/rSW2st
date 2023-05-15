@@ -23,7 +23,9 @@ read_netCDF_as_array(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   xy_names = c("lon", "lat"),
+  time_name = "time",
   time_ids = -1,
+  vertical_name = "vertical",
   vertical_ids = -1,
   collapse_degen = TRUE,
   load_values = TRUE,
@@ -76,8 +78,14 @@ inheriting from \var{sf} or \var{Spatial*}.}
 \item{xy_names}{A vector with two character strings. The names of the
 \var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
 
+\item{time_name}{A character string. The dimension name corresponding
+to the time axis.}
+
 \item{time_ids}{An integer vector. The index to read a subset of
 time steps; a value of \code{-1} means to read all.}
+
+\item{vertical_name}{A character string. The dimension name corresponding
+to the vertical axis.}
 
 \item{vertical_ids}{An integer vector. The index to read a subset of
 vertical steps; a value of \code{-1} means to read all.}
