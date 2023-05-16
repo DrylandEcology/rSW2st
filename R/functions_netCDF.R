@@ -376,7 +376,10 @@ create_netCDF <- function(
   verbose = FALSE
 ) {
   #------ 1) Checks/preparations -----------------------------------------------
-  stopifnot(requireNamespace("ncdf4"))
+  stopifnot(
+    requireNamespace("ncdf4"),
+    requireNamespace("RNetCDF")
+  )
 
   has_compression <- isTRUE(nc_compression)
   stopifnot(nc_deflate %in% c(NA, 1:9))
@@ -1332,14 +1335,39 @@ create_netCDF <- function(
   }
 
   #--- add coordinate system attributes
+  # switch to RNetCDF: remove once completely switched (#8)
+  ncdf4::nc_close(nc)
+  ncr <- RNetCDF::open.nc(filename, write = TRUE)
+  on.exit(RNetCDF::close.nc(ncr))
+
   for (natt in ns_att_crs) {
-    ncdf4::ncatt_put(
-      nc,
-      varid = "crs",
-      attname = natt,
-      attval = crs_attributes[[natt]]
-    )
+    if (FALSE) {
+      # `ndf4::ncat_put()` fails if `attval` is longer than 1:
+      # > Error in is.numeric(attval) && (floor(attval) == attval) :
+      # > 'length = 2' in coercion to 'logical(1)'
+      ncdf4::ncatt_put(
+        nc,
+        varid = "crs",
+        attname = natt,
+        attval = crs_attributes[[natt]]
+      )
+
+    } else {
+      RNetCDF::att.put.nc(
+        ncr,
+        variable = "crs",
+        name = natt,
+        type = get_nc_type(crs_attributes[[natt]]),
+        value = crs_attributes[[natt]]
+      )
+    }
   }
+
+  # switch back to ncdf4: remove once completely switched to RNetCDF (#8)
+  RNetCDF::close.nc(ncr)
+  nc <- ncdf4::nc_open(filename = filename, write = TRUE)
+  on.exit(ncdf4::nc_close(nc))
+
 
   ncdf4::ncatt_put(
     nc,
