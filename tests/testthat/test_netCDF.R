@@ -494,7 +494,13 @@ test_that("read_netCDF", {
         next
       }
 
-      res <- read_netCDF(fnc, km, var = "sine", xy_names = c("x", "y"))
+      res <- read_netCDF(
+        x = fnc,
+        method = km,
+        var = "sine",
+        xy_names = c("x", "y"),
+        verbose_read = FALSE
+      )
 
       if (km == "array") {
         expect_type(res, "list")

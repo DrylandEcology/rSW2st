@@ -14,6 +14,7 @@ read_netCDF(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   locations = NULL,
+  verbose_read = TRUE,
   ...
 )
 
@@ -37,6 +38,7 @@ read_netCDF_as_raster(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 )
 
@@ -45,6 +47,7 @@ read_netCDF_as_stars(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 )
 }
@@ -72,6 +75,9 @@ Function \code{\link{create_netCDF}} hard codes \var{"crs_wkt"}.}
 can be extracted that describe the \var{xy} locations of each \code{data}
 row, e.g., a matrix or \var{data.frame} or a spatial points object
 inheriting from \var{sf} or \var{Spatial*}.}
+
+\item{verbose_read}{A logical value. If \code{FALSE}, then an attempt is made
+to silence communication generated from reading the \var{netCDF}.}
 
 \item{...}{Additional arguments passed on to the specific functions.}
 
@@ -177,17 +183,37 @@ if (requireNamespace("graphics")) {
 
 ## Read netCDF as raster object
 # This will generate several warnings and messages
-raster_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "raster", band = 15)
+raster_xyt <- read_netCDF(
+  tmp_nc[["xyt"]],
+  method = "raster",
+  band = 15,
+  verbose_read = FALSE
+)
 raster::plot(raster_xyt)
 
-raster_szt <- read_netCDF(tmp_nc[["szt"]], method = "raster", band = 15)
+raster_szt <- read_netCDF(
+  tmp_nc[["szt"]],
+  method = "raster",
+  band = 15,
+  verbose_read = FALSE
+)
 raster::plot(raster_szt)
 
 ## Read netCDF as stars object
-stars_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "stars", var = "sine")
+stars_xyt <- read_netCDF(
+  tmp_nc[["xyt"]],
+  method = "stars",
+  var = "sine",
+  verbose_read = FALSE
+)
 plot(stars_xyt)
 
-stars_szt <- read_netCDF(tmp_nc[["szt"]], method = "stars", var = "sine")
+stars_szt <- read_netCDF(
+  tmp_nc[["szt"]],
+  method = "stars",
+  var = "sine",
+  verbose_read = FALSE
+)
 plot(stars_szt)
 
 ## Read gridded netCDF as array and extract subset

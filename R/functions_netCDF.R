@@ -1606,6 +1606,8 @@ populate_netCDF_dev <- function(
 #'   that holds the \var{WKT2} string of the \var{crs} variable
 #'   in the \var{netCDF}.
 #'   Function \code{\link{create_netCDF}} hard codes \var{"crs_wkt"}.
+#' @param verbose_read A logical value. If \code{FALSE}, then an attempt is made
+#'   to silence communication generated from reading the \var{netCDF}.
 #' @param ... Additional arguments passed on to the specific functions.
 #'
 #' @return
@@ -1671,17 +1673,37 @@ populate_netCDF_dev <- function(
 #'
 #' ## Read netCDF as raster object
 #' # This will generate several warnings and messages
-#' raster_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "raster", band = 15)
+#' raster_xyt <- read_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   method = "raster",
+#'   band = 15,
+#'   verbose_read = FALSE
+#' )
 #' raster::plot(raster_xyt)
 #'
-#' raster_szt <- read_netCDF(tmp_nc[["szt"]], method = "raster", band = 15)
+#' raster_szt <- read_netCDF(
+#'   tmp_nc[["szt"]],
+#'   method = "raster",
+#'   band = 15,
+#'   verbose_read = FALSE
+#' )
 #' raster::plot(raster_szt)
 #'
 #' ## Read netCDF as stars object
-#' stars_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "stars", var = "sine")
+#' stars_xyt <- read_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   method = "stars",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
 #' plot(stars_xyt)
 #'
-#' stars_szt <- read_netCDF(tmp_nc[["szt"]], method = "stars", var = "sine")
+#' stars_szt <- read_netCDF(
+#'   tmp_nc[["szt"]],
+#'   method = "stars",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
 #' plot(stars_szt)
 #'
 #' ## Read gridded netCDF as array and extract subset
@@ -1717,6 +1739,7 @@ read_netCDF <- function(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   locations = NULL,
+  verbose_read = TRUE,
   ...
 ) {
   method <- match.arg(method)
@@ -1741,7 +1764,8 @@ read_netCDF <- function(
       x = x,
       var = var,
       nc_name_crs = nc_name_crs,
-      nc_name_crs_wkt = nc_name_crs_wkt
+      nc_name_crs_wkt = nc_name_crs_wkt,
+      verbose_read = verbose_read
     ),
     dots
   )
@@ -2162,14 +2186,32 @@ read_netCDF_as_raster <- function(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 ) {
 
-  r <- if (is.null(var)) {
-    raster::raster(x, ...)
+  e <- expression(
+    if (is.null(var)) {
+      raster::raster(x, ...)
+    } else {
+      raster::raster(x, varname = var, ...)
+    }
+  )
+
+  r <- if (verbose_read) {
+    eval(e)
   } else {
-    raster::raster(x, varname = var, ...)
+    # silence `print()`, see issue #9
+    utils::capture.output(
+      res <- suppressMessages(
+        suppressWarnings(
+          eval(e)
+        )
+      )
+    )
+    res
   }
+
 
   # Check whether projection was read correctly
   r_crs <- raster::crs(r)
@@ -2215,13 +2257,26 @@ read_netCDF_as_stars <- function(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 ) {
 
   # `stars::read_ncdf()` uses "ncmeta" but it is a suggested package
   stopifnot(requireNamespace("ncmeta", quietly = TRUE))
 
-  r <- stars::read_ncdf(x, var = var, ...)
+  e <- expression(
+    stars::read_ncdf(x, var = var, ...)
+  )
+
+  r <- if (verbose_read) {
+    eval(e)
+  } else {
+    suppressMessages(
+      suppressWarnings(
+        eval(e)
+      )
+    )
+  }
 
 
   # Check whether projection was read correctly
