@@ -2556,6 +2556,37 @@ get_data_dims <- function(
 }
 
 
+#' Guess `netCDF` data type of an object
+#'
+#' @param x An object
+#'
+#' @return A text string of supported `netCDF` data types. Supported
+#' types are:
+#' `"NC_INT"`, `"NC_DOUBLE"`, `"NC_STRING"`
+#'
+#' @seealso [RNetCDF::var.def.nc()]
+#'
+#' @examples
+#' get_nc_type("test") ## "NC_STRING"
+#' get_nc_type(c(1L, 5L)) ## "NC_INT"
+#' get_nc_type(1) ## "NC_DOUBLE"
+#' \dontrun{get_nc_type(TRUE)} ## error
+#'
+#' @md
+#' @export
+get_nc_type <- function(x) {
+  switch(
+    EXPR = storage.mode(x),
+    integer = "NC_INT",
+    double = "NC_DOUBLE",
+    character = "NC_STRING",
+    stop(
+      shQuote(storage.mode(x)), " is not implemented."
+    )
+  )
+}
+
+
 
 #' Extract \var{xy-space} values
 #'
