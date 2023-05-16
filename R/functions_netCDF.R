@@ -2188,14 +2188,14 @@ read_netCDF_as_raster <- function(
     # TODO: update to use WKT2
     # once `raster` internal workflow is updated to use WKT2 instead of PROJ.4
     nc_crs <- raster::crs(nc_crs$Wkt) # nolint: extraction_operator_linter.
+    tmp_crs <- sf::st_crs(nc_crs)
     if (
-      inherits(nc_crs, "CRS") &&
-      !is.na(nc_crs) &&
-      isTRUE(try(inherits(sf::st_crs(nc_crs)), "crs"))
+      !is.na(tmp_crs) &&
+      isTRUE(try(inherits(tmp_crs, "crs"), silent = TRUE))
     ) {
       raster::crs(r) <- nc_crs
     } else {
-      warning("Could not locate a valid crs.")
+      warning("Could not locate a valid crs: ", nc_crs)
     }
   }
 
