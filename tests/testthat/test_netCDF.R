@@ -73,6 +73,16 @@ test_that("get_data_dims", {
 })
 
 
+#------ Tests for `get_nc_type()` ------
+test_that("get_nc_type", {
+  expect_identical(get_nc_type("t"), "NC_STRING")
+  expect_identical(get_nc_type("test"), "NC_STRING")
+  expect_identical(get_nc_type(c(1L, 5L)), "NC_INT")
+  expect_identical(get_nc_type(1), "NC_DOUBLE")
+  expect_error(get_nc_type(1 + 2i))
+  expect_error(get_nc_type(TRUE))
+})
+
 
 #------ Tests for `get_xyspace()` ------
 test_that("get_xyspace", {
@@ -484,7 +494,13 @@ test_that("read_netCDF", {
         next
       }
 
-      res <- read_netCDF(fnc, km, var = "sine", xy_names = c("x", "y"))
+      res <- read_netCDF(
+        x = fnc,
+        method = km,
+        var = "sine",
+        xy_names = c("x", "y"),
+        verbose_read = FALSE
+      )
 
       if (km == "array") {
         expect_type(res, "list")

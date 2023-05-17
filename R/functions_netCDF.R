@@ -376,7 +376,10 @@ create_netCDF <- function(
   verbose = FALSE
 ) {
   #------ 1) Checks/preparations -----------------------------------------------
-  stopifnot(requireNamespace("ncdf4"))
+  stopifnot(
+    requireNamespace("ncdf4"),
+    requireNamespace("RNetCDF")
+  )
 
   has_compression <- isTRUE(nc_compression)
   stopifnot(nc_deflate %in% c(NA, 1:9))
@@ -1332,14 +1335,39 @@ create_netCDF <- function(
   }
 
   #--- add coordinate system attributes
+  # switch to RNetCDF: remove once completely switched (#8)
+  ncdf4::nc_close(nc)
+  ncr <- RNetCDF::open.nc(filename, write = TRUE)
+  on.exit(RNetCDF::close.nc(ncr))
+
   for (natt in ns_att_crs) {
-    ncdf4::ncatt_put(
-      nc,
-      varid = "crs",
-      attname = natt,
-      attval = crs_attributes[[natt]]
-    )
+    if (FALSE) {
+      # `ndf4::ncat_put()` fails if `attval` is longer than 1:
+      # > Error in is.numeric(attval) && (floor(attval) == attval) :
+      # > 'length = 2' in coercion to 'logical(1)'
+      ncdf4::ncatt_put(
+        nc,
+        varid = "crs",
+        attname = natt,
+        attval = crs_attributes[[natt]]
+      )
+
+    } else {
+      RNetCDF::att.put.nc(
+        ncr,
+        variable = "crs",
+        name = natt,
+        type = get_nc_type(crs_attributes[[natt]]),
+        value = crs_attributes[[natt]]
+      )
+    }
   }
+
+  # switch back to ncdf4: remove once completely switched to RNetCDF (#8)
+  RNetCDF::close.nc(ncr)
+  nc <- ncdf4::nc_open(filename = filename, write = TRUE)
+  on.exit(ncdf4::nc_close(nc))
+
 
   ncdf4::ncatt_put(
     nc,
@@ -1578,6 +1606,8 @@ populate_netCDF_dev <- function(
 #'   that holds the \var{WKT2} string of the \var{crs} variable
 #'   in the \var{netCDF}.
 #'   Function \code{\link{create_netCDF}} hard codes \var{"crs_wkt"}.
+#' @param verbose_read A logical value. If \code{FALSE}, then an attempt is made
+#'   to silence communication generated from reading the \var{netCDF}.
 #' @param ... Additional arguments passed on to the specific functions.
 #'
 #' @return
@@ -1643,17 +1673,37 @@ populate_netCDF_dev <- function(
 #'
 #' ## Read netCDF as raster object
 #' # This will generate several warnings and messages
-#' raster_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "raster", band = 15)
+#' raster_xyt <- read_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   method = "raster",
+#'   band = 15,
+#'   verbose_read = FALSE
+#' )
 #' raster::plot(raster_xyt)
 #'
-#' raster_szt <- read_netCDF(tmp_nc[["szt"]], method = "raster", band = 15)
+#' raster_szt <- read_netCDF(
+#'   tmp_nc[["szt"]],
+#'   method = "raster",
+#'   band = 15,
+#'   verbose_read = FALSE
+#' )
 #' raster::plot(raster_szt)
 #'
 #' ## Read netCDF as stars object
-#' stars_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "stars", var = "sine")
+#' stars_xyt <- read_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   method = "stars",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
 #' plot(stars_xyt)
 #'
-#' stars_szt <- read_netCDF(tmp_nc[["szt"]], method = "stars", var = "sine")
+#' stars_szt <- read_netCDF(
+#'   tmp_nc[["szt"]],
+#'   method = "stars",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
 #' plot(stars_szt)
 #'
 #' ## Read gridded netCDF as array and extract subset
@@ -1689,6 +1739,7 @@ read_netCDF <- function(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   locations = NULL,
+  verbose_read = TRUE,
   ...
 ) {
   method <- match.arg(method)
@@ -1713,7 +1764,8 @@ read_netCDF <- function(
       x = x,
       var = var,
       nc_name_crs = nc_name_crs,
-      nc_name_crs_wkt = nc_name_crs_wkt
+      nc_name_crs_wkt = nc_name_crs_wkt,
+      verbose_read = verbose_read
     ),
     dots
   )
@@ -1733,7 +1785,12 @@ read_netCDF <- function(
       locations_crs = if ("locations_crs" %in% names(dots)) {
         dots[["locations_crs"]]
       } else {
-        sf::st_crs(locations)
+        tmp_crs <- try(sf::st_crs(locations), silent = TRUE)
+        if (inherits(tmp_crs, "crs")) {
+          tmp_crs
+        } else {
+          res[["crs"]]
+        }
       },
       data_str = res[["data_str"]],
       direction = "collapse"
@@ -2134,14 +2191,32 @@ read_netCDF_as_raster <- function(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 ) {
 
-  r <- if (is.null(var)) {
-    raster::raster(x, ...)
+  e <- expression(
+    if (is.null(var)) {
+      raster::raster(x, ...)
+    } else {
+      raster::raster(x, varname = var, ...)
+    }
+  )
+
+  r <- if (verbose_read) {
+    eval(e)
   } else {
-    raster::raster(x, varname = var, ...)
+    # silence `print()`, see issue #9
+    utils::capture.output(
+      res <- suppressMessages(
+        suppressWarnings(
+          eval(e)
+        )
+      )
+    )
+    res
   }
+
 
   # Check whether projection was read correctly
   r_crs <- raster::crs(r)
@@ -2160,14 +2235,14 @@ read_netCDF_as_raster <- function(
     # TODO: update to use WKT2
     # once `raster` internal workflow is updated to use WKT2 instead of PROJ.4
     nc_crs <- raster::crs(nc_crs$Wkt) # nolint: extraction_operator_linter.
+    tmp_crs <- sf::st_crs(nc_crs)
     if (
-      inherits(nc_crs, "CRS") &&
-      !is.na(nc_crs) &&
-      isTRUE(try(inherits(sf::st_crs(nc_crs)), "crs"))
+      !is.na(tmp_crs) &&
+      isTRUE(try(inherits(tmp_crs, "crs"), silent = TRUE))
     ) {
       raster::crs(r) <- nc_crs
     } else {
-      warning("Could not locate a valid crs.")
+      warning("Could not locate a valid crs: ", nc_crs)
     }
   }
 
@@ -2187,13 +2262,26 @@ read_netCDF_as_stars <- function(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 ) {
 
   # `stars::read_ncdf()` uses "ncmeta" but it is a suggested package
   stopifnot(requireNamespace("ncmeta", quietly = TRUE))
 
-  r <- stars::read_ncdf(x, var = var, ...)
+  e <- expression(
+    stars::read_ncdf(x, var = var, ...)
+  )
+
+  r <- if (verbose_read) {
+    eval(e)
+  } else {
+    suppressMessages(
+      suppressWarnings(
+        eval(e)
+      )
+    )
+  }
 
 
   # Check whether projection was read correctly
@@ -2556,6 +2644,37 @@ get_data_dims <- function(
 }
 
 
+#' Guess `netCDF` data type of an object
+#'
+#' @param x An object
+#'
+#' @return A text string of supported `netCDF` data types. Supported
+#' types are:
+#' `"NC_INT"`, `"NC_DOUBLE"`, `"NC_STRING"`
+#'
+#' @seealso [RNetCDF::var.def.nc()]
+#'
+#' @examples
+#' get_nc_type("test") ## "NC_STRING"
+#' get_nc_type(c(1L, 5L)) ## "NC_INT"
+#' get_nc_type(1) ## "NC_DOUBLE"
+#' \dontrun{get_nc_type(TRUE)} ## error
+#'
+#' @md
+#' @export
+get_nc_type <- function(x) {
+  switch(
+    EXPR = storage.mode(x),
+    integer = "NC_INT",
+    double = "NC_DOUBLE",
+    character = "NC_STRING",
+    stop(
+      shQuote(storage.mode(x)), " is not implemented."
+    )
+  )
+}
+
+
 
 #' Extract \var{xy-space} values
 #'
@@ -2712,21 +2831,30 @@ get_xyspace <- function(
     )
 
   } else {
-    tmp <- try(
-      as_points(x, to_class = "sf", crs = crs),
-      silent = TRUE
-    )
 
-    if (!inherits(tmp, "try-error")) {
+    is_not_points <-
+      identical(names(x), c("x", "y", "res")) ||
+      all(length(x) >= 2L, length(x[[1L]]) != length(x[[2L]]))
+
+    if (!is_not_points) {
+      tmp <- try(
+        as_points(x, to_class = "sf", crs = crs),
+        silent = TRUE
+      )
+
+      is_not_points <- inherits(tmp, "try-error")
+    }
+
+    xyspace <- if (!is_not_points) {
       tmp <- sf::st_coordinates(tmp)[, 1:2, drop = FALSE]
-      xyspace <- list(
+      list(
         x = sort(unique(tmp[, 1])),
         y = sort(unique(tmp[, 2])),
         res = res[1:2]
       )
 
     } else {
-      xyspace <- list(
+      list(
         x = sort(unique(x[[1L]])),
         y = sort(unique(x[[2L]])),
         res = if ("res" %in% names(x)) x[["res"]][1:2] else res[1:2]
@@ -2735,7 +2863,10 @@ get_xyspace <- function(
   }
 
   tmp_res <- unname(xyspace[["res"]])
-  c(xyspace[c("x", "y")], res = list(c(x = tmp_res[[1L]], y = tmp_res[[2L]])))
+  c(
+    xyspace[c("x", "y")],
+    res = list(c(x = tmp_res[[1L]], y = tmp_res[[2L]]))
+  )
 }
 
 
@@ -2810,6 +2941,12 @@ convert_xyspace <- function(
   }
 
   data_dims <- dim(data)
+
+
+  #--- check crs
+  stopifnot(
+    inherits(try(sf::st_crs(locations_crs), silent = TRUE), "crs")
+  )
 
 
   #--- xy-coordinates of grid

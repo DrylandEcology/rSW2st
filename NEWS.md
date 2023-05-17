@@ -12,6 +12,10 @@
 * `read_netCDF_as_array()` gains arguments `"time_name"` and `"vertical_name"`
   with previous hard-coded values as defaults ("time" and "vertical")
   (#14; @dschlaep)
+* New `get_nc_type()` identifies a suitable netCDF data type from an R object.
+* `read_netCDF()` gains argument `"verbose_read"` which, if set to `"FALSE"`,
+  attempts to silence communication (messages, warnings, and print statements)
+  generated from reading a `netCDF` (#9; @dschlaep).
 
 
 # rSW2st v0.1.0
