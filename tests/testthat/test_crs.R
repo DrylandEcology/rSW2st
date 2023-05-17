@@ -31,7 +31,6 @@ test_that("crs", {
   for (k in seq_len(nrow(test_crs))) {
     epsg <- test_crs[k, "epsg"]
     txt_epsg <- paste0("EPSG:", epsg)
-    proj4_epsg <- paste0("+init=", txt_epsg)
 
     expected_class <- "crs"
     expected_unit <- test_crs[k, "units"]
@@ -67,8 +66,20 @@ test_that("crs", {
     expect_identical(crs_units(epsg), expected_unit)
     expect_identical(crs_units(txt_epsg), expected_unit)
 
-    tmp_spCRS <- sp::CRS(SRS_string = txt_epsg)
-    expect_identical(crs_units(tmp_spCRS), expected_unit)
+    expect_identical(
+      # nolint start: commented_code_linter.
+      # See #22: `crs_units(sp::CRS(SRS_string = txt_epsg))` returns NA
+      # during package checks with `devtools::check()`
+      # while returning a correct unit text string with `devtools::test()`
+      # nolint end: commented_code_linter.
+      crs_units(as(sf::st_crs(txt_epsg), "CRS")),
+      expected_unit
+    )
+
+    expect_identical(
+      crs_units(sf::st_crs(txt_epsg)),
+      expected_unit
+    )
 
     expect_identical(
       crs_units(as_points(locs, "sp", crs = epsg)),
@@ -79,7 +90,7 @@ test_that("crs", {
       expected_unit
     )
     expect_identical(
-      crs_units(sf::st_as_sf(as_points(locs, "sf", crs = epsg))),
+      crs_units(as_points(locs, "sf", crs = epsg)),
       expected_unit
     )
 
