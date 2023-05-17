@@ -1785,7 +1785,12 @@ read_netCDF <- function(
       locations_crs = if ("locations_crs" %in% names(dots)) {
         dots[["locations_crs"]]
       } else {
-        sf::st_crs(locations)
+        tmp_crs <- try(sf::st_crs(locations), silent = TRUE)
+        if (inherits(tmp_crs, "crs")) {
+          tmp_crs
+        } else {
+          res[["crs"]]
+        }
       },
       data_str = res[["data_str"]],
       direction = "collapse"
@@ -2826,21 +2831,30 @@ get_xyspace <- function(
     )
 
   } else {
-    tmp <- try(
-      as_points(x, to_class = "sf", crs = crs),
-      silent = TRUE
-    )
 
-    if (!inherits(tmp, "try-error")) {
+    is_not_points <-
+      identical(names(x), c("x", "y", "res")) ||
+      all(length(x) >= 2L, length(x[[1L]]) != length(x[[2L]]))
+
+    if (!is_not_points) {
+      tmp <- try(
+        as_points(x, to_class = "sf", crs = crs),
+        silent = TRUE
+      )
+
+      is_not_points <- inherits(tmp, "try-error")
+    }
+
+    xyspace <- if (!is_not_points) {
       tmp <- sf::st_coordinates(tmp)[, 1:2, drop = FALSE]
-      xyspace <- list(
+      list(
         x = sort(unique(tmp[, 1])),
         y = sort(unique(tmp[, 2])),
         res = res[1:2]
       )
 
     } else {
-      xyspace <- list(
+      list(
         x = sort(unique(x[[1L]])),
         y = sort(unique(x[[2L]])),
         res = if ("res" %in% names(x)) x[["res"]][1:2] else res[1:2]
@@ -2849,7 +2863,10 @@ get_xyspace <- function(
   }
 
   tmp_res <- unname(xyspace[["res"]])
-  c(xyspace[c("x", "y")], res = list(c(x = tmp_res[[1L]], y = tmp_res[[2L]])))
+  c(
+    xyspace[c("x", "y")],
+    res = list(c(x = tmp_res[[1L]], y = tmp_res[[2L]]))
+  )
 }
 
 
@@ -2924,6 +2941,12 @@ convert_xyspace <- function(
   }
 
   data_dims <- dim(data)
+
+
+  #--- check crs
+  stopifnot(
+    inherits(try(sf::st_crs(locations_crs), silent = TRUE), "crs")
+  )
 
 
   #--- xy-coordinates of grid
