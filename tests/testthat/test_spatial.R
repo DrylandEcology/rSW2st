@@ -1,7 +1,4 @@
 test_that("variogram_range", {
-  prev <- rgdal::get_rgdal_show_exportToProj4_warnings()
-  rgdal::set_rgdal_show_exportToProj4_warnings(FALSE)
-
   r <- suppressWarnings(raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,
@@ -21,7 +18,7 @@ test_that("variogram_range", {
     grid = r
   )
 
-  expect_equal(
+  expect_identical(
     variogram_range(x = rv1),
     variogram_range(x = xy)
   )
@@ -31,6 +28,4 @@ test_that("variogram_range", {
     variogram_range(x = xy, sub_samplepoints_N = 5, seed = 2017),
     tolerance = 1e-6
   )
-
-  rgdal::set_rgdal_show_exportToProj4_warnings(prev)
 })

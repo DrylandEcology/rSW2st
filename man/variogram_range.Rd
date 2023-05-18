@@ -8,13 +8,16 @@ variogram_range(
   x,
   project_to_utm = TRUE,
   sub_samplepoints_N = NULL,
-  crs,
+  crs = NULL,
   seed = NULL
 )
 }
 \arguments{
-\item{x}{A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
-or an object that can be passed to \code{\link{as_points}}.}
+\item{x}{A two-dimensional
+\code{\link[raster:RasterLayer-class]{raster::RasterLayer}},
+\code{\link[terra:SpatRaster-class]{terra::SpatRaster}},
+\code{stars} object, or
+an object that can be passed to \code{\link{as_points}}.}
 
 \item{project_to_utm}{A logical value. If \code{TRUE}, then \code{x}
 will be projected to a suitable \var{UTM}; otherwise, \code{x} will

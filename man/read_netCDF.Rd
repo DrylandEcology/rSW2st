@@ -14,6 +14,7 @@ read_netCDF(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   locations = NULL,
+  verbose_read = TRUE,
   ...
 )
 
@@ -23,7 +24,9 @@ read_netCDF_as_array(
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
   xy_names = c("lon", "lat"),
+  time_name = "time",
   time_ids = -1,
+  vertical_name = "vertical",
   vertical_ids = -1,
   collapse_degen = TRUE,
   load_values = TRUE,
@@ -35,6 +38,7 @@ read_netCDF_as_raster(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 )
 
@@ -43,6 +47,7 @@ read_netCDF_as_stars(
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
   ...
 )
 }
@@ -71,13 +76,22 @@ can be extracted that describe the \var{xy} locations of each \code{data}
 row, e.g., a matrix or \var{data.frame} or a spatial points object
 inheriting from \var{sf} or \var{Spatial*}.}
 
+\item{verbose_read}{A logical value. If \code{FALSE}, then an attempt is made
+to silence communication generated from reading the \var{netCDF}.}
+
 \item{...}{Additional arguments passed on to the specific functions.}
 
 \item{xy_names}{A vector with two character strings. The names of the
 \var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
 
+\item{time_name}{A character string. The dimension name corresponding
+to the time axis.}
+
 \item{time_ids}{An integer vector. The index to read a subset of
 time steps; a value of \code{-1} means to read all.}
+
+\item{vertical_name}{A character string. The dimension name corresponding
+to the vertical axis.}
 
 \item{vertical_ids}{An integer vector. The index to read a subset of
 vertical steps; a value of \code{-1} means to read all.}
@@ -169,17 +183,37 @@ if (requireNamespace("graphics")) {
 
 ## Read netCDF as raster object
 # This will generate several warnings and messages
-raster_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "raster", band = 15)
+raster_xyt <- read_netCDF(
+  tmp_nc[["xyt"]],
+  method = "raster",
+  band = 15,
+  verbose_read = FALSE
+)
 raster::plot(raster_xyt)
 
-raster_szt <- read_netCDF(tmp_nc[["szt"]], method = "raster", band = 15)
+raster_szt <- read_netCDF(
+  tmp_nc[["szt"]],
+  method = "raster",
+  band = 15,
+  verbose_read = FALSE
+)
 raster::plot(raster_szt)
 
 ## Read netCDF as stars object
-stars_xyt <- read_netCDF(tmp_nc[["xyt"]], method = "stars", var = "sine")
+stars_xyt <- read_netCDF(
+  tmp_nc[["xyt"]],
+  method = "stars",
+  var = "sine",
+  verbose_read = FALSE
+)
 plot(stars_xyt)
 
-stars_szt <- read_netCDF(tmp_nc[["szt"]], method = "stars", var = "sine")
+stars_szt <- read_netCDF(
+  tmp_nc[["szt"]],
+  method = "stars",
+  var = "sine",
+  verbose_read = FALSE
+)
 plot(stars_szt)
 
 ## Read gridded netCDF as array and extract subset

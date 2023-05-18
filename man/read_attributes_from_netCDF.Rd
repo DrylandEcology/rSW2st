@@ -6,9 +6,11 @@
 \usage{
 read_attributes_from_netCDF(
   x,
-  group = c("var", "xy", "crs", "time", "vertical", "global", "all"),
+  group = c("var", "xy", "crs", time_name, vertical_name, "global", "all"),
   var = NULL,
   xy_names = c("lon", "lat"),
+  time_name = "time",
+  vertical_name = "vertical",
   nc_name_crs = "crs"
 )
 }
@@ -24,6 +26,12 @@ which to extract attributes, used if the "var" \code{group} is requested.}
 
 \item{xy_names}{A vector with two character strings. The names of the
 \var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
+
+\item{time_name}{A character string. The dimension name corresponding
+to the time axis.}
+
+\item{vertical_name}{A character string. The dimension name corresponding
+to the vertical axis.}
 
 \item{nc_name_crs}{A character string. The name of the \var{crs} variable
 in the \var{netCDF}.

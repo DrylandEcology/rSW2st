@@ -1,8 +1,11 @@
 
 #' Automatic calculation of a variogram range
 #'
-#' @param x A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
-#'   or an object that can be passed to \code{\link{as_points}}.
+#' @param x A two-dimensional
+#'   \code{\link[raster:RasterLayer-class]{raster::RasterLayer}},
+#'   \code{\link[terra:SpatRaster-class]{terra::SpatRaster}},
+#'   \code{stars} object, or
+#'   an object that can be passed to \code{\link{as_points}}.
 #' @param project_to_utm A logical value. If \code{TRUE}, then \code{x}
 #'   will be projected to a suitable \var{UTM}; otherwise, \code{x} will
 #'   be projected to \var{WGS84}.
@@ -26,7 +29,7 @@ variogram_range <- function(
   x,
   project_to_utm = TRUE,
   sub_samplepoints_N = NULL,
-  crs,
+  crs = NULL,
   seed = NULL
 ) {
 
@@ -35,17 +38,21 @@ variogram_range <- function(
     requireNamespace("gstat")
   )
 
-  if (inherits(x, "RasterLayer")) {
-    points <- raster::rasterToPoints(x, spatial = TRUE)
-    names(points) <- "target"
+  if (inherits(x, c("RasterLayer", "SpatRaster"))) {
+    x <- stars::st_as_stars(x)
+  }
+
+  points <- if (inherits(x, "stars")) {
+    sf::st_as_sf(x, as_points = TRUE, merge = FALSE)
 
   } else {
-    tmp <- as_points(x, crs = crs, to_class = "sp")
-    points <- sp::SpatialPointsDataFrame(
-      coords = tmp,
-      data = data.frame(target = rep(1, length(tmp)))
-    )
+    as_points(x, crs = crs, to_class = "sf")
   }
+
+  # question:
+  # should all points have equal or unique value, e.g., seq_len(nrow(points))
+  points[, "target"] <- 1
+
 
   if (!is.null(sub_samplepoints_N)) {
     set.seed(seed)
@@ -57,20 +64,16 @@ variogram_range <- function(
     points <- points[tmp, ]
   }
 
-  if (project_to_utm) {
-    # --> variogram will calculate Euclidean distances in map units
-    points_prj <- sp::spTransform(
-      points,
-      CRSobj = as(sf::st_crs(rSW2st::epsg_for_utm(points)), "CRS")
-    )
-
-  } else {
-    # --> variogram will calculate great circle distances(!)
-    points_prj <- sp::spTransform(
-      points,
-      CRSobj = as(sf::st_crs("OGC:CRS84"), "CRS")
-    )
-  }
+  points_prj <- sf::st_transform(
+    points,
+    crs = if (project_to_utm) {
+      # --> variogram will calculate Euclidean distances in map units
+      rSW2st::epsg_for_utm(points)
+    } else {
+      # --> variogram will calculate great circle distances(!)
+      "OGC:CRS84"
+    }
+  )
 
 
   #--- determine variogram; see gstat::variogram
@@ -84,7 +87,7 @@ variogram_range <- function(
   # estimate is only valid if some variation in data (i.e., sill > 0)
   psill_sum <- sum(fittedVar[["var_model"]][, "psill"])
 
-  if (abs(psill_sum) > sqrt(.Machine$double.eps)) {
+  if (abs(psill_sum) > sqrt(.Machine[["double.eps"]])) {
     fittedVar[["var_model"]][2, "range"]
   } else {
     NaN

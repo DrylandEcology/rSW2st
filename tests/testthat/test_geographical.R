@@ -9,23 +9,23 @@ test_that("gridcell areas", {
   )
 
   n <- prod(dim(r1))
-  r1[] <- seq_len(n)
+  r1[] <- seq_len(n) # nolint: extraction_operator_linter.
   xy <- raster::sampleRegular(r1, size = n, sp = TRUE)
 
   ## Calculate area for a subset of cells in grid
   cell_areas1a <- calculate_cell_area(xy, grid = r1)
 
-  expect_equal(
+  expect_identical(
     calculate_cell_area(sf::st_as_sf(xy), grid = r1),
     cell_areas1a
   )
 
-  expect_equal(
+  expect_identical(
     calculate_cell_area(xy, grid = stars::st_as_stars(r1)),
     cell_areas1a
   )
 
-  expect_equal(
+  expect_identical(
     calculate_cell_area(sf::st_as_sf(xy), grid = stars::st_as_stars(r1)),
     cell_areas1a
   )
@@ -34,14 +34,17 @@ test_that("gridcell areas", {
   ## Calculate are for all cells in grid
   cell_areas1b <- calculate_cell_area(grid = r1)
 
-  expect_equal(
+  expect_identical(
     calculate_cell_area(grid = stars::st_as_stars(r1)),
     cell_areas1b
   )
 
 
-  expect_equal(as.matrix(unique(cell_areas1a)), as.matrix(unique(cell_areas1b)))
-  expect_equal(max(cell_areas1a[, "rel"]), 1)
+  expect_identical(
+    as.matrix(unique(cell_areas1a)),
+    as.matrix(unique(cell_areas1b))
+  )
+  expect_identical(max(cell_areas1a[, "rel"]), 1.)
 
 
   #--- USA Contiguous Albers Equal Area Conic USGS version
@@ -53,19 +56,19 @@ test_that("gridcell areas", {
   ))
 
   n <- prod(dim(r2))
-  r2[] <- seq_len(n)
+  r2[] <- seq_len(n) # nolint: extraction_operator_linter.
   xy <- raster::sampleRegular(r2, size = 200, sp = TRUE)
 
   ## Calculate area for a subset of cells in grid
   cell_areas2a <- calculate_cell_area(xy, grid = r2)
 
-  expect_equal(
+  expect_identical(
     calculate_cell_area(sf::st_as_sf(xy), grid = stars::st_as_stars(r2)),
     cell_areas2a
   )
 
-  expect_equal(cell_areas2a[, "km2"], rep(100, nrow(cell_areas2a)))
-  expect_equal(cell_areas2a[, "rel"], rep(1, nrow(cell_areas2a)))
+  expect_identical(cell_areas2a[, "km2"], rep(100, nrow(cell_areas2a)))
+  expect_identical(cell_areas2a[, "rel"], rep(1, nrow(cell_areas2a)))
 })
 
 
@@ -73,7 +76,8 @@ test_that("nominal resolution", {
   #--- Geographic CRS
   tests <- data.frame(
     res = c(1 / 24, 1 / 16, 1 / 2, 1, 2),
-    nr = c("5 km", "10 km", "50 km", "100 km", "250 km")
+    nr = c("5 km", "10 km", "50 km", "100 km", "250 km"),
+    stringsAsFactors = FALSE
   )
 
   for (k in seq_len(nrow(tests))) {
@@ -86,12 +90,12 @@ test_that("nominal resolution", {
     ext <- raster::cellsFromExtent(r1, raster::extent(-107, -102, 32, 38))
     r1[ext] <- 1
 
-    expect_equal(
+    expect_identical(
       calculate_nominal_resolution(r1),
       tests[k, "nr"]
     )
 
-    expect_equal(
+    expect_identical(
       calculate_nominal_resolution(stars::st_as_stars(r1)),
       tests[k, "nr"]
     )
@@ -101,7 +105,8 @@ test_that("nominal resolution", {
   #--- Projected CRS: CONUS Albers Equal Area (USGS)
   tests <- data.frame(
     res = c(1e3, 1e4, 2e4, 1e5, 5e5),
-    nr = c("1 km", "10 km", "25 km", "100 km", "500 km")
+    nr = c("1 km", "10 km", "25 km", "100 km", "500 km"),
+    stringsAsFactors = FALSE
   )
 
   for (k in seq_len(nrow(tests))) {
@@ -120,12 +125,12 @@ test_that("nominal resolution", {
     )
     r2[ext] <- 1
 
-    expect_equal(
+    expect_identical(
       calculate_nominal_resolution(r2),
       tests[k, "nr"]
     )
 
-    expect_equal(
+    expect_identical(
       calculate_nominal_resolution(stars::st_as_stars(r2)),
       tests[k, "nr"]
     )

@@ -1,14 +1,5 @@
 test_that("crs", {
 
-  # Attempt to handle GDAL3+/PROJ6+ warnings
-  has_thin_PROJ6_warnings <-
-    getNamespaceVersion("rgdal") >= as.numeric_version("1.5.8")
-
-  if (has_thin_PROJ6_warnings) {
-    prev_warnings <- rgdal::get_thin_PROJ6_warnings()
-    rgdal::set_thin_PROJ6_warnings(TRUE)
-  }
-
   #--- Input test cases
   test_crs <- data.frame(
     epsg = c(
@@ -17,7 +8,7 @@ test_that("crs", {
       # NAD27(USA) was 2163; however, it was deprecated by https://epsg.org
       # with change id "2020.020" and replaced by 9311.
       # Yet, 9311 is not yet available as of
-      # rgdal v1.5.16 / GDAL 3.1.1 / PROJ 6.3.1
+      # GDAL 3.1.1 / PROJ 6.3.1
       NAD27_USA = 2163,
       NAD83_USA = 4269,
       NAD83_2011_USA = 6318
@@ -28,7 +19,8 @@ test_that("crs", {
       NAD27_USA = "metre",
       NAD83_USA = "degree",
       NAD83_2011_USA = "degree"
-    )
+    ),
+    stringsAsFactors = FALSE
   )
 
   locs <- matrix(c(1, 1), ncol = 2)
@@ -39,7 +31,6 @@ test_that("crs", {
   for (k in seq_len(nrow(test_crs))) {
     epsg <- test_crs[k, "epsg"]
     txt_epsg <- paste0("EPSG:", epsg)
-    proj4_epsg <- paste0("+init=", txt_epsg)
 
     expected_class <- "crs"
     expected_unit <- test_crs[k, "units"]
@@ -50,11 +41,7 @@ test_that("crs", {
     expect_s3_class(sf::st_crs(epsg), expected_class)
     expect_s3_class(sf::st_crs(txt_epsg), expected_class)
 
-    tmp_spCRS <- if (rgdal::new_proj_and_gdal()) {
-      sp::CRS(SRS_string = txt_epsg)
-    } else {
-      sp::CRS(proj4_epsg)
-    }
+    tmp_spCRS <- sp::CRS(SRS_string = txt_epsg)
     expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
 
 
@@ -76,35 +63,38 @@ test_that("crs", {
 
 
     #--- Determine crs units
-    expect_equal(crs_units(epsg), expected_unit)
-    expect_equal(crs_units(txt_epsg), expected_unit)
+    expect_identical(crs_units(epsg), expected_unit)
+    expect_identical(crs_units(txt_epsg), expected_unit)
 
-    tmp_spCRS <- if (rgdal::new_proj_and_gdal()) {
-      sp::CRS(SRS_string = txt_epsg)
-    } else {
-      sp::CRS(proj4_epsg)
-    }
-    expect_equal(crs_units(tmp_spCRS), expected_unit)
+    expect_identical(
+      # nolint start: commented_code_linter.
+      # See #22: `crs_units(sp::CRS(SRS_string = txt_epsg))` returns NA
+      # during package checks with `devtools::check()`
+      # while returning a correct unit text string with `devtools::test()`
+      # nolint end: commented_code_linter.
+      crs_units(as(sf::st_crs(txt_epsg), "CRS")),
+      expected_unit
+    )
 
-    expect_equal(
+    expect_identical(
+      crs_units(sf::st_crs(txt_epsg)),
+      expected_unit
+    )
+
+    expect_identical(
       crs_units(as_points(locs, "sp", crs = epsg)),
       expected_unit
     )
-    expect_equal(
+    expect_identical(
       crs_units(as_points(locs, "sf", crs = epsg)),
       expected_unit
     )
-    expect_equal(
-      crs_units(sf::st_as_sf(as_points(locs, "sf", crs = epsg))),
+    expect_identical(
+      crs_units(as_points(locs, "sf", crs = epsg)),
       expected_unit
     )
 
-    expect_equal(crs_units(r), expected_unit)
-  }
-
-  # Clean up
-  if (has_thin_PROJ6_warnings) {
-    rgdal::set_thin_PROJ6_warnings(prev_warnings)
+    expect_identical(crs_units(r), expected_unit)
   }
 })
 
@@ -114,10 +104,18 @@ test_that("UTM", {
   tmp <- c(-120, -100, -90, 0, 15, 90, 135, 150)
 
   locations <- data.frame(
-    longitude = rep(tmp, each = 2),
+    longitude = rep(tmp, each = 2L),
     latitude = rep(c(-40, 40), times = length(tmp)),
-    expected_utm_zone =
-      c(11, 11, 14, 14, 16, 16, 31, 31, 33, 33, 46, 46, 53, 53, 56, 56),
+    expected_utm_zone = c(
+      11L, 11L,
+      14L, 14L,
+      16L, 16L,
+      31L, 31L,
+      33L, 33L,
+      46L, 46L,
+      53L, 53L,
+      56L, 56L
+    ),
     expected_utm_epsg = c(
       32711, 32611,
       32714, 32614,
@@ -131,12 +129,12 @@ test_that("UTM", {
   )
 
   for (k in seq_len(nrow(locations))) {
-    expect_equal(
+    expect_identical(
       utm_zone(locations[k, 1:2])[["utm_zone"]],
       locations[k, "expected_utm_zone"]
     )
 
-    expect_equal(
+    expect_identical(
       epsg_for_utm(locations[k, 1:2]),
       locations[k, "expected_utm_epsg"]
     )

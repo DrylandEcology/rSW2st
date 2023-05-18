@@ -7,7 +7,7 @@ test_that("create_raster_from_variables", {
   )
 
   #--- Values are vector ---
-  v1 <- 1:10
+  v1 <- as.numeric(1:10)
   xy <- as_points(
     0.5 + cbind(0:9, 0:9),
     crs = "OGC:CRS84",
@@ -23,7 +23,7 @@ test_that("create_raster_from_variables", {
   expect_s4_class(rv1, "RasterLayer")
 
   # Extracted values are equal to input values
-  expect_equal(raster::extract(rv1, xy), v1)
+  expect_identical(raster::extract(rv1, xy), v1)
 
   # Resulting raster is of same kind as input grid
   expect_true(
@@ -36,7 +36,7 @@ test_that("create_raster_from_variables", {
 
 
   #--- Multiple variables in data.frame
-  v2 <- data.frame(a = 1:10, b = 101:110)
+  v2 <- data.frame(a = as.numeric(1:10), b = as.numeric(101:110))
 
   rv2 <- create_raster_from_variables(
     data = v2,
@@ -47,7 +47,7 @@ test_that("create_raster_from_variables", {
   expect_s4_class(rv2, "RasterBrick")
 
   # Extracted values are equal to input values
-  expect_equal(raster::extract(rv2, xy), data.matrix(v2))
+  expect_identical(raster::extract(rv2, xy), data.matrix(v2))
 
   # Resulting raster is of same kind as input grid
   expect_true(
@@ -62,52 +62,52 @@ test_that("create_raster_from_variables", {
 
 
 test_that("isoline_from_raster", {
-  r <- suppressWarnings(raster::raster(
-    xmn = 0, xmx = 10,
-    ymn = 0, ymx = 10,
-    crs = "OGC:CRS84",
-    resolution = c(1, 1)
-  ))
-  r <- raster::init(r, fun = "cell")
+  grid_size <- c(10L, 20L)
+  grid_n <- prod(grid_size)
 
-  #--- All raster grid values >= threshold
-  threshold <- -5
-  ip1 <- isoline_from_raster(r, alpha = threshold)
-  expect_s4_class(ip1, "SpatialPolygonsDataFrame")
-  expect_gte(max(raster::extract(r, ip1)[[1]]), threshold)
-
-  #--- Some raster grid values >= threshold
-  threshold <- 87
-  ip2 <- isoline_from_raster(r, alpha = threshold)
-  expect_s4_class(ip2, "SpatialPolygonsDataFrame")
-  expect_gte(max(raster::extract(r, ip2)[[1]]), threshold)
-
-  #--- No raster grid values >= threshold
-  threshold <- 1000
-  expect_warning(
-    ip3 <- isoline_from_raster(r, alpha = threshold),
-    "no values in selection"
+  grid_template <- stars::st_as_stars(
+    data.frame(
+      x = rep(seq_len(grid_size[[1L]]), times = grid_size[[2L]]),
+      y = rep(rev(seq_len(grid_size[[2L]])), each = grid_size[[1L]]),
+      value = seq_len(grid_n)
+    ),
+    dims = c("x", "y")
   )
-  expect_null(ip3)
+
+  sf::st_crs(grid_template) <- "OGC:CRS84"
 
 
-  #--- All stars grid values >= threshold
-  rs <- stars::st_as_stars(r)
+  types <- c("stars", "Raster")
 
-  threshold <- -5
-  ip1 <- isoline_from_raster(rs, alpha = threshold)
-  expect_s3_class(ip1, "sf")
-  expect_gte(max(rs[ip1][[1]], na.rm = TRUE), threshold)
+  if (requireNamespace("terra", quietly = TRUE)) {
+    types <- c(types, "SpatRaster")
+  }
 
-  #--- Some stars grid values >= threshold
-  threshold <- 87
-  ip2 <- isoline_from_raster(rs, alpha = threshold)
-  expect_s3_class(ip2, "sf")
-  expect_gte(max(rs[ip2][[1]], na.rm = TRUE), threshold)
+  for (type in types) {
+    rs <- switch(
+      EXPR = type,
+      Raster = raster::raster(terra::rast(grid_template)),
+      SpatRaster = terra::rast(grid_template),
+      stars = stars::st_as_stars(grid_template)
+    )
 
-  #--- No stars grid values >= threshold
-  threshold <- 1000
-  ip3 <- isoline_from_raster(rs, alpha = threshold)
-  expect_s3_class(ip3, "sf")
-  expect_equal(nrow(ip3), 0)
+
+    #--- All grid values >= threshold
+    threshold <- -5
+    ip1 <- isoline_from_raster(rs, alpha = threshold)
+    expect_s3_class(ip1, "sf")
+    expect_gte(min(grid_template[ip1][[1L]], na.rm = TRUE), threshold)
+
+    #--- Some grid values >= threshold
+    threshold <- as.integer(grid_n / 2L)
+    ip2 <- isoline_from_raster(rs, alpha = threshold)
+    expect_s3_class(ip2, "sf")
+    expect_gte(min(grid_template[ip2][[1L]], na.rm = TRUE), threshold)
+
+    #--- No grid values >= threshold
+    threshold <- grid_n + 10L
+    ip3 <- isoline_from_raster(rs, alpha = threshold)
+    expect_s3_class(ip3, "sf")
+    expect_identical(nrow(ip3), 0L)
+  }
 })
