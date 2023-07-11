@@ -182,22 +182,24 @@ if (requireNamespace("graphics")) {
 
 
 ## Read netCDF as raster object
-# This will generate several warnings and messages
-raster_xyt <- read_netCDF(
-  tmp_nc[["xyt"]],
-  method = "raster",
-  band = 15,
-  verbose_read = FALSE
-)
-raster::plot(raster_xyt)
+if (requireNamespace("raster")) {
+  # This will generate several warnings and messages
+  raster_xyt <- read_netCDF(
+    tmp_nc[["xyt"]],
+    method = "raster",
+    band = 15,
+    verbose_read = FALSE
+  )
+  raster::plot(raster_xyt)
 
-raster_szt <- read_netCDF(
-  tmp_nc[["szt"]],
-  method = "raster",
-  band = 15,
-  verbose_read = FALSE
-)
-raster::plot(raster_szt)
+  raster_szt <- read_netCDF(
+    tmp_nc[["szt"]],
+    method = "raster",
+    band = 15,
+    verbose_read = FALSE
+  )
+  raster::plot(raster_szt)
+}
 
 ## Read netCDF as stars object
 stars_xyt <- read_netCDF(

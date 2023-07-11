@@ -1672,22 +1672,24 @@ populate_netCDF_dev <- function(
 #'
 #'
 #' ## Read netCDF as raster object
-#' # This will generate several warnings and messages
-#' raster_xyt <- read_netCDF(
-#'   tmp_nc[["xyt"]],
-#'   method = "raster",
-#'   band = 15,
-#'   verbose_read = FALSE
-#' )
-#' raster::plot(raster_xyt)
+#' if (requireNamespace("raster")) {
+#'   # This will generate several warnings and messages
+#'   raster_xyt <- read_netCDF(
+#'     tmp_nc[["xyt"]],
+#'     method = "raster",
+#'     band = 15,
+#'     verbose_read = FALSE
+#'   )
+#'   raster::plot(raster_xyt)
 #'
-#' raster_szt <- read_netCDF(
-#'   tmp_nc[["szt"]],
-#'   method = "raster",
-#'   band = 15,
-#'   verbose_read = FALSE
-#' )
-#' raster::plot(raster_szt)
+#'   raster_szt <- read_netCDF(
+#'     tmp_nc[["szt"]],
+#'     method = "raster",
+#'     band = 15,
+#'     verbose_read = FALSE
+#'   )
+#'   raster::plot(raster_szt)
+#' }
 #'
 #' ## Read netCDF as stars object
 #' stars_xyt <- read_netCDF(
@@ -2194,6 +2196,7 @@ read_netCDF_as_raster <- function(
   verbose_read = TRUE,
   ...
 ) {
+  stopifnot(requireNamespace("raster"))
 
   e <- expression(
     if (is.null(var)) {
@@ -2686,6 +2689,8 @@ get_nc_type <- function(x) {
 #'          an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
 #'    \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
 #'          object,
+#'    \item a \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}
+#'          object,
 #'    \item a \code{stars::stars} object,
 #'    \item a list, such as the one produced by \code{\link{get_xyspace}}.
 #'    \item an object with coordinate values for all \var{gridcell} centers
@@ -2723,17 +2728,17 @@ get_nc_type <- function(x) {
 #'  if gridded (NA, if discrete).
 #'
 #' @examples
-#' # grid as raster object
-#' r <- raster::raster(
-#'   xmn = 0, xmx = 120,
-#'   ymn = 0, ymx = 45,
+#' # grid as terra object
+#' r <- terra::rast(
+#'   xmin = 0, xmax = 120,
+#'   ymin = 0, ymax = 45,
 #'   crs = "OGC:CRS84",
 #'   resolution = c(1, 1)
 #' )
 #' get_xyspace(r)
 #'
 #' # grid as data frame with coordinate values
-#' rdf <- raster::coordinates(r)
+#' rdf <- terra::crds(r)
 #' get_xyspace(rdf, crs = "OGC:CRS84", res = c(1, 1))
 #'
 #' # a list with vectors for all x values and all y values (and resolution)
@@ -2805,10 +2810,19 @@ get_xyspace <- function(
     )
 
   } else if (inherits(x, "Raster")) {
+    stopifnot(requireNamespace("raster"))
+
     xyspace <- list(
       x = raster::xFromCol(x, seq_len(raster::ncol(x))),
       y = raster::yFromRow(x, rev(seq_len(raster::nrow(x)))),
       res = raster::res(x)
+    )
+
+  } else if (inherits(x, "SpatRaster")) {
+    xyspace <- list(
+      x = terra::xFromCol(x, seq_len(terra::ncol(x))),
+      y = terra::yFromRow(x, rev(seq_len(terra::nrow(x)))),
+      res = terra::res(x)
     )
 
   } else if (inherits(x, "stars")) {
@@ -3225,14 +3239,16 @@ create_example_netCDFs <- function(
 
 
 
-  raster_xy <- suppressWarnings(raster::raster(
-    xmn = orig[[1L]] + min(x) - 0.5,
-    xmx = orig[[1L]] + max(x) + 0.5,
-    ymn = orig[[2L]] + min(y) - 0.5,
-    ymx = orig[[2L]] + max(y) + 0.5,
-    crs = nc_att_crs[["crs_wkt"]],
-    resolution = c(1, 1)
-  ))
+  raster_xy <- suppressWarnings(
+    terra::rast(
+      xmin = orig[[1L]] + min(x) - 0.5,
+      xmax = orig[[1L]] + max(x) + 0.5,
+      ymin = orig[[2L]] + min(y) - 0.5,
+      ymax = orig[[2L]] + max(y) + 0.5,
+      crs = nc_att_crs[["crs_wkt"]],
+      resolution = c(1, 1)
+    )
+  )
 
 
   #--- Create sites

@@ -21,6 +21,8 @@ get_xyspace(
          an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
    \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
          object,
+   \item a \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}
+         object,
    \item a \code{stars::stars} object,
    \item a list, such as the one produced by \code{\link{get_xyspace}}.
    \item an object with coordinate values for all \var{gridcell} centers
@@ -78,17 +80,17 @@ Otherwise, it is ignored and can be missing.
 }
 
 \examples{
-# grid as raster object
-r <- raster::raster(
-  xmn = 0, xmx = 120,
-  ymn = 0, ymx = 45,
+# grid as terra object
+r <- terra::rast(
+  xmin = 0, xmax = 120,
+  ymin = 0, ymax = 45,
   crs = "OGC:CRS84",
   resolution = c(1, 1)
 )
 get_xyspace(r)
 
 # grid as data frame with coordinate values
-rdf <- raster::coordinates(r)
+rdf <- terra::crds(r)
 get_xyspace(rdf, crs = "OGC:CRS84", res = c(1, 1))
 
 # a list with vectors for all x values and all y values (and resolution)

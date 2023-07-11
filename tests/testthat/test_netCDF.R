@@ -93,30 +93,38 @@ test_that("get_xyspace", {
   #--- `grid` cases:
   list_grids <- list()
 
-  # 1) raster object;
-  list_grids[["raster"]] <- raster::raster(
-    xmn = 0.5, xmx = 0.5 + gd[["nx"]],
-    ymn = 0.5, ymx = 0.5 + gd[["ny"]],
+  # 1) terra object;
+  list_grids[["terra"]] <- terra::rast(
+    xmin = 0.5, xmax = 0.5 + gd[["nx"]],
+    ymin = 0.5, ymax = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = res
   )
 
-  # 2) stars object
-  list_grids[["stars"]] <- stars::st_as_stars(list_grids[["raster"]])
+  # 2) raster object
+  if (requireNamespace("raster", quietly = TRUE)) {
+    list_grids[["raster"]] <- raster::raster(list_grids[["terra"]])
+  }
 
-  # 3) an object for `as_points()` with full gridcell coverage
-  list_grids[["df"]] <- raster::coordinates(list_grids[["raster"]])
+  # 3) stars object
+  list_grids[["stars"]] <- suppressWarnings(
+    # suppressed warning: '[readValues] raster has no values'
+    stars::st_as_stars(list_grids[["terra"]])
+  )
 
-  # 4) a list with vectors for all x values and all y values
+  # 4) an object for `as_points()` with full gridcell coverage
+  list_grids[["df"]] <- terra::crds(list_grids[["terra"]])
+
+  # 5) a list with vectors for all x values and all y values
   list_grids[["list1"]] <- list(
     x = sort(unique(list_grids[["df"]][, 1])),
     y = sort(unique(list_grids[["df"]][, 2]))
   )
 
-  # 5) a list with vectors for all x values and all y values and resolution
+  # 6) a list with vectors for all x values and all y values and resolution
   list_grids[["list2"]] <- c(list_grids[["list1"]], list(res = res))
 
-  # 6) an open netCDF
+  # 7) an open netCDF
   fname_nc <- tempfile(fileext = ".nc")
 
   create_netCDF(
@@ -130,7 +138,7 @@ test_that("get_xyspace", {
   list_grids[["nc"]] <- ncdf4::nc_open(fname_nc)
 
 
-  # 7) a filename pointing to a netCDF on disk
+  # 8) a filename pointing to a netCDF on disk
   list_grids[["nc_filename"]] <- fname_nc
 
 
@@ -164,9 +172,10 @@ test_that("convert_xyspace", {
 
   #--- grid with full xy-space
   crs_wgs84 <- "OGC:CRS84"
-  grid <- raster::raster(
-    xmn = 0.5, xmx = 0.5 + gd[["nx"]],
-    ymn = 0.5, ymx = 0.5 + gd[["ny"]],
+
+  grid <- terra::rast(
+    xmin = 0.5, xmax = 0.5 + gd[["nx"]],
+    ymin = 0.5, ymax = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = c(1, 1)
   )
