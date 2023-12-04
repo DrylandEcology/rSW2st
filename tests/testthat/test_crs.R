@@ -41,8 +41,10 @@ test_that("crs", {
     expect_s3_class(sf::st_crs(epsg), expected_class)
     expect_s3_class(sf::st_crs(txt_epsg), expected_class)
 
-    tmp_spCRS <- sp::CRS(SRS_string = txt_epsg)
-    expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
+    if (requireNamespace("sp")) {
+      tmp_spCRS <- sp::CRS(SRS_string = txt_epsg)
+      expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
+    }
 
 
     expect_s3_class(

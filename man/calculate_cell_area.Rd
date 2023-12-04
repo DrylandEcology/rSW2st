@@ -16,6 +16,7 @@ calculate_cell_area(
 (a \code{matrix}, \code{array}, or \code{data.frame})
 with longitude/X, latitude/Y as columns;
 a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object; or
+a \code{\link[terra:SpatVector-class]{terra::SpatVector}} object; or
 a \var{sf} object with a point geometry,
 i.e., an object with a class \var{sf} or \var{sfc}.}
 

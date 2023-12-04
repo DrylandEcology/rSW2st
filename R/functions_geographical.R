@@ -59,7 +59,10 @@ calculate_cell_area <- function(
 
   m2_to_km2 <- 1e-6
 
-  stopifnot(inherits(grid, c("Raster", "stars")))
+  stopifnot(
+    requireNamespace("sp"),
+    inherits(grid, c("Raster", "stars"))
+  )
 
   if (!missing(x)) {
     x <- as_points(x, to_class = "sf", crs = crs)
