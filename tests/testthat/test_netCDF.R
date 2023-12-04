@@ -189,19 +189,20 @@ test_that("convert_xyspace", {
   n_loc <- nrow(locations)
 
   # Create indices of three locations to check correct transfer of values
-  loc_checks <- list(
-    c(
-      tmp <- c(gx = d0[[1L]] + 1, gy = d0[[2L]] + 3),
-      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
-    ),
-    c(
-      tmp <- c(gx = d0[[1L]] + dd[["nx"]] - 10, gy = d0[[2L]] + dd[["ny"]] - 3),
-      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
-    ),
-    c(
-      tmp <- c(gx = d0[[1L]] + dd[["nx"]] - 1, gy = d0[[2L]] + dd[["ny"]] - 1),
-      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
-    )
+  tmp <- list(
+    c(gx = d0[[1L]] + 1L, gy = d0[[2L]] + 3L),
+    c(gx = d0[[1L]] + dd[["nx"]] - 10L, gy = d0[[2L]] + dd[["ny"]] - 3L),
+    c(gx = d0[[1L]] + dd[["nx"]] - 1L, gy = d0[[2L]] + dd[["ny"]] - 1L)
+  )
+
+  loc_checks <- lapply(
+    tmp,
+    function(x) {
+      c(
+        x,
+        loc = which(locations[, 1L] == x[[1L]] & locations[, 2L] == x[[2L]])
+      )
+    }
   )
 
 
@@ -257,7 +258,7 @@ test_that("convert_xyspace", {
     tmp_sparse[k * dd[["nx"]] + 4 + 3:4, , k] <- NA
   }
 
-  if (FALSE) {
+  if (interactive()) {
     # Visualize test data
     tmp <- data.frame(
       Var1 = seq_len(dd[["nx"]]),
@@ -355,7 +356,7 @@ test_that("convert_xyspace", {
 
       } else if (
         data_str_res %in% c("xyz", "xyt", "xy") &&
-        !is.null(dim(ref))
+          !is.null(dim(ref))
       ) {
         expect_equal(
           res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], ],

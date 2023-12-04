@@ -16,6 +16,7 @@ dir.create(dir_in, recursive = TRUE, showWarnings = TRUE)
 #------ Create example \var{netCDFs}
 # Currently, the plan is to use `create_example_netCDFs()` in the examples
 # instead of using up c. 400 KB by extdata/
+# nolint start: unreachable_code_linter.
 if (FALSE) {
   create_example_netCDFs(
     path = dir_in,
@@ -23,3 +24,4 @@ if (FALSE) {
     type_timeaxis = "timeseries"
   )
 }
+# nolint end

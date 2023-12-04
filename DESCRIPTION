@@ -30,7 +30,7 @@ Suggests:
     RNetCDF (>= 2.6.2),
     testthat (>= 3.0.0),
     spelling,
-    lintr (>= 3.0.0),
+    lintr (>= 3.1.1),
     covr
 License: GPL-3
 URL: https://github.com/DrylandEcology/rSW2st
