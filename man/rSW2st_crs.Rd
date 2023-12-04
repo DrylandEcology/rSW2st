@@ -29,7 +29,10 @@ Determines the coordinate reference system
 \examples{
 crs_units(4326)
 crs_units("EPSG:4326")
-crs_units(sp::CRS("+init=EPSG:4326"))
+crs_units(terra::crs("EPSG:4326"))
+if (requireNamespace("sp")) {
+  crs_units(sp::CRS("+init=EPSG:4326"))
+}
 
 }
 \seealso{
