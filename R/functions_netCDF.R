@@ -1694,6 +1694,23 @@ populate_netCDF_dev <- function(
 #' )
 #' plot(stars_szt)
 #'
+#' ## Read netCDF as terra object
+#' terra_xyt <- read_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   method = "terra",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
+#' terra::plot(terra_xyt)
+#'
+#' terra_szt <- read_netCDF(
+#'   tmp_nc[["szt"]],
+#'   method = "terra",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
+#' terra::plot(terra_szt)
+#'
 #' ## Read gridded netCDF as array and extract subset
 #' datasubset_xyt <- read_netCDF(
 #'   tmp_nc[["xyt"]],
@@ -1722,7 +1739,7 @@ populate_netCDF_dev <- function(
 #' @export
 read_netCDF <- function(
   x,
-  method = c("array", "raster", "stars", "xy_subset"),
+  method = c("array", "raster", "stars", "terra", "xy_subset"),
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
@@ -1762,6 +1779,7 @@ read_netCDF <- function(
     EXPR = method,
     raster = do.call(read_netCDF_as_raster, args = args),
     stars = do.call(read_netCDF_as_stars, args = args),
+    terra = do.call(read_netCDF_as_terra, args = args),
     do.call(read_netCDF_as_array, args = args)
   )
 
@@ -2260,6 +2278,54 @@ read_netCDF_as_stars <- function(
 
   e <- expression(
     stars::read_ncdf(x, var = var, ...)
+  )
+
+  r <- if (verbose_read) {
+    eval(e)
+  } else {
+    suppressMessages(
+      suppressWarnings(
+        eval(e)
+      )
+    )
+  }
+
+
+  # Check whether projection was read correctly
+  r_crs <- try(sf::st_crs(r), silent = TRUE)
+  r_has_crs <- inherits(r_crs, "crs") && !is.na(r_crs)
+
+  if (!r_has_crs) {
+    sf::st_crs(r) <- read_crs_from_netCDF(
+      x,
+      nc_name_crs = nc_name_crs,
+      nc_name_crs_wkt = nc_name_crs_wkt
+    )
+  }
+
+  r
+}
+
+
+
+#' @rdname read_netCDF
+#'
+#' @section Details: \code{\link{read_netCDF_as_terra}} is a thin wrapper
+#' around \code{\link[terra:rast]{terra::rast}},
+#' but makes an extra attempt to correctly set the \var{crs} object.
+#'
+#' @export
+read_netCDF_as_terra <- function(
+  x,
+  var = NULL,
+  nc_name_crs = "crs",
+  nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
+  ...
+) {
+
+  e <- expression(
+    terra::rast(x, drivers = "NETCDF")
   )
 
   r <- if (verbose_read) {

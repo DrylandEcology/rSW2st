@@ -474,7 +474,7 @@ test_that("convert_xyspace", {
 
 #------ Tests for `read_netCDF()` ------
 test_that("read_netCDF", {
-  tmp_methods <- c("array", "raster", "stars")
+  tmp_methods <- c("array", "raster", "stars", "terra")
 
   #--- Create netCDFs to check reading
   tmp_nc <- create_example_netCDFs(
@@ -499,8 +499,8 @@ test_that("read_netCDF", {
     # Loop over methods
     for (km in tmp_methods) {
 
-      if (km == "raster" && basename(fnc) == "nc_s.nc") {
-        # It appears that the raster package does not handle this case
+      if (km %in% c("terra", "raster") && basename(fnc) == "nc_s.nc") {
+        # It appears that the raster and terra packages do not handle this case
         next
       }
 
@@ -551,6 +551,10 @@ test_that("read_netCDF", {
 
       } else if (km == "stars") {
         expect_s3_class(res, "stars")
+        expect_gt(length(dim(res)), 0L)
+
+      } else if (km == "terra") {
+        expect_s4_class(res, "SpatRaster")
         expect_gt(length(dim(res)), 0L)
       }
 
