@@ -4,13 +4,14 @@
 \alias{as_points}
 \title{Convert two-dimensional locations to a spatially explicit object}
 \usage{
-as_points(x, crs, to_class = c("sf", "sfc", "sp"))
+as_points(x, crs, to_class = c("sf", "sfc", "sp", "sv"))
 }
 \arguments{
 \item{x}{A numerical two-dimensional object
 (a \code{matrix}, \code{array}, or \code{data.frame})
 with longitude/X, latitude/Y as columns;
 a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object; or
+a \code{\link[terra:SpatVector-class]{terra::SpatVector}} object; or
 a \var{sf} object with a point geometry,
 i.e., an object with a class \var{sf} or \var{sfc}.}
 
@@ -25,10 +26,12 @@ or of a class including
   \code{\link[sp:CRS-class]{sp::CRS}},
   or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
-\item{to_class}{A character string. Convert either
+\item{to_class}{A character string. Convert
 to \var{"sp"} for
 a \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}} object;
-convert to \var{"sf"} for a \code{\link[sf:sf]{sf}} object; or
+to \var{"sv"} for
+a \code{\link[terra:SpatVector-class]{terra::SpatVector}} object;
+to \var{"sf"} for a \code{\link[sf:sf]{sf}} object; or
 convert to \var{"sfc"} for
 a \code{\link[sf:sfc_POINT]{sf::sfc_POINT}} object.}
 }
@@ -58,18 +61,25 @@ locations <- matrix(
 
 pts_sf1 <- as_points(locations, crs = 4326, to_class = "sf")
 pts_sfc1 <- as_points(locations, crs = 4326, to_class = "sfc")
-pts_sp1 <- as_points(locations, crs = 4326, to_class = "sp")
+pts_sv1 <- as_points(locations, crs = 4326, to_class = "sv")
 
-pts_sf2 <- as_points(pts_sp1, to_class = "sf")
-pts_sfc2 <- as_points(pts_sp1, to_class = "sfc")
-pts_sp2 <- as_points(pts_sf1, to_class = "sp")
+pts_sf2 <- as_points(pts_sv1, to_class = "sf")
+pts_sfc2 <- as_points(pts_sv1, to_class = "sfc")
+pts_sv2 <- as_points(pts_sf1, to_class = "sv")
 
 all.equal(pts_sf1, pts_sf2, check.attributes = FALSE)
 all.equal(pts_sfc1, pts_sfc2, check.attributes = FALSE)
-all.equal(pts_sp1, pts_sp2)
+all.equal(pts_sv1, pts_sv2)
 all.equal(locations, sf::st_coordinates(pts_sf1), check.attributes = FALSE)
 all.equal(locations, sf::st_coordinates(pts_sfc1), check.attributes = FALSE)
-all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
+all.equal(locations, terra::crds(pts_sv1), check.attributes = FALSE)
+
+if (requireNamespace("sp")) {
+  pts_sp1 <- as_points(locations, crs = 4326, to_class = "sp")
+  pts_sp2 <- as_points(pts_sf1, to_class = "sp")
+  all.equal(pts_sp1, pts_sp2)
+  all.equal(locations, sp::coordinates(pts_sp1), check.attributes = FALSE)
+}
 
 # A vector of length two is interpreted as a single point location
 pts_sf11 <- as_points(locations[1, ], crs = 4326, to_class = "sf")

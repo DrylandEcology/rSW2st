@@ -36,21 +36,23 @@ A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
 Fills a raster grid with variable values associated with geographic locations
 }
 \examples{
-r <- raster::raster(
-  xmn = 0, xmx = 10,
-  ymn = 0, ymx = 10,
-  crs = "OGC:CRS84",
-  resolution = c(1, 1)
-)
-
-rv <- create_raster_from_variables(
-  data = 1:10,
-  site_locations = as_points(
-    0.5 + cbind(0:9, 0:9),
+if (requireNamespace("raster")) {
+  r <- raster::raster(
+    xmn = 0, xmx = 10,
+    ymn = 0, ymx = 10,
     crs = "OGC:CRS84",
-    to_class = "sf"
-  ),
-  grid = r
-)
+    resolution = c(1, 1)
+  )
+
+  rv <- create_raster_from_variables(
+    data = 1:10,
+    site_locations = as_points(
+      0.5 + cbind(0:9, 0:9),
+      crs = "OGC:CRS84",
+      to_class = "sf"
+    ),
+    grid = r
+  )
+}
 
 }

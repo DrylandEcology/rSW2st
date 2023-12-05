@@ -455,15 +455,14 @@ create_netCDF <- function(
     data_dims <- unlist(data_dims)
 
     # Check that provided `data_dims` match dimensions of argument `data`
-    if (has_data) {
-      if (
+    if (
+      has_data &&
         !isTRUE(all.equal(
           data_dims_from_data,
           data_dims[names(data_dims_from_data)]
         ))
-      ) {
-        stop("Disagreement in dimensions between `data_dims` and `data`.")
-      }
+    ) {
+      stop("Disagreement in dimensions between `data_dims` and `data`.")
     }
   }
 
@@ -475,30 +474,30 @@ create_netCDF <- function(
     data_dims[["ns"]] > 0 || data_dims[["nx"]] > 0 && data_dims[["ny"]] > 0
   )
 
-  # nolint start: consecutive_stopifnot_linter.
+  # nolint start: consecutive_assertion_linter.
   # Check that data structure is possible given data dimensions
   tmp <- switch(
     EXPR = data_str,
 
-    `xyzt` = stopifnot(
+    xyzt = stopifnot(
       data_dims[["nt"]] > 0,
       data_dims[["nz"]] > 0,
       data_dims[["nv"]] == 0
     ),
 
-    `xyt` = stopifnot(
+    xyt = stopifnot(
       data_dims[["nt"]] > 0,
       data_dims[["nz"]] == 0,
       data_dims[["nv"]] == 0
     ),
 
-    `xyz` = stopifnot(
+    xyz = stopifnot(
       data_dims[["nt"]] == 0,
       data_dims[["nz"]] > 0,
       data_dims[["nv"]] == 0
     ),
 
-    `xy` = stopifnot(
+    xy = stopifnot(
       data_dims[["nt"]] == 0,
       data_dims[["nz"]] == 0,
       data_dims[["nv"]] >= 0
@@ -900,7 +899,15 @@ create_netCDF <- function(
     stop("Need unit attribute in variable attribute list")
   }
 
-  if (!("grid_mapping" %in% names(var_attributes))) {
+  if ("grid_mapping" %in% names(var_attributes)) {
+    if (!startsWith(var_attributes[["grid_mapping"]], "crs")) {
+      warning(
+        "Variable attribute for `grid_mapping` should be 'crs: ...', but is ",
+        shQuote(var_attributes[["grid_mapping"]])
+      )
+    }
+
+  } else {
     # This function creates only one grid_mapping and
     # the grid_mapping variable name is hard-coded to be "crs"
     var_attributes[["grid_mapping"]] <- paste(
@@ -915,14 +922,6 @@ create_netCDF <- function(
       message(
         "Adding `grid_mapping = \"", var_attributes[["grid_mapping"]], "\"`",
         " to variable attributes."
-      )
-    }
-
-  } else {
-    if (!startsWith(var_attributes[["grid_mapping"]], "crs")) {
-      warning(
-        "Variable attribute for `grid_mapping` should be 'crs: ...', but is ",
-        shQuote(var_attributes[["grid_mapping"]])
       )
     }
   }
@@ -1341,26 +1340,13 @@ create_netCDF <- function(
   on.exit(RNetCDF::close.nc(ncr))
 
   for (natt in ns_att_crs) {
-    if (FALSE) {
-      # `ndf4::ncat_put()` fails if `attval` is longer than 1:
-      # > Error in is.numeric(attval) && (floor(attval) == attval) :
-      # > 'length = 2' in coercion to 'logical(1)'
-      ncdf4::ncatt_put(
-        nc,
-        varid = "crs",
-        attname = natt,
-        attval = crs_attributes[[natt]]
-      )
-
-    } else {
-      RNetCDF::att.put.nc(
-        ncr,
-        variable = "crs",
-        name = natt,
-        type = get_nc_type(crs_attributes[[natt]]),
-        value = crs_attributes[[natt]]
-      )
-    }
+    RNetCDF::att.put.nc(
+      ncr,
+      variable = "crs",
+      name = natt,
+      type = get_nc_type(crs_attributes[[natt]]),
+      value = crs_attributes[[natt]]
+    )
   }
 
   # switch back to ncdf4: remove once completely switched to RNetCDF (#8)
@@ -1672,22 +1658,24 @@ populate_netCDF_dev <- function(
 #'
 #'
 #' ## Read netCDF as raster object
-#' # This will generate several warnings and messages
-#' raster_xyt <- read_netCDF(
-#'   tmp_nc[["xyt"]],
-#'   method = "raster",
-#'   band = 15,
-#'   verbose_read = FALSE
-#' )
-#' raster::plot(raster_xyt)
+#' if (requireNamespace("raster")) {
+#'   # This will generate several warnings and messages
+#'   raster_xyt <- read_netCDF(
+#'     tmp_nc[["xyt"]],
+#'     method = "raster",
+#'     band = 15,
+#'     verbose_read = FALSE
+#'   )
+#'   raster::plot(raster_xyt)
 #'
-#' raster_szt <- read_netCDF(
-#'   tmp_nc[["szt"]],
-#'   method = "raster",
-#'   band = 15,
-#'   verbose_read = FALSE
-#' )
-#' raster::plot(raster_szt)
+#'   raster_szt <- read_netCDF(
+#'     tmp_nc[["szt"]],
+#'     method = "raster",
+#'     band = 15,
+#'     verbose_read = FALSE
+#'   )
+#'   raster::plot(raster_szt)
+#' }
 #'
 #' ## Read netCDF as stars object
 #' stars_xyt <- read_netCDF(
@@ -1705,6 +1693,23 @@ populate_netCDF_dev <- function(
 #'   verbose_read = FALSE
 #' )
 #' plot(stars_szt)
+#'
+#' ## Read netCDF as terra object
+#' terra_xyt <- read_netCDF(
+#'   tmp_nc[["xyt"]],
+#'   method = "terra",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
+#' terra::plot(terra_xyt)
+#'
+#' terra_szt <- read_netCDF(
+#'   tmp_nc[["szt"]],
+#'   method = "terra",
+#'   var = "sine",
+#'   verbose_read = FALSE
+#' )
+#' terra::plot(terra_szt)
 #'
 #' ## Read gridded netCDF as array and extract subset
 #' datasubset_xyt <- read_netCDF(
@@ -1734,7 +1739,7 @@ populate_netCDF_dev <- function(
 #' @export
 read_netCDF <- function(
   x,
-  method = c("array", "raster", "stars", "xy_subset"),
+  method = c("array", "raster", "stars", "terra", "xy_subset"),
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
@@ -1774,6 +1779,7 @@ read_netCDF <- function(
     EXPR = method,
     raster = do.call(read_netCDF_as_raster, args = args),
     stars = do.call(read_netCDF_as_stars, args = args),
+    terra = do.call(read_netCDF_as_terra, args = args),
     do.call(read_netCDF_as_array, args = args)
   )
 
@@ -2194,6 +2200,7 @@ read_netCDF_as_raster <- function(
   verbose_read = TRUE,
   ...
 ) {
+  stopifnot(requireNamespace("raster"))
 
   e <- expression(
     if (is.null(var)) {
@@ -2208,7 +2215,7 @@ read_netCDF_as_raster <- function(
   } else {
     # silence `print()`, see issue #9
     utils::capture.output(
-      res <- suppressMessages(
+      res <- suppressMessages( # nolint: implicit_assignment_linter.
         suppressWarnings(
           eval(e)
         )
@@ -2238,7 +2245,7 @@ read_netCDF_as_raster <- function(
     tmp_crs <- sf::st_crs(nc_crs)
     if (
       !is.na(tmp_crs) &&
-      isTRUE(try(inherits(tmp_crs, "crs"), silent = TRUE))
+        isTRUE(try(inherits(tmp_crs, "crs"), silent = TRUE))
     ) {
       raster::crs(r) <- nc_crs
     } else {
@@ -2271,6 +2278,54 @@ read_netCDF_as_stars <- function(
 
   e <- expression(
     stars::read_ncdf(x, var = var, ...)
+  )
+
+  r <- if (verbose_read) {
+    eval(e)
+  } else {
+    suppressMessages(
+      suppressWarnings(
+        eval(e)
+      )
+    )
+  }
+
+
+  # Check whether projection was read correctly
+  r_crs <- try(sf::st_crs(r), silent = TRUE)
+  r_has_crs <- inherits(r_crs, "crs") && !is.na(r_crs)
+
+  if (!r_has_crs) {
+    sf::st_crs(r) <- read_crs_from_netCDF(
+      x,
+      nc_name_crs = nc_name_crs,
+      nc_name_crs_wkt = nc_name_crs_wkt
+    )
+  }
+
+  r
+}
+
+
+
+#' @rdname read_netCDF
+#'
+#' @section Details: \code{\link{read_netCDF_as_terra}} is a thin wrapper
+#' around \code{\link[terra:rast]{terra::rast}},
+#' but makes an extra attempt to correctly set the \var{crs} object.
+#'
+#' @export
+read_netCDF_as_terra <- function(
+  x,
+  var = NULL,
+  nc_name_crs = "crs",
+  nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
+  ...
+) {
+
+  e <- expression(
+    terra::rast(x, drivers = "NETCDF")
   )
 
   r <- if (verbose_read) {
@@ -2468,7 +2523,7 @@ read_attributes_from_netCDF <- function(
 
     if (
       group != "global" &&
-      !(varid %in% c(names(x[["var"]]), names(x[["dim"]])))
+        !(varid %in% c(names(x[["var"]]), names(x[["dim"]])))
     ) {
       stop("Attributes of requested ", shQuote(varid), " cannot be located.")
     }
@@ -2573,7 +2628,7 @@ get_data_dims <- function(
   # Compose result
   switch(
     EXPR = data_str,
-    `xyzt` = c(
+    xyzt = c(
       ns = 0L,
       nx = dims[[1L]],
       ny = dims[[2L]],
@@ -2581,7 +2636,8 @@ get_data_dims <- function(
       nt = dims[[4L]],
       nv = 0L
     ),
-    `xyt` = c(
+
+    xyt = c(
       ns = 0L,
       nx = dims[[1L]],
       ny = dims[[2L]],
@@ -2589,7 +2645,8 @@ get_data_dims <- function(
       nt = dims[[3L]],
       nv = 0L
     ),
-    `xyz` = c(
+
+    xyz = c(
       ns = 0L,
       nx = dims[[1L]],
       ny = dims[[2L]],
@@ -2597,7 +2654,8 @@ get_data_dims <- function(
       nt = 0L,
       nv = 0L
     ),
-    `xy` = c(
+
+    xy = c(
       ns = 0L,
       nx = dims[[1L]],
       ny = dims[[2L]],
@@ -2606,7 +2664,7 @@ get_data_dims <- function(
       nv = if (nd >= 3L) dims[[3L]] else 0L
     ),
 
-    `szt` = c(
+    szt = c(
       ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
@@ -2614,7 +2672,8 @@ get_data_dims <- function(
       nt = dims[[3L]],
       nv = 0L
     ),
-    `st` = c(
+
+    st = c(
       ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
@@ -2622,7 +2681,8 @@ get_data_dims <- function(
       nt = dims[[2L]],
       nv = 0L
     ),
-    `sz` = c(
+
+    sz = c(
       ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
@@ -2630,7 +2690,8 @@ get_data_dims <- function(
       nt = 0L,
       nv = 0L
     ),
-    `s` = c(
+
+    s = c(
       ns = dims[[1L]],
       nx = 0L,
       ny = 0L,
@@ -2686,6 +2747,8 @@ get_nc_type <- function(x) {
 #'          an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
 #'    \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
 #'          object,
+#'    \item a \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}
+#'          object,
 #'    \item a \code{stars::stars} object,
 #'    \item a list, such as the one produced by \code{\link{get_xyspace}}.
 #'    \item an object with coordinate values for all \var{gridcell} centers
@@ -2723,17 +2786,17 @@ get_nc_type <- function(x) {
 #'  if gridded (NA, if discrete).
 #'
 #' @examples
-#' # grid as raster object
-#' r <- raster::raster(
-#'   xmn = 0, xmx = 120,
-#'   ymn = 0, ymx = 45,
+#' # grid as terra object
+#' r <- terra::rast(
+#'   xmin = 0, xmax = 120,
+#'   ymin = 0, ymax = 45,
 #'   crs = "OGC:CRS84",
 #'   resolution = c(1, 1)
 #' )
 #' get_xyspace(r)
 #'
 #' # grid as data frame with coordinate values
-#' rdf <- raster::coordinates(r)
+#' rdf <- terra::crds(r)
 #' get_xyspace(rdf, crs = "OGC:CRS84", res = c(1, 1))
 #'
 #' # a list with vectors for all x values and all y values (and resolution)
@@ -2805,10 +2868,19 @@ get_xyspace <- function(
     )
 
   } else if (inherits(x, "Raster")) {
+    stopifnot(requireNamespace("raster"))
+
     xyspace <- list(
       x = raster::xFromCol(x, seq_len(raster::ncol(x))),
       y = raster::yFromRow(x, rev(seq_len(raster::nrow(x)))),
       res = raster::res(x)
+    )
+
+  } else if (inherits(x, "SpatRaster")) {
+    xyspace <- list(
+      x = terra::xFromCol(x, seq_len(terra::ncol(x))),
+      y = terra::yFromRow(x, rev(seq_len(terra::nrow(x)))),
+      res = terra::res(x)
     )
 
   } else if (inherits(x, "stars")) {
@@ -2845,19 +2917,19 @@ get_xyspace <- function(
       is_not_points <- inherits(tmp, "try-error")
     }
 
-    xyspace <- if (!is_not_points) {
+    xyspace <- if (is_not_points) {
+      list(
+        x = sort(unique(x[[1L]])),
+        y = sort(unique(x[[2L]])),
+        res = if ("res" %in% names(x)) x[["res"]][1:2] else res[1:2]
+      )
+
+    } else {
       tmp <- sf::st_coordinates(tmp)[, 1:2, drop = FALSE]
       list(
         x = sort(unique(tmp[, 1])),
         y = sort(unique(tmp[, 2])),
         res = res[1:2]
-      )
-
-    } else {
-      list(
-        x = sort(unique(x[[1L]])),
-        y = sort(unique(x[[2L]])),
-        res = if ("res" %in% names(x)) x[["res"]][1:2] else res[1:2]
       )
     }
   }
@@ -3028,7 +3100,7 @@ convert_xyspace <- function(
       ids_tzv <- rep(seq_len(data_dims[[2L]]), each = n_loc)
       res[cbind(ids_x, ids_y, ids_tzv)] <- as.matrix(data)
 
-    } else if (data_str %in% "xyzt") {
+    } else if (data_str == "xyzt") {
       ids_t <- rep(seq_len(data_dims[[2L]]), each = n_loc)
       ids_z <- rep(seq_len(data_dims[[3L]]), each = prod(data_dims[1:2]))
       res[cbind(ids_x, ids_y, ids_t, ids_z)] <- data
@@ -3059,13 +3131,11 @@ convert_xyspace <- function(
         attr(res, "dim") <- c(n_loc, data_dims[[3L]])
       }
 
-    } else if (length(data_dims) == 4) {
-      if (data_str %in% "xyzt") {
-        ids_t <- rep(seq_len(data_dims[[3L]]), each = n_loc)
-        ids_z <- rep(seq_len(data_dims[[4L]]), each = n_loc * data_dims[[3L]])
-        res <- data[cbind(ids_x, ids_y, ids_t, ids_z)]
-        attr(res, "dim") <- c(n_loc, data_dims[3:4])
-      }
+    } else if (length(data_dims) == 4L && data_str == "xyzt") {
+      ids_t <- rep(seq_len(data_dims[[3L]]), each = n_loc)
+      ids_z <- rep(seq_len(data_dims[[4L]]), each = n_loc * data_dims[[3L]])
+      res <- data[cbind(ids_x, ids_y, ids_t, ids_z)]
+      attr(res, "dim") <- c(n_loc, data_dims[3:4])
     }
 
     if (is.null(res)) {
@@ -3225,14 +3295,16 @@ create_example_netCDFs <- function(
 
 
 
-  raster_xy <- suppressWarnings(raster::raster(
-    xmn = orig[[1L]] + min(x) - 0.5,
-    xmx = orig[[1L]] + max(x) + 0.5,
-    ymn = orig[[2L]] + min(y) - 0.5,
-    ymx = orig[[2L]] + max(y) + 0.5,
-    crs = nc_att_crs[["crs_wkt"]],
-    resolution = c(1, 1)
-  ))
+  raster_xy <- suppressWarnings(
+    terra::rast(
+      xmin = orig[[1L]] + min(x) - 0.5,
+      xmax = orig[[1L]] + max(x) + 0.5,
+      ymin = orig[[2L]] + min(y) - 0.5,
+      ymax = orig[[2L]] + max(y) + 0.5,
+      crs = nc_att_crs[["crs_wkt"]],
+      resolution = c(1, 1)
+    )
+  )
 
 
   #--- Create sites
@@ -3313,18 +3385,6 @@ create_example_netCDFs <- function(
         t = k1 / (0.75 * nt)
       )
     }
-  }
-
-
-  if (FALSE) {
-    graphics::persp(
-      x, y,
-      data_xyzt[, , 1, 15],
-      theta = 30,
-      phi = 30,
-      expand = 0.5,
-      col = "lightblue"
-    )
   }
 
 

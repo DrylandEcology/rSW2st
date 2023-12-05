@@ -24,7 +24,7 @@ test_that("crs", {
   )
 
   locs <- matrix(c(1, 1), ncol = 2)
-  r <- raster::raster(nrows = 1, ncols = 1, xmn = 0, xmx = 1)
+  r <- terra::rast(nrows = 1, ncols = 1, xmin = 0, xmax = 1)
 
 
   #--- Run checks
@@ -35,14 +35,16 @@ test_that("crs", {
     expected_class <- "crs"
     expected_unit <- test_crs[k, "units"]
 
-    raster::crs(r) <- epsg
+    terra::crs(r) <- txt_epsg
 
     #--- Retrieve crs
     expect_s3_class(sf::st_crs(epsg), expected_class)
     expect_s3_class(sf::st_crs(txt_epsg), expected_class)
 
-    tmp_spCRS <- sp::CRS(SRS_string = txt_epsg)
-    expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
+    if (requireNamespace("sp")) {
+      tmp_spCRS <- sp::CRS(SRS_string = txt_epsg)
+      expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
+    }
 
 
     expect_s3_class(

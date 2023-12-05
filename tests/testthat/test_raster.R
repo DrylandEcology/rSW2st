@@ -1,4 +1,6 @@
 test_that("create_raster_from_variables", {
+  skip_if_not(requireNamespace("raster"))
+
   r <- raster::raster(
     xmn = 0, xmx = 10,
     ymn = 0, ymx = 10,

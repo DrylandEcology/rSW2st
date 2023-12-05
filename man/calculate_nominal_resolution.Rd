@@ -7,7 +7,8 @@
 calculate_nominal_resolution(grid, maskvalue = NA)
 }
 \arguments{
-\item{grid}{A \code{\link[raster:Raster-class]{raster::Raster}} or
+\item{grid}{A \code{\link[terra:SpatRaster-class]{terra::rast}},
+a \code{\link[raster:Raster-class]{raster::Raster}} or
 a \code{stars::stars} object.
 Gridcells with values that are not equal to a
 \code{maskvalue} are included in the "nominal resolution" calculation.}
@@ -21,31 +22,29 @@ A character string with a "nominal resolution" value in kilometers.
 Calculate "nominal resolution" of a grid
 }
 \examples{
-r1 <- raster::raster(
-  xmn = -120, xmx = -90,
-  ymn = 30, ymx = 50,
+r1 <- terra::rast(
+  xmin = -120, xmax = -90,
+  ymin = 30, ymax = 50,
   crs = "OGC:CRS84",
   resolution = c(0.5, 0.5)
 )
-ext <- raster::cellsFromExtent(r1, raster::extent(-110, -100, 35, 45))
-r1[ext] <- 1
+xy <- terra::spatSample(r1, size = 200L, as.points = TRUE)
+r1[xy] <- 1
 
 calculate_nominal_resolution(r1)
 calculate_nominal_resolution(stars::st_as_stars(r1))
 
-r2 <- raster::raster(
-  xmn = -2480000, xmx = 90000,
-  ymn = 650000, ymx = 4020000,
+r2 <- terra::rast(
+  xmin = -2480000, xmax = 90000,
+  ymin = 650000, ymax = 4020000,
   crs = "EPSG:6350",
-  resolution = c(1e4, 1e4)
+  resolution = c(10000, 10000)
 )
-ext <- raster::cellsFromExtent(
-  r2,
-  raster::extent(-2080000, 0, 1000000, 3500000)
-)
-r2[ext] <- 1
+xy <- terra::spatSample(r2, size = 200L, as.points = TRUE)
+r2[xy] <- 1
 
 calculate_nominal_resolution(r2)
+calculate_nominal_resolution(stars::st_as_stars(r2))
 
 }
 \references{

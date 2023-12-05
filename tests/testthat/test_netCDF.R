@@ -93,30 +93,38 @@ test_that("get_xyspace", {
   #--- `grid` cases:
   list_grids <- list()
 
-  # 1) raster object;
-  list_grids[["raster"]] <- raster::raster(
-    xmn = 0.5, xmx = 0.5 + gd[["nx"]],
-    ymn = 0.5, ymx = 0.5 + gd[["ny"]],
+  # 1) terra object;
+  list_grids[["terra"]] <- terra::rast(
+    xmin = 0.5, xmax = 0.5 + gd[["nx"]],
+    ymin = 0.5, ymax = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = res
   )
 
-  # 2) stars object
-  list_grids[["stars"]] <- stars::st_as_stars(list_grids[["raster"]])
+  # 2) raster object
+  if (requireNamespace("raster", quietly = TRUE)) {
+    list_grids[["raster"]] <- raster::raster(list_grids[["terra"]])
+  }
 
-  # 3) an object for `as_points()` with full gridcell coverage
-  list_grids[["df"]] <- raster::coordinates(list_grids[["raster"]])
+  # 3) stars object
+  list_grids[["stars"]] <- suppressWarnings(
+    # suppressed warning: '[readValues] raster has no values'
+    stars::st_as_stars(list_grids[["terra"]])
+  )
 
-  # 4) a list with vectors for all x values and all y values
+  # 4) an object for `as_points()` with full gridcell coverage
+  list_grids[["df"]] <- terra::crds(list_grids[["terra"]])
+
+  # 5) a list with vectors for all x values and all y values
   list_grids[["list1"]] <- list(
     x = sort(unique(list_grids[["df"]][, 1])),
     y = sort(unique(list_grids[["df"]][, 2]))
   )
 
-  # 5) a list with vectors for all x values and all y values and resolution
+  # 6) a list with vectors for all x values and all y values and resolution
   list_grids[["list2"]] <- c(list_grids[["list1"]], list(res = res))
 
-  # 6) an open netCDF
+  # 7) an open netCDF
   fname_nc <- tempfile(fileext = ".nc")
 
   create_netCDF(
@@ -130,7 +138,7 @@ test_that("get_xyspace", {
   list_grids[["nc"]] <- ncdf4::nc_open(fname_nc)
 
 
-  # 7) a filename pointing to a netCDF on disk
+  # 8) a filename pointing to a netCDF on disk
   list_grids[["nc_filename"]] <- fname_nc
 
 
@@ -164,9 +172,10 @@ test_that("convert_xyspace", {
 
   #--- grid with full xy-space
   crs_wgs84 <- "OGC:CRS84"
-  grid <- raster::raster(
-    xmn = 0.5, xmx = 0.5 + gd[["nx"]],
-    ymn = 0.5, ymx = 0.5 + gd[["ny"]],
+
+  grid <- terra::rast(
+    xmin = 0.5, xmax = 0.5 + gd[["nx"]],
+    ymin = 0.5, ymax = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = c(1, 1)
   )
@@ -180,19 +189,20 @@ test_that("convert_xyspace", {
   n_loc <- nrow(locations)
 
   # Create indices of three locations to check correct transfer of values
-  loc_checks <- list(
-    c(
-      tmp <- c(gx = d0[[1L]] + 1, gy = d0[[2L]] + 3),
-      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
-    ),
-    c(
-      tmp <- c(gx = d0[[1L]] + dd[["nx"]] - 10, gy = d0[[2L]] + dd[["ny"]] - 3),
-      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
-    ),
-    c(
-      tmp <- c(gx = d0[[1L]] + dd[["nx"]] - 1, gy = d0[[2L]] + dd[["ny"]] - 1),
-      loc = which(locations[, 1] == tmp[[1L]] & locations[, 2] == tmp[[2L]])
-    )
+  tmp <- list(
+    c(gx = d0[[1L]] + 1L, gy = d0[[2L]] + 3L),
+    c(gx = d0[[1L]] + dd[["nx"]] - 10L, gy = d0[[2L]] + dd[["ny"]] - 3L),
+    c(gx = d0[[1L]] + dd[["nx"]] - 1L, gy = d0[[2L]] + dd[["ny"]] - 1L)
+  )
+
+  loc_checks <- lapply(
+    tmp,
+    function(x) {
+      c(
+        x,
+        loc = which(locations[, 1L] == x[[1L]] & locations[, 2L] == x[[2L]])
+      )
+    }
   )
 
 
@@ -248,7 +258,7 @@ test_that("convert_xyspace", {
     tmp_sparse[k * dd[["nx"]] + 4 + 3:4, , k] <- NA
   }
 
-  if (FALSE) {
+  if (interactive()) {
     # Visualize test data
     tmp <- data.frame(
       Var1 = seq_len(dd[["nx"]]),
@@ -346,7 +356,7 @@ test_that("convert_xyspace", {
 
       } else if (
         data_str_res %in% c("xyz", "xyt", "xy") &&
-        !is.null(dim(ref))
+          !is.null(dim(ref))
       ) {
         expect_equal(
           res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], ],
@@ -464,7 +474,7 @@ test_that("convert_xyspace", {
 
 #------ Tests for `read_netCDF()` ------
 test_that("read_netCDF", {
-  tmp_methods <- c("array", "raster", "stars")
+  tmp_methods <- c("array", "raster", "stars", "terra")
 
   #--- Create netCDFs to check reading
   tmp_nc <- create_example_netCDFs(
@@ -489,8 +499,8 @@ test_that("read_netCDF", {
     # Loop over methods
     for (km in tmp_methods) {
 
-      if (km == "raster" && basename(fnc) == "nc_s.nc") {
-        # It appears that the raster package does not handle this case
+      if (km %in% c("terra", "raster") && basename(fnc) == "nc_s.nc") {
+        # It appears that the raster and terra packages do not handle this case
         next
       }
 
@@ -541,6 +551,10 @@ test_that("read_netCDF", {
 
       } else if (km == "stars") {
         expect_s3_class(res, "stars")
+        expect_gt(length(dim(res)), 0L)
+
+      } else if (km == "terra") {
+        expect_s4_class(res, "SpatRaster")
         expect_gt(length(dim(res)), 0L)
       }
 
