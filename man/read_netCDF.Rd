@@ -5,11 +5,12 @@
 \alias{read_netCDF_as_array}
 \alias{read_netCDF_as_raster}
 \alias{read_netCDF_as_stars}
+\alias{read_netCDF_as_terra}
 \title{Read a \var{netCDF}}
 \usage{
 read_netCDF(
   x,
-  method = c("array", "raster", "stars", "xy_subset"),
+  method = c("array", "raster", "stars", "terra", "xy_subset"),
   var = NULL,
   nc_name_crs = "crs",
   nc_name_crs_wkt = "crs_wkt",
@@ -43,6 +44,15 @@ read_netCDF_as_raster(
 )
 
 read_netCDF_as_stars(
+  x,
+  var = NULL,
+  nc_name_crs = "crs",
+  nc_name_crs_wkt = "crs_wkt",
+  verbose_read = TRUE,
+  ...
+)
+
+read_netCDF_as_terra(
   x,
   var = NULL,
   nc_name_crs = "crs",
@@ -131,6 +141,10 @@ but makes an extra attempt to correctly set the \var{crs} object.
  \code{\link{read_netCDF_as_stars}} is a thin wrapper
 around \code{\link[stars:read_ncdf]{stars::read_ncdf}},
 but makes an extra attempt to correctly set the \var{crs} object.
+
+ \code{\link{read_netCDF_as_terra}} is a thin wrapper
+around \code{\link[terra:rast]{terra::rast}},
+but makes an extra attempt to correctly set the \var{crs} object.
 }
 
 \examples{
@@ -182,22 +196,24 @@ if (requireNamespace("graphics")) {
 
 
 ## Read netCDF as raster object
-# This will generate several warnings and messages
-raster_xyt <- read_netCDF(
-  tmp_nc[["xyt"]],
-  method = "raster",
-  band = 15,
-  verbose_read = FALSE
-)
-raster::plot(raster_xyt)
+if (requireNamespace("raster")) {
+  # This will generate several warnings and messages
+  raster_xyt <- read_netCDF(
+    tmp_nc[["xyt"]],
+    method = "raster",
+    band = 15,
+    verbose_read = FALSE
+  )
+  raster::plot(raster_xyt)
 
-raster_szt <- read_netCDF(
-  tmp_nc[["szt"]],
-  method = "raster",
-  band = 15,
-  verbose_read = FALSE
-)
-raster::plot(raster_szt)
+  raster_szt <- read_netCDF(
+    tmp_nc[["szt"]],
+    method = "raster",
+    band = 15,
+    verbose_read = FALSE
+  )
+  raster::plot(raster_szt)
+}
 
 ## Read netCDF as stars object
 stars_xyt <- read_netCDF(
@@ -215,6 +231,23 @@ stars_szt <- read_netCDF(
   verbose_read = FALSE
 )
 plot(stars_szt)
+
+## Read netCDF as terra object
+terra_xyt <- read_netCDF(
+  tmp_nc[["xyt"]],
+  method = "terra",
+  var = "sine",
+  verbose_read = FALSE
+)
+terra::plot(terra_xyt)
+
+terra_szt <- read_netCDF(
+  tmp_nc[["szt"]],
+  method = "terra",
+  var = "sine",
+  verbose_read = FALSE
+)
+terra::plot(terra_szt)
 
 ## Read gridded netCDF as array and extract subset
 datasubset_xyt <- read_netCDF(

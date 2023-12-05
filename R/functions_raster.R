@@ -16,22 +16,24 @@
 #'   (if \code{data} is two-dimensional).
 #'
 #' @examples
-#' r <- raster::raster(
-#'   xmn = 0, xmx = 10,
-#'   ymn = 0, ymx = 10,
-#'   crs = "OGC:CRS84",
-#'   resolution = c(1, 1)
-#' )
-#'
-#' rv <- create_raster_from_variables(
-#'   data = 1:10,
-#'   site_locations = as_points(
-#'     0.5 + cbind(0:9, 0:9),
+#' if (requireNamespace("raster")) {
+#'   r <- raster::raster(
+#'     xmn = 0, xmx = 10,
+#'     ymn = 0, ymx = 10,
 #'     crs = "OGC:CRS84",
-#'     to_class = "sf"
-#'   ),
-#'   grid = r
-#' )
+#'     resolution = c(1, 1)
+#'   )
+#'
+#'   rv <- create_raster_from_variables(
+#'     data = 1:10,
+#'     site_locations = as_points(
+#'       0.5 + cbind(0:9, 0:9),
+#'       crs = "OGC:CRS84",
+#'       to_class = "sf"
+#'     ),
+#'     grid = r
+#'   )
+#' }
 #'
 #' @export
 create_raster_from_variables <- function(
@@ -41,6 +43,7 @@ create_raster_from_variables <- function(
   site_crs = sf::st_crs(site_locations),
   filename = ""
 ) {
+  stopifnot(requireNamespace("raster"))
 
   # prepare locations
   loc <- rSW2st::as_points(site_locations, to_class = "sf", crs = site_crs)

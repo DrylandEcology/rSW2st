@@ -1,10 +1,10 @@
 test_that("variogram_range", {
-  r <- suppressWarnings(raster::raster(
-    xmn = 0, xmx = 10,
-    ymn = 0, ymx = 10,
+  rv1 <- terra::rast(
+    xmin = 0, xmax = 10,
+    ymin = 0, ymax = 10,
     crs = "EPSG:6350",
     resolution = c(1, 1)
-  ))
+  )
 
   xy <- as_points(
     0.5 + cbind(0:9, 0:9),
@@ -12,11 +12,8 @@ test_that("variogram_range", {
     to_class = "sf"
   )
 
-  rv1 <- create_raster_from_variables(
-    data = rep(1, 10),
-    site_locations = xy,
-    grid = r
-  )
+  ids <- terra::cellFromXY(rv1, sf::st_coordinates(xy))
+  rv1[ids] <- 1L
 
   expect_identical(
     variogram_range(x = rv1),
