@@ -1,4 +1,14 @@
-# rSW2st v0.2.1-9000
+# rSW2st v0.2.1
+
+* `rSW2st` no longer depends on but instead suggests
+  `"sp"` and `"raster"` packages (#18; @dschlaep).
+    * Functions that gained the ability to handle `"SpatRaster"`
+      (`"terra"` package) objects:
+        `get_xyspace()`, `calculate_cell_area()`,
+        `calculate_nominal_resolution()`, `read_netCDF()`
+    * `as_points()` gained the ability to handle
+      `"SpatVector"` (`"terra"` package) objects.
+
 
 # rSW2st v0.2.0
 
