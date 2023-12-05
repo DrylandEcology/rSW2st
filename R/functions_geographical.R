@@ -3,11 +3,11 @@
 #'
 #' @inheritParams as_points
 #' @param grid
-#'   A \code{\link[raster:Raster-class]{raster::Raster}} or
+#'   A \code{\link[terra:SpatRaster-class]{terra::rast}},
+#'   a \code{\link[raster:Raster-class]{raster::Raster}} or
 #'   a \code{stars::stars} object for coordinate system and cells.
-#' @param tol A numerical value to inform the site to gridcell matching.
+#' @param ... Currently, unused and silently ignored.
 #'
-#' @seealso \code{\link[geosphere]{areaPolygon}}
 #'
 #' @return A \code{data.frame} with four columns: \var{\dQuote{Longitude}},
 #'   \var{\dQuote{Latitude}}, \var{\dQuote{km2}}, and \var{\dQuote{rel}};
@@ -16,34 +16,33 @@
 #'   \code{km2} and as fraction of maximal cell area on the equator \code{rel}.
 #'
 #' @examples
-#' r <- raster::raster(
-#'   xmn = 0, xmx = 1,
-#'   ymn = -90, ymx = 90,
+#' r <- terra::rast(
+#'   xmin = 0, xmax = 1,
+#'   ymin = -90, ymax = 90,
 #'   crs = "OGC:CRS84",
-#'   resolution = c(1, 1)
+#'   resolution = c(1, 1),
+#'   vals = 1:180
 #' )
-#' n <- prod(dim(r))
-#' r[] <- seq_len(n)
-#' xy <- raster::sampleRegular(r, size = n, sp = TRUE)
+#' xy <- terra::spatSample(r, size = 20L, method = "random", as.points = TRUE)
 #'
 #' ## Calculate area for a subset of cells in grid
 #' cell_areas <- calculate_cell_area(xy, grid = r)
 #' cell_areas <- calculate_cell_area(xy, grid = stars::st_as_stars(r))
 #'
-#' ## Calculate are for all cells in grid
+#' ## Calculate area for all cells in grid
 #' cell_areas2 <- calculate_cell_area(grid = r)
 #'
 #'
 #' ## Visualize cell area by latitude
-#' with(cell_areas, graphics::plot(y, km2, type = "l"))
+#' with(cell_areas2, graphics::plot(y, km2, type = "l"))
 #'
 #' ## Comparison with a spherical Earth
 #' # A spherical Earth underestimates cell areas
 #' # at mid latitudes compared to cell areas on a WGS84 ellipsoid as here
-#' rel_spherical <- cos(cell_areas[, "y"] * pi / 180)
+#' rel_spherical <- cos(cell_areas2[, "y"] * pi / 180)
 #' graphics::plot(
-#'   abs(cell_areas[, "y"]),
-#'   max(cell_areas[, "km2"]) * (cell_areas[, "rel"] - rel_spherical),
+#'   abs(cell_areas2[, "y"]),
+#'   max(cell_areas2[, "km2"]) * (cell_areas2[, "rel"] - rel_spherical),
 #'   pch = 46,
 #'   xlab = "abs(Latitude)",
 #'   ylab = "Cell area difference\n(ellipsoid - sphere; km2)"
@@ -54,17 +53,19 @@ calculate_cell_area <- function(
   x,
   grid,
   crs = sf::st_crs(x),
-  tol = sqrt(.Machine[["double.eps"]])
+  ...
 ) {
 
-  m2_to_km2 <- 1e-6
+  if (inherits(grid, "Raster")) {
+    stopifnot(requireNamespace("raster"))
+    grid <- terra::rast(grid)
+  }
 
-  stopifnot(
-    requireNamespace("sp"),
-    inherits(grid, c("Raster", "stars"))
-  )
+  stopifnot(inherits(grid, c("stars", "SpatRaster")))
 
-  if (!missing(x)) {
+  has_x <- !(missing(x) || is.null(x))
+
+  if (has_x) {
     x <- as_points(x, to_class = "sf", crs = crs)
 
     if (sf::st_crs(x) != sf::st_crs(grid)) {
@@ -75,8 +76,8 @@ calculate_cell_area <- function(
     colnames(coords) <- c("x", "y")
 
   } else {
-    coords <- if (inherits(grid, "Raster")) {
-      raster::coordinates(grid)
+    coords <- if (inherits(grid, "SpatRaster")) {
+      terra::crds(grid)
 
     } else if (inherits(grid, "stars")) {
       sf::st_coordinates(grid, center = TRUE)[, 1:2, drop = FALSE]
@@ -86,88 +87,78 @@ calculate_cell_area <- function(
   cells <- data.frame(coords, km2 = NA, rel = NA)
 
 
-  if (sf::st_is_longlat(grid)) {
-    # Use function `areaPolygon` which works on
-    # angular coordinates (longitude/latitude) on an ellipsoid
-    stopifnot(requireNamespace("geosphere"))
-
-    unique_lats <- unique(cells[, "y"])
-
-    # Create empty 2d-raster except for cells at specified latitudes
-    rgrid <- if (inherits(grid, "Raster")) {
-      grid
-
-    } else if (inherits(grid, "stars")) {
-      as(
-        if (length(dim(grid)) > 2) {
-          grid[1, , , 1, drop = TRUE]
-        } else {
-          grid
-        },
-        Class = "Raster"
-      )
-    }
-
-    rtmp <- etmp <- raster::init(rgrid, fun = function(x) rep(NA, x))
-    xy <- cbind(rep(raster::xmin(rtmp), length(unique_lats)), unique_lats)
-    rtmp[raster::cellFromXY(rtmp, xy)] <- 1
-
-    # Convert cells into polygons
-    ptmp <- raster::rasterToPolygons(rtmp, dissolve = FALSE)
-
-    # Calculate area of polygon for each cell
-    for (k in seq_along(ptmp)) {
-      icols <- abs(cells[, "y"] - sp::coordinates(ptmp[k, ])[, 2]) < tol
-      # Return value of `areaPolygon` is square-meter
-      cells[icols, "km2"] <- m2_to_km2 * geosphere::areaPolygon(ptmp[k, ])
-    }
-
-    # Calculate area of maximal polygon for a cell on the equator
-    rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
-    if (is.na(rid)) {
-      dxy <- - raster::res(etmp) - c(raster::xmin(etmp), raster::ymin(etmp))
-      etmp <- raster::shift(etmp, dx = dxy[[1L]], dy = dxy[[2L]])
-      rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
-    }
-
-    etmp[rid] <- 1
-    etmp <- raster::rasterToPolygons(etmp, dissolve = FALSE)
-    cell_maxarea_km2 <- m2_to_km2 * geosphere::areaPolygon(etmp)
-
-  } else {
-    # Use Euclidean area for projected/flat grids
-    if (inherits(grid, "Raster")) {
-      tmp_res <- raster::res(grid)
-
-    } else if (inherits(grid, "stars")) {
-      tmp_res <- abs(unname(
-        vapply(
-          stars::st_dimensions(grid),
-          function(x) x[["delta"]],
-          FUN.VALUE = NA_real_
-        )
-      ))[1:2]
-
-      if (anyNA(tmp_res)) {
-        stop("Can currently only handle regular, rectangular grids.")
-      }
-    }
-
-    ar <- prod(tmp_res)
-
-    # Determine distance units: meters or kilometers?
-    ar_km2 <- ar * switch(
-      crs_units(grid),
-      meter = , meters = , metre = , metres = , m = m2_to_km2,
-      kilometer = , kilometers = , kilometre = , kilometres = , km2 = 1,
-      NA
-    )
-    cells[, "km2"] <- ar_km2
-
-    cell_maxarea_km2 <- ar_km2
+  # Prepare grid on equator
+  res <- if (inherits(grid, "SpatRaster")) {
+    terra::res(grid)
+  } else if (inherits(grid, "stars")) {
+    stars::st_res(grid)
   }
 
-  cells[, "rel"] <- cells[, "km2"] / cell_maxarea_km2
+  eq0 <- terra::rast(
+    xmin = - res[[1L]] / 2L, xmax = res[[1L]] / 2L,
+    ymin = - res[[2L]] / 2L, ymax = res[[2L]] / 2L,
+    resolution = res,
+    crs = "OGC:CRS84"
+  )
+  eq0[] <- 1L # nolint: extraction_operator_linter.
+
+
+  if (inherits(grid, "SpatRaster")) {
+    # Calculate area of requested cells -- terra
+    tmpa <- terra::cellSize(grid, unit = "km")
+    if (has_x) {
+      tmpa <- terra::extract(tmpa, coords)
+    }
+    cells[["km2"]] <- as.data.frame(tmpa)[[1L]]
+
+    # Calculate area of a cell on the equator -- terra
+    eq <- suppressWarnings(
+      try(
+        terra::project(eq0, y = terra::crs(grid), res = res),
+        silent = TRUE
+      )
+    )
+
+    cell_maxarea_km2 <- if (inherits(eq, "try-error")) {
+      NA_real_
+    } else {
+      max(as.data.frame(terra::cellSize(eq, unit = "km"))[[1L]])
+    }
+
+  } else if (inherits(grid, "stars")) {
+    stopifnot(requireNamespace("units"))
+
+    # Calculate area of requested cells -- stars
+    tmpa <- sf::st_area(grid)
+    units(tmpa[["area"]]) <- "km^2"
+
+    tmp <- if (has_x) {
+      stars::st_extract(tmpa, x)[["area"]]
+    } else {
+      as.vector(tmpa[["area"]])
+    }
+
+    cells[["km2"]] <- as.numeric(tmp)
+
+    # Calculate area of a cell on the equator -- stars
+    stopifnot(requireNamespace("lwgeom")) # required but not loaded by stars
+    eq <- suppressWarnings(
+      try(
+        stars::st_warp(
+          stars::st_as_stars(eq0), crs = sf::st_crs(grid), cellsize = res
+        ),
+        silent = TRUE
+      )
+    )
+
+    cell_maxarea_km2 <- if (inherits(eq, "try-error")) {
+      NA_real_
+    } else {
+      max(as.vector(units::set_units(sf::st_area(eq)[["area"]], "km^2")))
+    }
+  }
+
+  cells[["rel"]] <- cells[["km2"]] / cell_maxarea_km2
 
   cells
 }
@@ -176,7 +167,8 @@ calculate_cell_area <- function(
 #' Calculate "nominal resolution" of a grid
 #'
 #' @param grid
-#'   A \code{\link[raster:Raster-class]{raster::Raster}} or
+#'   A \code{\link[terra:SpatRaster-class]{terra::rast}},
+#'   a \code{\link[raster:Raster-class]{raster::Raster}} or
 #'   a \code{stars::stars} object.
 #'   Gridcells with values that are not equal to a
 #'   \code{maskvalue} are included in the "nominal resolution" calculation.
@@ -192,105 +184,81 @@ calculate_cell_area <- function(
 # nolint end
 #'
 #' @examples
-#' r1 <- raster::raster(
-#'   xmn = -120, xmx = -90,
-#'   ymn = 30, ymx = 50,
+#' r1 <- terra::rast(
+#'   xmin = -120, xmax = -90,
+#'   ymin = 30, ymax = 50,
 #'   crs = "OGC:CRS84",
 #'   resolution = c(0.5, 0.5)
 #' )
-#' ext <- raster::cellsFromExtent(r1, raster::extent(-110, -100, 35, 45))
-#' r1[ext] <- 1
+#' xy <- terra::spatSample(r1, size = 200L, as.points = TRUE)
+#' r1[xy] <- 1
 #'
 #' calculate_nominal_resolution(r1)
 #' calculate_nominal_resolution(stars::st_as_stars(r1))
 #'
-#' r2 <- raster::raster(
-#'   xmn = -2480000, xmx = 90000,
-#'   ymn = 650000, ymx = 4020000,
+#' r2 <- terra::rast(
+#'   xmin = -2480000, xmax = 90000,
+#'   ymin = 650000, ymax = 4020000,
 #'   crs = "EPSG:6350",
-#'   resolution = c(1e4, 1e4)
+#'   resolution = c(10000, 10000)
 #' )
-#' ext <- raster::cellsFromExtent(
-#'   r2,
-#'   raster::extent(-2080000, 0, 1000000, 3500000)
-#' )
-#' r2[ext] <- 1
+#' xy <- terra::spatSample(r2, size = 200L, as.points = TRUE)
+#' r2[xy] <- 1
 #'
 #' calculate_nominal_resolution(r2)
+#' calculate_nominal_resolution(stars::st_as_stars(r2))
 #'
 #' @export
 calculate_nominal_resolution <- function(grid, maskvalue = NA) {
   # For a land surface model calculated on its own grid,
   # include all land grid cells
 
+  if (inherits(grid, "Raster")) {
+    stopifnot(requireNamespace("raster"))
+    grid <- terra::rast(grid)
+  }
+
+  stopifnot(
+    inherits(grid, c("stars", "SpatRaster")),
+    requireNamespace("units")
+  )
+
+  if (!isTRUE(is.na(maskvalue))) {
+    warning(
+      "maskvalue = ", shQuote(maskvalue), ": currently only NA is supported"
+    )
+  }
+
+
   # For each grid cell, calculate the distance (in km) between each pair of
   # cell vertices and select the maximum distance ("dmax").
   # For latxlon grid cells, for example, dmax would be the diagonal distance.
 
-  if (inherits(grid, "Raster")) {
-    res <- raster::res(grid)
+  if (inherits(grid, "SpatRaster")) {
+    tmpg <- terra::as.polygons(grid, aggregate = FALSE, na.rm = TRUE)
+    tmpc <- terra::geom(tmpg)[, c(3L, 4L, 1L)]
 
   } else if (inherits(grid, "stars")) {
-    res <- abs(unname(
-      vapply(
-        stars::st_dimensions(grid),
-        function(x) x[["delta"]],
-        FUN.VALUE = NA_real_
-      )
-    ))[1:2]
-
-    if (anyNA(res)) {
-      stop("Can currently only handle regular, rectangular grids.")
-    }
-
-  } else {
-    stop("`grid` of class ", shQuote(class(grid)), " is not implemented.")
-  }
-
-
-  if (sf::st_is_longlat(grid)) {
-    stopifnot(requireNamespace("geosphere"))
-
-    if (inherits(grid, "Raster")) {
-      has_values <- !(raster::getValues(grid) %in% maskvalue)
-      xy <- raster::coordinates(grid)[has_values, , drop = FALSE]
-
-    } else if (inherits(grid, "stars")) {
-      tmp <- as.data.frame(grid, center = TRUE)
-      xy <- tmp[complete.cases(tmp), 1:2, drop = FALSE]
-    }
-
-    xy_lowerleft <- xy - res / 2
-    xy_upperright <- xy + res / 2
-
-    id_use <-
-      xy_lowerleft[, 1] >= -180 & xy_lowerleft[, 1] <= 180 &
-      xy_lowerleft[, 2] >= -90 & xy_lowerleft[, 2] <= 90 &
-      xy_upperright[, 1] >= -180 & xy_upperright[, 1] <= 180 &
-      xy_upperright[, 2] >= -90 & xy_upperright[, 2] <= 90
-
-    dmax_km <- 1e-3 *
-      geosphere::distGeo(xy_lowerleft[id_use, ], xy_upperright[id_use, ])
-
-    # Calculate the mean over all cells of dmax, weighting each by the
-    # grid-cell's area (A)
-    cell_areas_km2 <- calculate_cell_area(
-      xy[id_use, , drop = FALSE],
-      grid = grid,
-      crs = sf::st_crs(grid)
-    )[, "km2"]
-    mean_resolution_km <- stats::weighted.mean(dmax_km, cell_areas_km2)
-
-  } else {
-    tmp <- sqrt(sum(res^2))
-    cu <- switch(
-      EXPR = crs_units(grid),
-      meter = , meters = , metre = , metres = , m = 1e-3,
-      kilometer = , kilometers = , kilometre = , kilometres = , km = 1,
-      stop("Unknown unit")
+    tmpg <- sf::st_as_sf(grid, as_points = FALSE, na.rm = TRUE)
+    tmpc <- sf::st_coordinates(
+      sf::st_cast(sf::st_geometry(tmpg), "MULTIPOINT")
     )
-    mean_resolution_km <- cu * tmp
   }
+
+  ns_coords <- colnames(tmpc)[1:2]
+  crs <- sf::st_crs(grid)
+
+  tmpd <- by(
+    tmpc[, 1:2, drop = FALSE],
+    INDICES = tmpc[, 3L],
+    FUN = function(pts) {
+      tmp <- sf::st_as_sf(pts, coords = ns_coords, crs = crs)
+      as.numeric(units::set_units(max(sf::st_distance(tmp)), "km"))
+    },
+    simplify = FALSE
+  )
+
+  mean_resolution_km <- mean(do.call(c, tmpd))
 
 
   # Nominal resolution

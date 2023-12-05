@@ -4,12 +4,7 @@
 \alias{calculate_cell_area}
 \title{Calculate area extent of grid cells}
 \usage{
-calculate_cell_area(
-  x,
-  grid,
-  crs = sf::st_crs(x),
-  tol = sqrt(.Machine[["double.eps"]])
-)
+calculate_cell_area(x, grid, crs = sf::st_crs(x), ...)
 }
 \arguments{
 \item{x}{A numerical two-dimensional object
@@ -20,7 +15,8 @@ a \code{\link[terra:SpatVector-class]{terra::SpatVector}} object; or
 a \var{sf} object with a point geometry,
 i.e., an object with a class \var{sf} or \var{sfc}.}
 
-\item{grid}{A \code{\link[raster:Raster-class]{raster::Raster}} or
+\item{grid}{A \code{\link[terra:SpatRaster-class]{terra::rast}},
+a \code{\link[raster:Raster-class]{raster::Raster}} or
 a \code{stars::stars} object for coordinate system and cells.}
 
 \item{crs}{An object which is a \var{crs} or from which one can be derived.
@@ -34,7 +30,7 @@ or of a class including
   \code{\link[sp:CRS-class]{sp::CRS}},
   or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
-\item{tol}{A numerical value to inform the site to gridcell matching.}
+\item{...}{Currently, unused and silently ignored.}
 }
 \value{
 A \code{data.frame} with four columns: \var{\dQuote{Longitude}},
@@ -47,40 +43,36 @@ A \code{data.frame} with four columns: \var{\dQuote{Longitude}},
 Calculate area extent of grid cells
 }
 \examples{
-r <- raster::raster(
-  xmn = 0, xmx = 1,
-  ymn = -90, ymx = 90,
+r <- terra::rast(
+  xmin = 0, xmax = 1,
+  ymin = -90, ymax = 90,
   crs = "OGC:CRS84",
-  resolution = c(1, 1)
+  resolution = c(1, 1),
+  vals = 1:180
 )
-n <- prod(dim(r))
-r[] <- seq_len(n)
-xy <- raster::sampleRegular(r, size = n, sp = TRUE)
+xy <- terra::spatSample(r, size = 20L, method = "random", as.points = TRUE)
 
 ## Calculate area for a subset of cells in grid
 cell_areas <- calculate_cell_area(xy, grid = r)
 cell_areas <- calculate_cell_area(xy, grid = stars::st_as_stars(r))
 
-## Calculate are for all cells in grid
+## Calculate area for all cells in grid
 cell_areas2 <- calculate_cell_area(grid = r)
 
 
 ## Visualize cell area by latitude
-with(cell_areas, graphics::plot(y, km2, type = "l"))
+with(cell_areas2, graphics::plot(y, km2, type = "l"))
 
 ## Comparison with a spherical Earth
 # A spherical Earth underestimates cell areas
 # at mid latitudes compared to cell areas on a WGS84 ellipsoid as here
-rel_spherical <- cos(cell_areas[, "y"] * pi / 180)
+rel_spherical <- cos(cell_areas2[, "y"] * pi / 180)
 graphics::plot(
-  abs(cell_areas[, "y"]),
-  max(cell_areas[, "km2"]) * (cell_areas[, "rel"] - rel_spherical),
+  abs(cell_areas2[, "y"]),
+  max(cell_areas2[, "km2"]) * (cell_areas2[, "rel"] - rel_spherical),
   pch = 46,
   xlab = "abs(Latitude)",
   ylab = "Cell area difference\n(ellipsoid - sphere; km2)"
 )
 
-}
-\seealso{
-\code{\link[geosphere]{areaPolygon}}
 }

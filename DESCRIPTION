@@ -21,12 +21,13 @@ Imports:
     stars (>= 0.4.3)
 Suggests:
     automap,
-    geosphere,
     gstat,
+    lwgeom,
     ggplot2,
     ncdf4 (>= 1.17),
     ncmeta (>= 0.3.0),
     RNetCDF (>= 2.6.2),
+    units (>= 0.8.5),
     sp (>= 1.4.5),
     testthat (>= 3.0.0),
     spelling,
