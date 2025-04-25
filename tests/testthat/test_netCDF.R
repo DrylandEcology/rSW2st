@@ -512,6 +512,7 @@ test_that("read_netCDF", {
         verbose_read = FALSE
       )
 
+      # nolint start: if_switch_linter.
       if (km == "array") {
         expect_type(res, "list")
         # nolint start: expect_s3_class_linter.
@@ -557,6 +558,7 @@ test_that("read_netCDF", {
         expect_s4_class(res, "SpatRaster")
         expect_gt(length(dim(res)), 0L)
       }
+      # nolint end.
 
       res_crs <- read_crs_from_netCDF(fnc)
       expect_s3_class(res_crs, "crs")

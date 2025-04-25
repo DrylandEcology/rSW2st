@@ -100,7 +100,7 @@ calculate_cell_area <- function(
     resolution = res,
     crs = "OGC:CRS84"
   )
-  eq0[] <- 1L # nolint: extraction_operator_linter.
+  eq0[] <- 1L
 
 
   if (inherits(grid, "SpatRaster")) {
@@ -225,7 +225,8 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
 
   if (!isTRUE(is.na(maskvalue))) {
     warning(
-      "maskvalue = ", shQuote(maskvalue), ": currently only NA is supported"
+      "maskvalue = ", shQuote(maskvalue), ": currently only NA is supported",
+      call. = FALSE
     )
   }
 
