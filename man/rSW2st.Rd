@@ -2,8 +2,8 @@
 % Please edit documentation in R/rSW2st-package.R
 \docType{package}
 \name{rSW2st}
-\alias{rSW2st}
 \alias{rSW2st-package}
+\alias{rSW2st}
 \title{Package \pkg{rSW2st}: Collection of general purpose functions that operate on
 spatially and temporally explicit objects
 to support \pkg{SOILWAT2} and \pkg{STEPWAT2} simulation experiments.}
