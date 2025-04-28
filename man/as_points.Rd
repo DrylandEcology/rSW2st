@@ -21,10 +21,10 @@ be numeric as a \var{EPSG} number;
 a character string as a \var{wkt};
 a character string as a \var{proj4} (not recommended because outdated);
 or of a class including
-  \code{\link[raster:Raster-class]{raster::Raster}},
-  \code{\link[sp:Spatial-class]{sp::Spatial}},
-  \code{\link[sp:CRS-class]{sp::CRS}},
-  or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+\code{\link[raster:Raster-class]{raster::Raster}},
+\code{\link[sp:Spatial-class]{sp::Spatial}},
+\code{\link[sp:CRS-class]{sp::CRS}},
+or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
 \item{to_class}{A character string. Convert
 to \var{"sp"} for
@@ -43,14 +43,14 @@ Convert two-dimensional locations to a spatially explicit object
 }
 \section{Details}{
 
-  Argument \code{crs} is only used if \code{x} is not a spatial object
-  with an embedded \code{crs}; the argument is otherwise ignored and
-  should be missing.
+Argument \code{crs} is only used if \code{x} is not a spatial object
+with an embedded \code{crs}; the argument is otherwise ignored and
+should be missing.
 }
 
 \section{Notes}{
 
-  This function does not carry out \var{crs} transformation.
+This function does not carry out \var{crs} transformation.
 }
 
 \examples{

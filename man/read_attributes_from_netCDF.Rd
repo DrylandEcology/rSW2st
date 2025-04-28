@@ -45,20 +45,20 @@ Read all attributes of a group from a \var{netCDF}
 }
 \section{Details}{
 
-  Example code is available in the documentation of
-  \code{\link{read_netCDF}}.
+Example code is available in the documentation of
+\code{\link{read_netCDF}}.
 
  \itemize{
-  \item If attributes of a variable are requested (group is \var{"var"}),
-        then the variable name must be passed to \code{var}.
-  \item If \var{xy-space} attributes are requested (group is \var{"xy"}),
-        then the names of the x and y dimension must be passed to
-        \code{xy_names}.
-  \item If \var{crs} attributes are requested (group is \var{"crs"}),
-        then the name must be passed to \code{nc_name_crs}.
-  \item To obtain all attributes from each group, pass "all" to \code{group};
-        \code{var}, \code{xy_names}, \code{nc_name_crs}
-        must be correctly specified.
+\item If attributes of a variable are requested (group is \var{"var"}),
+then the variable name must be passed to \code{var}.
+\item If \var{xy-space} attributes are requested (group is \var{"xy"}),
+then the names of the x and y dimension must be passed to
+\code{xy_names}.
+\item If \var{crs} attributes are requested (group is \var{"crs"}),
+then the name must be passed to \code{nc_name_crs}.
+\item To obtain all attributes from each group, pass "all" to \code{group};
+\code{var}, \code{xy_names}, \code{nc_name_crs}
+must be correctly specified.
 }
 }
 

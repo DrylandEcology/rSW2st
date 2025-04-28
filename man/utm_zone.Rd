@@ -21,15 +21,15 @@ be numeric as a \var{EPSG} number;
 a character string as a \var{wkt};
 a character string as a \var{proj4} (not recommended because outdated);
 or of a class including
-  \code{\link[raster:Raster-class]{raster::Raster}},
-  \code{\link[sp:Spatial-class]{sp::Spatial}},
-  \code{\link[sp:CRS-class]{sp::CRS}},
-  or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+\code{\link[raster:Raster-class]{raster::Raster}},
+\code{\link[sp:Spatial-class]{sp::Spatial}},
+\code{\link[sp:CRS-class]{sp::CRS}},
+or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 }
 \value{
 A list with two elements: \describe{
-  \item{utm_zone}{The UTM zone number as integer value.}
-  \item{utm_NS}{North/South indicator as character "N" or "S"}.
+\item{utm_zone}{The UTM zone number as integer value.}
+\item{utm_NS}{North/South indicator as character "N" or "S"}.
 }
 }
 \description{
@@ -49,6 +49,6 @@ utm_zone(locations[2, ])
 }
 \references{
 Convert Latitude/Longitude to UTM
-  \url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
-  (attributed to Chuck Gantz).
+\url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
+(attributed to Chuck Gantz).
 }

@@ -2777,7 +2777,6 @@ get_data_dims <- function(
 #' get_nc_type(1) ## "NC_DOUBLE"
 #' \dontrun{get_nc_type(TRUE)} ## error
 #'
-#' @md
 #' @export
 get_nc_type <- function(x) {
   switch(

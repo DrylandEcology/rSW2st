@@ -134,8 +134,8 @@ Used only if \code{nc_compression} is activated \code{TRUE}.}
 }
 \value{
 This function is used for the side-effect of creating a \var{netCDF}
-  file.
-  Data values are written to the file if provided as argument \code{data}.
+file.
+Data values are written to the file if provided as argument \code{data}.
 }
 \description{
 The user describes a data array and specifies
@@ -150,10 +150,10 @@ Values can be written to the file at a later time using function
 
 The created \var{netCDF} is suitable for three data situations:
 \enumerate{
-   \item one variable and \var{xy-space}, time and vertical dimensions
-   \item one variable and \var{xy-space} and time or vertical dimensions
-   \item one or multiple variables and \var{xy-space} dimensions
-         without time/vertical dimensions
+\item one variable and \var{xy-space}, time and vertical dimensions
+\item one variable and \var{xy-space} and time or vertical dimensions
+\item one or multiple variables and \var{xy-space} dimensions
+without time/vertical dimensions
 }
 }
 
@@ -169,21 +169,21 @@ or list of discrete points/sites
 (determined by the first character of \code{data_str} equal to \var{"s"}).
 
 \itemize{
-  \item The gridded situation creates \var{x} and \var{y} dimensions and
-    associated variables in the \var{netCDF} file.
-    The size of the \var{xy-space} must agree
-    with the elements \var{"n_x"} and \var{"n_y"} of \code{data_dims} and,
-    thus, with the two first dimensions of \code{data}, if available.
+\item The gridded situation creates \var{x} and \var{y} dimensions and
+associated variables in the \var{netCDF} file.
+The size of the \var{xy-space} must agree
+with the elements \var{"n_x"} and \var{"n_y"} of \code{data_dims} and,
+thus, with the two first dimensions of \code{data}, if available.
 
-  \item The discrete point/site situation creates a \var{site} dimension and
-    associated variable as well as \var{x} and \var{y} variables
-    for the spatial coordinate values of the sites; see
-    \href{http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data}{CF point-data}.
-    The code will add a \var{coordinates} attribute to the variable(s) and
-    a \var{featureType = "point"} global attribute.
-    The size of the \var{xy-space}, i.e., the number of sites, must agree
-    with the element \var{"n_s"} of \code{data_dims} and,
-    thus, with the first dimension of \code{data}, if available.
+\item The discrete point/site situation creates a \var{site} dimension and
+associated variable as well as \var{x} and \var{y} variables
+for the spatial coordinate values of the sites; see
+\href{http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data}{CF point-data}.
+The code will add a \var{coordinates} attribute to the variable(s) and
+a \var{featureType = "point"} global attribute.
+The size of the \var{xy-space}, i.e., the number of sites, must agree
+with the element \var{"n_s"} of \code{data_dims} and,
+thus, with the first dimension of \code{data}, if available.
 }
 
 The \var{crs} are checked by default (see argument \code{check_crs}) for
@@ -223,10 +223,10 @@ points/sites.
 The first non-spatial dimension of a \code{data} array, if present,
 corresponds to
 \itemize{
-  \item multiple variables, if \code{data_str} is \var{"xy"} or \var{"s"}
-  \item time dimension, if \code{data_str} is \var{"xyt"} or \var{"st"}
-  \item vertical dimension, if \code{data_str} is
-        \var{"xyzt"}, \var{"xyz"}, \var{"szt"}, or \var{"sz"}
+\item multiple variables, if \code{data_str} is \var{"xy"} or \var{"s"}
+\item time dimension, if \code{data_str} is \var{"xyt"} or \var{"st"}
+\item vertical dimension, if \code{data_str} is
+\var{"xyzt"}, \var{"xyz"}, \var{"szt"}, or \var{"sz"}
 }
 
 The second non-spatial dimension of the \code{data} array, if present,
@@ -247,14 +247,14 @@ Standardized variable names can be searched in the
 
 The argument \code{nc_chunks} offers two auto-determined chunking schemes:
 \describe{
-  \item{"by_zt"}{
-    create chunks for the entire \var{xy-space} and
-    for each vertical and each time step
-  }
-  \item{"by_t"}{
-    create chunks for the entire \var{xy-space} and all vertical steps
-    (if present) and for each time step
-  }
+\item{"by_zt"}{
+create chunks for the entire \var{xy-space} and
+for each vertical and each time step
+}
+\item{"by_t"}{
+create chunks for the entire \var{xy-space} and all vertical steps
+(if present) and for each time step
+}
 }
 Alternatively, the user can provide an integer vector with a length
 equal to the number of the dimensions according to \code{data_dims}.

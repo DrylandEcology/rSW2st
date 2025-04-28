@@ -14,19 +14,19 @@ get_xyspace(
 }
 \arguments{
 \item{x}{An object that describes a gridded or discrete \var{xy-space}.
- Regular, rectangular grids are the only currently supported grid.
- This can be \itemize{
-   \item an object identifying a \var{netCDF} file, i.e.,
-         a character string as file name or
-         an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
-   \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
-         object,
-   \item a \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}
-         object,
-   \item a \code{stars::stars} object,
-   \item a list, such as the one produced by \code{\link{get_xyspace}}.
-   \item an object with coordinate values for all \var{gridcell} centers
-         that can be passed to \code{\link{as_points}};
+Regular, rectangular grids are the only currently supported grid.
+This can be \itemize{
+\item an object identifying a \var{netCDF} file, i.e.,
+a character string as file name or
+an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
+\item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+object,
+\item a \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}
+object,
+\item a \code{stars::stars} object,
+\item a list, such as the one produced by \code{\link{get_xyspace}}.
+\item an object with coordinate values for all \var{gridcell} centers
+that can be passed to \code{\link{as_points}};
 }}
 
 \item{crs}{An object which is a \var{crs} or from which one can be derived.
@@ -35,10 +35,10 @@ be numeric as a \var{EPSG} number;
 a character string as a \var{wkt};
 a character string as a \var{proj4} (not recommended because outdated);
 or of a class including
-  \code{\link[raster:Raster-class]{raster::Raster}},
-  \code{\link[sp:Spatial-class]{sp::Spatial}},
-  \code{\link[sp:CRS-class]{sp::CRS}},
-  or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+\code{\link[raster:Raster-class]{raster::Raster}},
+\code{\link[sp:Spatial-class]{sp::Spatial}},
+\code{\link[sp:CRS-class]{sp::CRS}},
+or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
 \item{res}{A numeric vector of length two. The (absolute values of)
 cell size/resolution/delta of the \var{x} and \var{y} dimensions
@@ -52,12 +52,12 @@ is regular and to calculate grid resolution.}
 }
 \value{
 A list with three elements:
- two vectors one each containing all unique values of the
- \var{x} coordinate and the \var{y} coordinates of
- (i) all \var{gricell} centers, if gridded, or
- (ii) all \var{sites}, if discrete;
- and a vector \var{res} with the (regular) \var{x} and \var{y} resolutions,
- if gridded (NA, if discrete).
+two vectors one each containing all unique values of the
+\var{x} coordinate and the \var{y} coordinates of
+(i) all \var{gricell} centers, if gridded, or
+(ii) all \var{sites}, if discrete;
+and a vector \var{res} with the (regular) \var{x} and \var{y} resolutions,
+if gridded (NA, if discrete).
 }
 \description{
 Extract \var{xy-space} values
@@ -70,11 +70,11 @@ Otherwise, it is ignored and can be missing.
 
 
 The argument \code{res} is only used in two cases: \itemize{
-  \item if \code{grid} is a list,
-        such as the one produced by \code{\link{get_xyspace}}, but does
-        not contain a named element \var{res}; or
-  \item if \code{grid} is an object with coordinate values for
-        all \var{gridcell} centers.
+\item if \code{grid} is a list,
+such as the one produced by \code{\link{get_xyspace}}, but does
+not contain a named element \var{res}; or
+\item if \code{grid} is an object with coordinate values for
+all \var{gridcell} centers.
 }
 Otherwise, it is ignored and can be missing.
 }
