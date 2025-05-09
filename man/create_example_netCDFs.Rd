@@ -60,5 +60,6 @@ if (requireNamespace("graphics")) {
 }
 
 unlink(unlist(tmp_nc))
+unlink("Rplots.pdf")
 
 }

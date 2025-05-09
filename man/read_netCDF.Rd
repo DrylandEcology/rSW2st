@@ -273,5 +273,6 @@ read_attributes_from_netCDF(tmp_nc[["szt"]], group = "global")
 
 # Clean up
 unlink(unlist(tmp_nc))
+unlink("Rplots.pdf")
 
 }
