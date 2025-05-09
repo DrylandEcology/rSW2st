@@ -10,7 +10,7 @@ checkSpatialNCSW(
   nameDimY = "latitude",
   nameCRS = "crs",
   expectedSpatialDims = c(NA, NA),
-  expectedSpatialExtent = c(NA, NA, NA, NA),
+  expectedSpatialExtent = c(xmin = NA, xmax = NA, ymin = NA, ymax = NA),
   tolerance = sqrt(.Machine[["double.eps"]])
 )
 }
@@ -18,6 +18,22 @@ checkSpatialNCSW(
 \item{x}{A character string (file name that will be opened and closed) or
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
+
+\item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
+coordinate variable.}
+
+\item{nameDimY}{A character string. The name of the \code{Y}-axis dimension and
+coordinate variable.}
+
+\item{nameCRS}{A character string. The name of the \code{CRS} variable.}
+
+\item{expectedSpatialDims}{A vector of length 2. Function will check
+spatial dimensions of \code{x} against \code{expectedSpatialDims} if not \code{NA}.}
+
+\item{expectedSpatialExtent}{A named vector of length 4. Function will check
+spatial extent of \code{x} against \code{expectedSpatialExtent} if not \code{NA}.}
+
+\item{tolerance}{A numeric value. Tolerance to identify unique differences.}
 }
 \description{
 Check spatial structure of a \code{netCDF}

@@ -19,6 +19,27 @@ setSpatialBoundsNCSW(
 \item{x}{A character string (file name that will be opened and closed) or
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
+
+\item{nameBnds}{A character string. The name of the bounds dimension.}
+
+\item{nameBndsX}{A character string. The name of the \code{X}-axis bounds
+variable.}
+
+\item{nameBndsY}{A character string. The name of the \code{Y}-axis bounds
+variable.}
+
+\item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
+coordinate variable.}
+
+\item{nameDimY}{A character string. The name of the \code{Y}-axis dimension and
+coordinate variable.}
+
+\item{valuesBndsX}{A numeric vector. The values of the \code{X}-axis bounds
+variable. Values will derived from \code{X}-axis variable assuming
+symmetric bounds if \code{NULL}.}
+
+\item{valuesBndsY}{A numeric vector. The values of the \code{Y}-axis bounds
+symmetric bounds if \code{NULL}.}
 }
 \description{
 Set spatial bounds on x-axis and y-axis

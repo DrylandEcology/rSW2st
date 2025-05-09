@@ -27,7 +27,37 @@ setVariableNCSW(
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
 
+\item{varName}{A character string. The name of the variable.}
+
+\item{values}{An object. The values to write to the
+\code{netCDF} variable \code{varName} if not \code{NULL},
+see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
+
+\item{start}{A numeric vector. The start indices at which to write values,
+see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
+
+\item{count}{A numeric vector. The counts of writing values,
+see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
+
+\item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
 \item{dataType}{A character string. A \code{netCDF} data type.}
+
+\item{dimensions}{A vector, see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
+\item{deflate}{A numeric value or \code{NA},
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
+\item{long_name}{A character string. Attribute of variable \code{varName}.}
+
+\item{units}{A character string. Attribute of variable \code{varName}.}
+
+\item{cell_method}{A character string. Attribute of variable \code{varName}.}
+
+\item{coordinates}{A character string. Attribute of variable \code{varName}.}
+
+\item{grid_mapping}{A character string. Attribute of variable \code{varName}.}
 
 \item{attributes}{A named vector or named list of character strings.}
 }
@@ -37,8 +67,10 @@ Add a variable
 \section{Details}{
 
 \enumerate{
-\item Create variable of \code{dataType} and \code{dimensions} if not present.
-\item Write values if \code{values}, \code{count}, and optionally \code{start} are provided.
+\item Create variable of \code{dataType} and \code{dimensions} if not present,
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}}.
+\item Write values if \code{values}, \code{count}, and optionally \code{start} are provided,
+see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}}.
 \item Add attributes \code{"long_name"}, \code{"units"}, \code{"cell_method"},
 \code{"coordinates"} and \code{"grid_mapping"} if provided.
 If \code{"long_name"} is not provided and there is no attribute with that

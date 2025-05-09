@@ -5,13 +5,28 @@
 #' @param x A character string (file name that will be opened and closed) or
 #' an object of class `"NetCDF"` from the `RNetCDF` package
 #' (an open connection to a `NetCDF` dataset that will be kept open).
-#'
 #' @param attributes A named vector or named list of character strings.
-#'
 #' @param dataType A character string. A `netCDF` data type.
+#' @param nameDimX A character string. The name of the `X`-axis dimension and
+#' coordinate variable.
+#' @param nameDimY A character string. The name of the `Y`-axis dimension and
+#' coordinate variable.
+#' @param nameCRS A character string. The name of the `CRS` variable.
+#' @param nameAxis A character string. The name of the axis dimension and
+#' associated coordinate variable.
+#' @param timeValues A numeric vector. The values of the time axis variable.
+#' @param verticalValues A numeric vector. The values of the vertical axis
+#' variable.
+#' @param pftValues A vector of character strings. The value of the variable
+#' representing plant functional types.
+#' @param var_chunksizes_xyzt A numeric vector. The chunk sizes if not `NA`,
+#' see [`RNetCDF::var.def.nc()`] for more detail.
+#'
+#'
 #'
 #' @name ncsw
 NULL
+#--- ncsw ------
 
 
 #' Identify the fill value corresponding to a data type
@@ -51,7 +66,15 @@ fillValue <- function(dataType) {
 }
 
 
-#' Unique differences
+#' Unique differences between adjacent values
+#'
+#' Check if values are regularly spaced.
+#'
+#' @param x A numeric vector.
+#' @param uniqueDifferences A logical value. Find unique differences between
+#' adjacent values in `x`.
+#' @param allowMultiple A logical value. Allow more than one unique difference.
+#' @param tolerance A numeric value. Tolerance to identify unique differences.
 #'
 #' @examples
 #' x <- seq(0, 1, by = 1 / 24)
@@ -93,6 +116,16 @@ uniqueDifferences <- function(
 #' Write a `terra` raster object to a `netCDF` file suitable for `SOILWAT2`
 #'
 #' @inheritParams ncsw
+#' @param filename A character string. The file name of the `netCDF` file
+#' to be created.
+#' @param increasingLat A logical value. Sort `Y`-axis values increasingly.
+#' @param addSpatialBounds A logical value. Add spatial bounds.
+#' @param nameAxisVertical A character string. The name of the `Z`-axis
+#' dimension and coordinate variable.
+#' @param nameAxisTime A character string. The name of the `T`-axis
+#' dimension and coordinate variable.
+#' @param deleteGlobalAttributes A vector of character strings.
+#' Global attributes to delete.
 #'
 #' @export
 writeTerraToNCSW <- function(
@@ -101,8 +134,8 @@ writeTerraToNCSW <- function(
   var_chunksizes_xyzt = NA,
   dataType = c("double", "float", "integer", "short", "byte", "char"),
   increasingLat = TRUE,
-  nameLon = "longitude",
-  nameLat = "latitude",
+  nameDimX = "longitude",
+  nameDimY = "latitude",
   addSpatialBounds = TRUE,
   nameAxisVertical = "vertical",
   verticalValues = NULL,
@@ -172,21 +205,25 @@ writeTerraToNCSW <- function(
   # nolint start.
   # [terra:::.write_cdf] `ydim <- ncdf4::ncdim_def( yname, yunit, yFromRow(y, 1:nrow(y)) )`
   # nolint end.
-  xlat <- RNetCDF::var.get.nc(xnc, variable = nameLat)
-  RNetCDF::var.put.nc(xnc, variable = nameLat, data = rev(xlat))
+  xlat <- RNetCDF::var.get.nc(xnc, variable = nameDimY)
+  RNetCDF::var.put.nc(xnc, variable = nameDimY, data = rev(xlat))
 
 
   #--- longitude/latitude attributes
-  RNetCDF::att.put.nc(xnc, nameLon, "axis", "NC_CHAR", value = "X")
-  RNetCDF::att.put.nc(xnc, nameLon, "standard_name", "NC_CHAR", value = nameLon)
+  RNetCDF::att.put.nc(xnc, nameDimX, "axis", "NC_CHAR", value = "X")
+  RNetCDF::att.put.nc(
+    xnc, nameDimX, "standard_name", "NC_CHAR", value = nameDimX
+  )
 
-  RNetCDF::att.put.nc(xnc, nameLat, "axis", "NC_CHAR", value = "Y")
-  RNetCDF::att.put.nc(xnc, nameLat, "standard_name", "NC_CHAR", value = nameLat)
+  RNetCDF::att.put.nc(xnc, nameDimY, "axis", "NC_CHAR", value = "Y")
+  RNetCDF::att.put.nc(
+    xnc, nameDimY, "standard_name", "NC_CHAR", value = nameDimY
+  )
 
 
   #--- Spatial bounds
   if (isTRUE(addSpatialBounds)) {
-    setSpatialBoundsNCSW(xnc, nameDimX = nameLon, nameDimY = nameLat)
+    setSpatialBoundsNCSW(xnc, nameDimX = nameDimX, nameDimY = nameDimY)
   }
 
   #--- Set CRS to WGS84
@@ -275,6 +312,11 @@ setCRSWGS84NCSW <- function(x, nameCRS) {
 #' Check spatial structure of a `netCDF`
 #'
 #' @inheritParams ncsw
+#' @inheritParams uniqueDifferences
+#' @param expectedSpatialDims A vector of length 2. Function will check
+#' spatial dimensions of `x` against `expectedSpatialDims` if not `NA`.
+#' @param expectedSpatialExtent A named vector of length 4. Function will check
+#' spatial extent of `x` against `expectedSpatialExtent` if not `NA`.
 #'
 #' @export
 checkSpatialNCSW <- function(
@@ -283,7 +325,7 @@ checkSpatialNCSW <- function(
   nameDimY = "latitude",
   nameCRS = "crs",
   expectedSpatialDims = c(NA, NA),
-  expectedSpatialExtent = c(NA, NA, NA, NA),
+  expectedSpatialExtent = c(xmin = NA, xmax = NA, ymin = NA, ymax = NA),
   tolerance = sqrt(.Machine[["double.eps"]])
 ) {
   if (inherits(x, "NetCDF")) {
@@ -377,6 +419,16 @@ renameSpatialNCSW <- function(
 #' Set spatial bounds on x-axis and y-axis
 #'
 #' @inheritParams ncsw
+#' @param nameBnds A character string. The name of the bounds dimension.
+#' @param nameBndsX A character string. The name of the `X`-axis bounds
+#' variable.
+#' @param nameBndsY A character string. The name of the `Y`-axis bounds
+#' variable.
+#' @param valuesBndsX A numeric vector. The values of the `X`-axis bounds
+#' variable. Values will derived from `X`-axis variable assuming
+#' symmetric bounds if `NULL`.
+#' @param valuesBndsY A numeric vector. The values of the `Y`-axis bounds
+#' symmetric bounds if `NULL`.
 #'
 #' @export
 setSpatialBoundsNCSW <- function(
@@ -461,9 +513,15 @@ setSpatialBoundsNCSW <- function(
 }
 
 
-#' Add a vertical dimension and coordinate variable
+#' Add a vertical dimension and coordinate variable (`Z`-axis)
 #'
 #' @inheritParams ncsw
+#' @param verticalUpperBound A numerical vector. The upper (top) soil depths
+#' (bounds) of each soil layer (as defined by `verticalValues`).
+#' @param verticalLowerBound A numerical vector. The lower (bottom) soil depths
+#' (bounds) of each soil layer (as defined by `verticalValues`).
+#' @param verticalType A character string. The type of the vertical axis.
+#' @param units A character string. The length units of `verticalType`.
 #'
 #' @export
 setAxisVerticalNCSW <- function(
@@ -589,8 +647,10 @@ setAxisVerticalNCSW <- function(
 #' @export
 setAxisPFTsNCSW <- function(
   x,
-  pfts = c(Tree = "Trees", Shrub = "Shrubs", Forb = "Forbs", Grass = "Grasses"),
-  dimName = "pft",
+  pftValues = c(
+    Tree = "Trees", Shrub = "Shrubs", Forb = "Forbs", Grass = "Grasses"
+  ),
+  nameAxis = "pft",
   dataType = c("NC_STRING", "NC_BYTE")
 ) {
   dataType <- match.arg(dataType)
@@ -608,53 +668,56 @@ setAxisPFTsNCSW <- function(
   }
 
   #--- Create dimension
-  res <- try(RNetCDF::dim.inq.nc(xnc, dimName), silent = TRUE)
+  res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::dim.def.nc(
-      xnc, dimname = dimName, dimlength = length(pfts)
+      xnc, dimname = nameAxis, dimlength = length(pftValues)
     )
   }
 
   #--- Create variable
-  res <- try(RNetCDF::var.inq.nc(xnc, dimName), silent = TRUE)
+  res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::var.def.nc(
       xnc,
-      varname = dimName, vartype = dataType, dimensions = dimName
+      varname = nameAxis, vartype = dataType, dimensions = nameAxis
     )
   }
 
   if (identical(dataType, "NC_STRING")) {
-    RNetCDF::var.put.nc(xnc, dimName, data = pfts)
+    RNetCDF::var.put.nc(xnc, nameAxis, data = pftValues)
   } else if (identical(dataType, "NC_BYTE")) {
-    RNetCDF::var.put.nc(xnc, dimName, data = seq_along(pfts))
+    RNetCDF::var.put.nc(xnc, nameAxis, data = seq_along(pftValues))
   }
 
 
   #--- Variable attributes
   RNetCDF::att.put.nc(
-    xnc, dimName, "standard_name", "NC_CHAR", value = "biological_taxon_name"
+    xnc, nameAxis, "standard_name", "NC_CHAR", value = "biological_taxon_name"
   )
 
   if (identical(dataType, "NC_BYTE")) {
     RNetCDF::att.put.nc(
       xnc,
-      variable = dimName,
+      variable = nameAxis,
       name = "flag_meanings",
       type = "NC_CHAR",
-      value = paste(pfts, collapse = " ")
+      value = paste(pftValues, collapse = " ")
     )
 
     RNetCDF::att.put.nc(
-      xnc, dimName, "flag_values", "NC_BYTE", value = seq_along(pfts)
+      xnc, nameAxis, "flag_values", "NC_BYTE", value = seq_along(pftValues)
     )
   }
 }
 
 
-#' Add a time dimension and coordinate variable
+#' Add a time dimension and coordinate variable (`T`-axis)
 #'
 #' @inheritParams ncsw
+#' @param startYear An integer value. The calendar year used as reference
+#' in the time units `"days since ...`.
+#' @param calendar A character string representing the calendar type.
 #'
 #' @export
 setAxisTimeNCSW <- function(
@@ -733,6 +796,10 @@ setAxisTimeNCSW <- function(
 #' Add a monthly climatology dimension and coordinate variable
 #'
 #' @inheritParams ncsw
+#' @param startYear An integer value. The first calendar year of the period
+#' which the climatology represents.
+#' @param endYear An integer value. The last calendar year of the period
+#' which the climatology represents.
 #'
 #' @export
 setAxisMonthClimatologyNCSW <- function(
@@ -831,10 +898,28 @@ setAxisMonthClimatologyNCSW <- function(
 #' Add a variable
 #'
 #' @inheritParams ncsw
+#' @param varName A character string. The name of the variable.
+#' @param values An object. The values to write to the
+#' `netCDF` variable `varName` if not `NULL`,
+#' see [`RNetCDF::var.put.nc()`] for more detail.
+#' @param start A numeric vector. The start indices at which to write values,
+#' see [`RNetCDF::var.put.nc()`] for more detail.
+#' @param count A numeric vector. The counts of writing values,
+#' see [`RNetCDF::var.put.nc()`] for more detail.
+#' @param dimensions A vector, see [`RNetCDF::var.def.nc()`] for more detail.
+#' @param deflate A numeric value or `NA`,
+#' see [`RNetCDF::var.def.nc()`] for more detail.
+#' @param long_name A character string. Attribute of variable `varName`.
+#' @param units A character string. Attribute of variable `varName`.
+#' @param cell_method A character string. Attribute of variable `varName`.
+#' @param coordinates A character string. Attribute of variable `varName`.
+#' @param grid_mapping A character string. Attribute of variable `varName`.
 #'
 #' @section Details:
-#'   1. Create variable of `dataType` and `dimensions` if not present.
-#'   2. Write values if `values`, `count`, and optionally `start` are provided.
+#'   1. Create variable of `dataType` and `dimensions` if not present,
+#'      see [`RNetCDF::var.def.nc()`].
+#'   2. Write values if `values`, `count`, and optionally `start` are provided,
+#'      see [`RNetCDF::var.put.nc()`].
 #'   3. Add attributes `"long_name"`, `"units"`, `"cell_method"`,
 #'      `"coordinates"` and `"grid_mapping"` if provided.
 #'      If `"long_name"` is not provided and there is no attribute with that

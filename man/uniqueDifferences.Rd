@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_ncSOILWAT2.R
 \name{uniqueDifferences}
 \alias{uniqueDifferences}
-\title{Unique differences}
+\title{Unique differences between adjacent values}
 \usage{
 uniqueDifferences(
   x,
@@ -11,8 +11,18 @@ uniqueDifferences(
   tolerance = sqrt(.Machine[["double.eps"]])
 )
 }
+\arguments{
+\item{x}{A numeric vector.}
+
+\item{uniqueDifferences}{A logical value. Find unique differences between
+adjacent values in \code{x}.}
+
+\item{allowMultiple}{A logical value. Allow more than one unique difference.}
+
+\item{tolerance}{A numeric value. Tolerance to identify unique differences.}
+}
 \description{
-Unique differences
+Check if values are regularly spaced.
 }
 \examples{
 x <- seq(0, 1, by = 1 / 24)

@@ -6,8 +6,8 @@
 \usage{
 setAxisPFTsNCSW(
   x,
-  pfts = c(Tree = "Trees", Shrub = "Shrubs", Forb = "Forbs", Grass = "Grasses"),
-  dimName = "pft",
+  pftValues = c(Tree = "Trees", Shrub = "Shrubs", Forb = "Forbs", Grass = "Grasses"),
+  nameAxis = "pft",
   dataType = c("NC_STRING", "NC_BYTE")
 )
 }
@@ -15,6 +15,12 @@ setAxisPFTsNCSW(
 \item{x}{A character string (file name that will be opened and closed) or
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
+
+\item{pftValues}{A vector of character strings. The value of the variable
+representing plant functional types.}
+
+\item{nameAxis}{A character string. The name of the axis dimension and
+associated coordinate variable.}
 
 \item{dataType}{A character string. A \code{netCDF} data type.}
 }

@@ -10,6 +10,8 @@ setCRSWGS84NCSW(x, nameCRS)
 \item{x}{A character string (file name that will be opened and closed) or
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
+
+\item{nameCRS}{A character string. The name of the \code{CRS} variable.}
 }
 \description{
 Create a \code{CRS} variable with \code{WGS84} attributes

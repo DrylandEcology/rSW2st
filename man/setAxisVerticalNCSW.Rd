@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_ncSOILWAT2.R
 \name{setAxisVerticalNCSW}
 \alias{setAxisVerticalNCSW}
-\title{Add a vertical dimension and coordinate variable}
+\title{Add a vertical dimension and coordinate variable (\code{Z}-axis)}
 \usage{
 setAxisVerticalNCSW(
   x,
@@ -20,8 +20,24 @@ setAxisVerticalNCSW(
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
 
+\item{verticalValues}{A numeric vector. The values of the vertical axis
+variable.}
+
+\item{verticalUpperBound}{A numerical vector. The upper (top) soil depths
+(bounds) of each soil layer (as defined by \code{verticalValues}).}
+
+\item{verticalLowerBound}{A numerical vector. The lower (bottom) soil depths
+(bounds) of each soil layer (as defined by \code{verticalValues}).}
+
+\item{verticalType}{A character string. The type of the vertical axis.}
+
+\item{nameAxis}{A character string. The name of the axis dimension and
+associated coordinate variable.}
+
+\item{units}{A character string. The length units of \code{verticalType}.}
+
 \item{dataType}{A character string. A \code{netCDF} data type.}
 }
 \description{
-Add a vertical dimension and coordinate variable
+Add a vertical dimension and coordinate variable (\code{Z}-axis)
 }

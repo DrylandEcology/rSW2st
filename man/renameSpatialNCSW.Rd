@@ -15,6 +15,14 @@ renameSpatialNCSW(
 \item{x}{A character string (file name that will be opened and closed) or
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
+
+\item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
+coordinate variable.}
+
+\item{nameDimY}{A character string. The name of the \code{Y}-axis dimension and
+coordinate variable.}
+
+\item{nameCRS}{A character string. The name of the \code{CRS} variable.}
 }
 \description{
 Rename spatial dimensions and variables

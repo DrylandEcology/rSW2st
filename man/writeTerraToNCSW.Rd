@@ -10,8 +10,8 @@ writeTerraToNCSW(
   var_chunksizes_xyzt = NA,
   dataType = c("double", "float", "integer", "short", "byte", "char"),
   increasingLat = TRUE,
-  nameLon = "longitude",
-  nameLat = "latitude",
+  nameDimX = "longitude",
+  nameDimY = "latitude",
   addSpatialBounds = TRUE,
   nameAxisVertical = "vertical",
   verticalValues = NULL,
@@ -25,7 +25,37 @@ writeTerraToNCSW(
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
 
+\item{filename}{A character string. The file name of the \code{netCDF} file
+to be created.}
+
+\item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
 \item{dataType}{A character string. A \code{netCDF} data type.}
+
+\item{increasingLat}{A logical value. Sort \code{Y}-axis values increasingly.}
+
+\item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
+coordinate variable.}
+
+\item{nameDimY}{A character string. The name of the \code{Y}-axis dimension and
+coordinate variable.}
+
+\item{addSpatialBounds}{A logical value. Add spatial bounds.}
+
+\item{nameAxisVertical}{A character string. The name of the \code{Z}-axis
+dimension and coordinate variable.}
+
+\item{verticalValues}{A numeric vector. The values of the vertical axis
+variable.}
+
+\item{nameAxisTime}{A character string. The name of the \code{T}-axis
+dimension and coordinate variable.}
+
+\item{timeValues}{A numeric vector. The values of the time axis variable.}
+
+\item{deleteGlobalAttributes}{A vector of character strings.
+Global attributes to delete.}
 }
 \description{
 Write a \code{terra} raster object to a \code{netCDF} file suitable for \code{SOILWAT2}

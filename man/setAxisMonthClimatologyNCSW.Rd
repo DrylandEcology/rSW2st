@@ -17,6 +17,15 @@ setAxisMonthClimatologyNCSW(
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
 
+\item{startYear}{An integer value. The first calendar year of the period
+which the climatology represents.}
+
+\item{endYear}{An integer value. The last calendar year of the period
+which the climatology represents.}
+
+\item{nameAxis}{A character string. The name of the axis dimension and
+associated coordinate variable.}
+
 \item{dataType}{A character string. A \code{netCDF} data type.}
 }
 \description{

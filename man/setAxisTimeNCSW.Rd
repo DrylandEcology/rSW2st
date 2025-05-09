@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_ncSOILWAT2.R
 \name{setAxisTimeNCSW}
 \alias{setAxisTimeNCSW}
-\title{Add a time dimension and coordinate variable}
+\title{Add a time dimension and coordinate variable (\code{T}-axis)}
 \usage{
 setAxisTimeNCSW(
   x,
@@ -18,8 +18,18 @@ setAxisTimeNCSW(
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 (an open connection to a \code{NetCDF} dataset that will be kept open).}
 
+\item{startYear}{An integer value. The calendar year used as reference
+in the time units \verb{"days since ...}.}
+
+\item{timeValues}{A numeric vector. The values of the time axis variable.}
+
+\item{nameAxis}{A character string. The name of the axis dimension and
+associated coordinate variable.}
+
+\item{calendar}{A character string representing the calendar type.}
+
 \item{dataType}{A character string. A \code{netCDF} data type.}
 }
 \description{
-Add a time dimension and coordinate variable
+Add a time dimension and coordinate variable (\code{T}-axis)
 }

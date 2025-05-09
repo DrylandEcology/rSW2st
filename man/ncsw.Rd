@@ -11,6 +11,28 @@ an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 \item{attributes}{A named vector or named list of character strings.}
 
 \item{dataType}{A character string. A \code{netCDF} data type.}
+
+\item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
+coordinate variable.}
+
+\item{nameDimY}{A character string. The name of the \code{Y}-axis dimension and
+coordinate variable.}
+
+\item{nameCRS}{A character string. The name of the \code{CRS} variable.}
+
+\item{nameAxis}{A character string. The name of the axis dimension and
+associated coordinate variable.}
+
+\item{timeValues}{A numeric vector. The values of the time axis variable.}
+
+\item{verticalValues}{A numeric vector. The values of the vertical axis
+variable.}
+
+\item{pftValues}{A vector of character strings. The value of the variable
+representing plant functional types.}
+
+\item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 }
 \description{
 \code{netCDF} functionality suitable for \code{SOILWAT2}
