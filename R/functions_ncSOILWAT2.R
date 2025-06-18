@@ -918,8 +918,8 @@ setAxisMonthClimatologyNCSW <- function(
 #' @section Details:
 #'   1. Create variable of `dataType` and `dimensions` if not present,
 #'      see [`RNetCDF::var.def.nc()`].
-#'   2. Write values if `values`, `count`, and optionally `start` are provided,
-#'      see [`RNetCDF::var.put.nc()`].
+#'   2. Write values if `values` are not `NULL`
+#'      (using `count` and `start` if provided), see [`RNetCDF::var.put.nc()`].
 #'   3. Add attributes `"long_name"`, `"units"`, `"cell_method"`,
 #'      `"coordinates"` and `"grid_mapping"` if provided.
 #'      If `"long_name"` is not provided and there is no attribute with that
@@ -931,8 +931,8 @@ setVariableNCSW <- function(
   x,
   varName,
   values = NULL,
-  start = NULL,
-  count = NULL,
+  start = NA,
+  count = NA,
   var_chunksizes_xyzt = NA,
   dataType = c("NC_DOUBLE", "NC_FLOAT"),
   dimensions = NULL,
@@ -983,7 +983,7 @@ setVariableNCSW <- function(
   }
 
   #--- Write values
-  if (!is.null(values) && !is.null(count)) {
+  if (!is.null(values)) {
     RNetCDF::var.put.nc(
       xnc, variable = varName, data = values, start = start, count = count
     )

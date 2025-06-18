@@ -8,8 +8,8 @@ setVariableNCSW(
   x,
   varName,
   values = NULL,
-  start = NULL,
-  count = NULL,
+  start = NA,
+  count = NA,
   var_chunksizes_xyzt = NA,
   dataType = c("NC_DOUBLE", "NC_FLOAT"),
   dimensions = NULL,
@@ -69,8 +69,8 @@ Add a variable
 \enumerate{
 \item Create variable of \code{dataType} and \code{dimensions} if not present,
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}}.
-\item Write values if \code{values}, \code{count}, and optionally \code{start} are provided,
-see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}}.
+\item Write values if \code{values} are not \code{NULL}
+(using \code{count} and \code{start} if provided), see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}}.
 \item Add attributes \code{"long_name"}, \code{"units"}, \code{"cell_method"},
 \code{"coordinates"} and \code{"grid_mapping"} if provided.
 If \code{"long_name"} is not provided and there is no attribute with that
