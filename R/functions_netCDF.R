@@ -1771,6 +1771,7 @@ populate_netCDF_dev <- function(
 #'
 #' # Clean up
 #' unlink(unlist(tmp_nc))
+#' unlink("Rplots.pdf")
 #'
 #' @export
 read_netCDF <- function(
@@ -3259,6 +3260,7 @@ convert_xyspace <- function(
 #' }
 #'
 #' unlink(unlist(tmp_nc))
+#' unlink("Rplots.pdf")
 #'
 #' @export
 create_example_netCDFs <- function(
