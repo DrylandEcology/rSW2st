@@ -1,4 +1,6 @@
 test_that("variogram_range", {
+  skip_if_not_installed("automap")
+
   rv1 <- terra::rast(
     xmin = 0, xmax = 10,
     ymin = 0, ymax = 10,
