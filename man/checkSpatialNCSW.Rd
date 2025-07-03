@@ -8,7 +8,6 @@ checkSpatialNCSW(
   x,
   nameDimX = "longitude",
   nameDimY = "latitude",
-  nameCRS = "crs",
   expectedSpatialDims = c(NA, NA),
   expectedSpatialExtent = c(xmin = NA, xmax = NA, ymin = NA, ymax = NA),
   tolerance = sqrt(.Machine[["double.eps"]])
@@ -24,8 +23,6 @@ coordinate variable.}
 
 \item{nameDimY}{A character string. The name of the \code{Y}-axis dimension and
 coordinate variable.}
-
-\item{nameCRS}{A character string. The name of the \code{CRS} variable.}
 
 \item{expectedSpatialDims}{A vector of length 2. Function will check
 spatial dimensions of \code{x} against \code{expectedSpatialDims} if not \code{NA}.}

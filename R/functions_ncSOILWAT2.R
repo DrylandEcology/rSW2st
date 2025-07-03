@@ -323,7 +323,6 @@ checkSpatialNCSW <- function(
   x,
   nameDimX = "longitude",
   nameDimY = "latitude",
-  nameCRS = "crs",
   expectedSpatialDims = c(NA, NA),
   expectedSpatialExtent = c(xmin = NA, xmax = NA, ymin = NA, ymax = NA),
   tolerance = sqrt(.Machine[["double.eps"]])
@@ -355,9 +354,9 @@ checkSpatialNCSW <- function(
 
   if (!anyNA(expectedSpatialExtent)) {
     valuesAxisX <- RNetCDF::var.get.nc(xnc, nameDimX)
-    resX <- abs(uniqueDifferences(valuesAxisX))
+    resX <- abs(uniqueDifferences(valuesAxisX))[[1L]]
     valuesAxisY <- RNetCDF::var.get.nc(xnc, nameDimY)
-    resY <- abs(uniqueDifferences(valuesAxisY))
+    resY <- abs(uniqueDifferences(valuesAxisY))[[1L]]
 
     ext <- c(
       xmin = min(valuesAxisX) - resX / 2,
@@ -472,7 +471,7 @@ setSpatialBoundsNCSW <- function(
 
     if (is.null(valuesBndsX)) {
       valuesAxisX <- RNetCDF::var.get.nc(xnc, nameDimX)
-      resX <- abs(uniqueDifferences(valuesAxisX))
+      resX <- abs(uniqueDifferences(valuesAxisX)[[1L]])
 
       valuesBndsX <- apply(
         rbind(valuesAxisX - resX / 2, valuesAxisX + resX / 2),
@@ -498,7 +497,7 @@ setSpatialBoundsNCSW <- function(
 
     if (is.null(valuesBndsY)) {
       valuesAxisY <- RNetCDF::var.get.nc(xnc, nameDimY)
-      resY <- abs(uniqueDifferences(valuesAxisY))
+      resY <- abs(uniqueDifferences(valuesAxisY)[[1L]])
 
       valuesBndsY <- apply(
         rbind(valuesAxisY + resY / 2, valuesAxisY - resY / 2),
@@ -743,6 +742,15 @@ setAxisTimeNCSW <- function(
     )
   }
 
+  time_unit <- paste0("days since ", startYear, "-01-01 00:00:00")
+
+  if (!isTRUE(is.numeric(timeValues))) {
+    timeValues <- RNetCDF::utinvcal.nc(
+      time_unit,
+      value = as.POSIXct(timeValues)
+    )
+  }
+
 
   #--- Create dimension
   res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
@@ -768,7 +776,7 @@ setAxisTimeNCSW <- function(
   RNetCDF::att.put.nc(
     xnc,
     variable = nameAxis, name = "units", type = "NC_CHAR",
-    value = paste0("days since ", startYear, "-01-01 00:00:00")
+    value = time_unit
   )
   RNetCDF::att.put.nc(
     xnc,
