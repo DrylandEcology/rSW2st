@@ -53,9 +53,13 @@ test_that("manipulateNCforSOILWAT2", {
     overwrite = TRUE
   )
 
-  x <- terra::rast(tmpin_nc[["xyzt"]])
-  verticalValues <- unique(terra::depth(x))
-  timeValues <- unique(terra::time(x))
+  tmpnc <- RNetCDF::open.nc(tmpin_nc[["xyz"]])
+  verticalValues <- RNetCDF::var.get.nc(tmpnc, "vertical")
+  RNetCDF::close.nc(tmpnc)
+
+  tmpnc <- RNetCDF::open.nc(tmpin_nc[["xyt"]])
+  timeValues <- RNetCDF::var.get.nc(tmpnc, "time")
+  RNetCDF::close.nc(tmpnc)
 
   globalAttributes <- c(featureType = "timeSeries", frequency = "day")
   deleteGlobalAttributes <- c("created_by", "created_date", "date")
@@ -69,17 +73,22 @@ test_that("manipulateNCforSOILWAT2", {
 
     xin <- terra::rast(tmpin_nc[[ds]])
 
-
     #--- Create netCDF
     xtmp <- if (isXYZT) {
+      # Remove ZT which we will add afterwards separately
       xtmp <- xin[[1L]]
       terra::varnames(xtmp) <- paste0(terra::varnames(xtmp), "0")
+      terra::time(xtmp) <- NULL
       xtmp
     } else {
       xin
     }
 
-    expect_no_condition(
+    suppressWarnings(
+      # nolint start: commented_code_linter.
+      # ignore warning on some configurations:
+      # "GDAL Message 1: dimension #1 (easting) is not a Longitude/X dimension."
+      # nolint end: commented_code_linter.
       writeTerraToNCSW(
         x = xtmp,
         filename = tmpout_nc[[ds]],

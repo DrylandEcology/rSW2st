@@ -163,8 +163,11 @@ writeTerraToNCSW <- function(
     missval = fillValue(dataType)
   )
 
+  hasVertical <- !is.null(nameAxisVertical) && !is.null(verticalValues)
+  hasTime <- !is.null(nameAxisTime) && !is.null(timeValues)
+
   if (getNamespaceVersion("terra") >= "1.8-42") {
-    if (!is.null(nameAxisVertical) && !is.null(verticalValues)) {
+    if (hasVertical) {
       terra::depthName(x) <- nameAxisVertical
       terra::depth(x) <- verticalValues
     } else {
@@ -172,17 +175,22 @@ writeTerraToNCSW <- function(
       terra::depth(x) <- NULL
     }
 
-    if (!is.null(nameAxisTime) && !is.null(timeValues)) {
+    if (hasTime) {
       terra::time(x) <- timeValues
     } else {
       terra::time(x) <- NULL
     }
 
   } else {
-    listArgsWriteCDF[["zname"]] <- if (is.null(nameAxisVertical)) {
-      nameAxisTime
-    } else {
+    # terra v1.8-42 introduced terra::depth() and terra::time()
+    if (hasVertical && hasTime) {
+      stop("Upgrade 'terra' to support xyzt data.", call. = FALSE)
+    }
+
+    listArgsWriteCDF[["zname"]] <- if (hasVertical) {
       nameAxisVertical
+    } else if (hasTime) {
+      nameAxisTime
     }
   }
 
