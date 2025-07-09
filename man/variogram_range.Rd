@@ -49,7 +49,7 @@ Automatic calculation of a variogram range
 }
 \examples{
 xy <- as_points(0.5 + cbind(0:9, 0:9), crs = 6350, to_class = "sf")
-variogram_range(xy)
+try(variogram_range(xy)) ## requires packages "automap" and "gstat"
 
 }
 \seealso{

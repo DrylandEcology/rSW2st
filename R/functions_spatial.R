@@ -22,7 +22,7 @@
 #'
 #' @examples
 #' xy <- as_points(0.5 + cbind(0:9, 0:9), crs = 6350, to_class = "sf")
-#' variogram_range(xy)
+#' try(variogram_range(xy)) ## requires packages "automap" and "gstat"
 #'
 #' @export
 variogram_range <- function(
@@ -34,7 +34,7 @@ variogram_range <- function(
 ) {
 
   stopifnot(
-    requireNamespace("automap"),
+    requireNamespace("automap"), # nolint: missing_package_linter
     requireNamespace("gstat")
   )
 
@@ -77,11 +77,13 @@ variogram_range <- function(
 
 
   #--- determine variogram; see gstat::variogram
+  # nolint start: missing_package_linter, namespace_linter.
   fittedVar <- automap::autofitVariogram(
     target ~ 1,
     input_data = pts_prj,
     miscFitOptions = list(merge.small.bins = TRUE)
   )
+  # nolint end
 
   #--- variogram range
   # estimate is only valid if some variation in data (i.e., sill > 0)

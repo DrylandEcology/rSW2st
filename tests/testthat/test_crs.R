@@ -1,15 +1,22 @@
 test_that("crs", {
+  # NAD27(USA) was 2163; however, it was deprecated by https://epsg.org
+  # with change id "2020.020" and replaced by 9311.
+  # PROJ v7.1.0 marked 2163 deprecated in favor of 9311:
+  # nolint start: line_length_linter.
+  # (commit https://github.com/OSGeo/PROJ/commit/0853daaeb117c227db9c648785f3f81ef85956a3)
+  # nolint end
+  epsg_nad27 <- if (sf::sf_extSoftVersion()[["PROJ"]] >= "7.1.0") {
+    9311L
+  } else {
+    2136L
+  }
 
   #--- Input test cases
   test_crs <- data.frame(
     epsg = c(
       WGS84 = 4326,
       Web_PseudoMercator = 3857,
-      # NAD27(USA) was 2163; however, it was deprecated by https://epsg.org
-      # with change id "2020.020" and replaced by 9311.
-      # Yet, 9311 is not yet available as of
-      # GDAL 3.1.1 / PROJ 6.3.1
-      NAD27_USA = 2163,
+      NAD27_USA = epsg_nad27,
       NAD83_USA = 4269,
       NAD83_2011_USA = 6318
     ),
