@@ -12,13 +12,13 @@ to a one-column matrix.}
 \item{grid}{An object that describes a gridded \var{xy-space}.
 Regular, rectangular grids are the only currently supported type.
 This can be \itemize{
-  \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
-        object,
-  \item a \code{stars::stars} object,
-  \item a file name pointing to such a raster on disk;
-  \item a list, such as the one produced by \code{\link{get_xyspace}}.
-  \item an object with coordinate values for all \var{gridcell} centers
-        that can be passed to \code{\link{as_points}};
+\item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+object,
+\item a \code{stars::stars} object,
+\item a file name pointing to such a raster on disk;
+\item a list, such as the one produced by \code{\link{get_xyspace}}.
+\item an object with coordinate values for all \var{gridcell} centers
+that can be passed to \code{\link{as_points}};
 }
 The \var{crs} of the grid coordinate values must match the one of the
 data locations.}

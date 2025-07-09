@@ -121,7 +121,7 @@ as_points <- function(
     }
 
     if (missing(crs) || is.null(crs)) {
-      stop("`crs` is missing and `x` is not a spatial object.")
+      stop("`crs` is missing and `x` is not a spatial object.", call. = FALSE)
     }
 
     crs_sf <- sf::st_crs(crs)
@@ -141,7 +141,7 @@ as_points <- function(
           data.matrix(x)
         },
         type = "points",
-        crs = terra::crs(crs_sf$Wkt) # nolint: extraction_operator_linter.
+        crs = terra::crs(crs_sf$Wkt)
       ),
 
       sf = ,

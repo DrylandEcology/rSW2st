@@ -35,8 +35,8 @@ A named list, invisibly, of full paths to the created files on disk.
 \description{
 This function creates different \var{netCDFs} for all requested conditions:
 \itemize{
-  \item \code{data_str}
-  \item \code{type_timeaxis}
+\item \code{data_str}
+\item \code{type_timeaxis}
 }
 }
 \examples{
@@ -60,5 +60,6 @@ if (requireNamespace("graphics")) {
 }
 
 unlink(unlist(tmp_nc))
+unlink("Rplots.pdf")
 
 }

@@ -32,7 +32,7 @@ NULL
 #'
 #' @export
 crs_units <- function(crs) {
-  sf::st_crs(crs)$units_gdal # nolint: extraction_operator_linter.
+  sf::st_crs(crs)$units_gdal
 }
 
 

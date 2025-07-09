@@ -22,13 +22,13 @@ temporal dimension.}
 }
 \value{
 A named integer vector with six elements for
-  \describe{
-    \item{ns}{sites, for a spatial representation of data as sites}
-    \item{nx}{x coordinate, for a gridded spatial representation}
-    \item{ny}{y coordinate, for a gridded spatial representation}
-    \item{nz}{vertical levels}
-    \item{nt}{temporal units}
-  }
+\describe{
+\item{ns}{sites, for a spatial representation of data as sites}
+\item{nx}{x coordinate, for a gridded spatial representation}
+\item{ny}{y coordinate, for a gridded spatial representation}
+\item{nz}{vertical levels}
+\item{nt}{temporal units}
+}
 }
 \description{
 \var{XYZT} or \var{SZT} data dimensions for interacting with \var{netCDFs}

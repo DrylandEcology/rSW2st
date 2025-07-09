@@ -32,24 +32,24 @@ be numeric as a \var{EPSG} number;
 a character string as a \var{wkt};
 a character string as a \var{proj4} (not recommended because outdated);
 or of a class including
-  \code{\link[raster:Raster-class]{raster::Raster}},
-  \code{\link[sp:Spatial-class]{sp::Spatial}},
-  \code{\link[sp:CRS-class]{sp::CRS}},
-  or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+\code{\link[raster:Raster-class]{raster::Raster}},
+\code{\link[sp:Spatial-class]{sp::Spatial}},
+\code{\link[sp:CRS-class]{sp::CRS}},
+or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
 \item{seed}{Passed to \code{\link{set.seed}}; used only if
 \code{sub_samplepoints_N} is a number.}
 }
 \value{
 A numeric value representing the variogram range
-  in units of \code{x}.
+in units of \code{x}.
 }
 \description{
 Automatic calculation of a variogram range
 }
 \examples{
 xy <- as_points(0.5 + cbind(0:9, 0:9), crs = 6350, to_class = "sf")
-variogram_range(xy)
+try(variogram_range(xy)) ## requires packages "automap" and "gstat"
 
 }
 \seealso{

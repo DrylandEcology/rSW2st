@@ -1,3 +1,12 @@
+# rSW2st v0.3.0
+
+* New `netCDF` functionality that supports input and output workflows for
+  `nc`-based SOILWAT2 (#25; @dschlaep).
+* `RNetCDF` is now an imported package.
+* Updates to package infrastructure including Github Actions, spelling, linting,
+  and a few miscellaneous patches to fix deprecated dependencies.
+
+
 # rSW2st v0.2.1
 
 * `rSW2st` no longer depends on but instead suggests
@@ -24,7 +33,7 @@
 * `read_netCDF_as_array()` gains arguments `"time_name"` and `"vertical_name"`
   with previous hard-coded values as defaults ("time" and "vertical")
   (#14; @dschlaep)
-* New `get_nc_type()` identifies a suitable netCDF data type from an R object.
+* New `get_nc_type()` identifies a suitable `netCDF` data type from an R object.
 * `read_netCDF()` gains argument `"verbose_read"` which, if set to `"FALSE"`,
   attempts to silence communication (messages, warnings, and print statements)
   generated from reading a `netCDF` (#9; @dschlaep).

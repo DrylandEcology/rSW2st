@@ -118,19 +118,19 @@ not returned
 }
 \value{
 A named list including a data \var{array}
-  (the list contains completed information to re-create the file with a
-  call to \code{\link{create_netCDF}}),
-  a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}, or
-  a \code{stars::stars} object.
+(the list contains completed information to re-create the file with a
+call to \code{\link{create_netCDF}}),
+a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}, or
+a \code{stars::stars} object.
 }
 \description{
 Read a \var{netCDF} as produced by \code{create_netCDF}
 }
 \section{Notes}{
 
-  Reading discrete \var{netCDF}s,
-  i.e., cases \var{"szt"}, \var{"st"}, \var{"sz"}, and \var{"s"},
-  is mostly supported; see examples.
+Reading discrete \var{netCDF}s,
+i.e., cases \var{"szt"}, \var{"st"}, \var{"sz"}, and \var{"s"},
+is mostly supported; see examples.
 }
 
 \section{Details}{
@@ -273,5 +273,6 @@ read_attributes_from_netCDF(tmp_nc[["szt"]], group = "global")
 
 # Clean up
 unlink(unlist(tmp_nc))
+unlink("Rplots.pdf")
 
 }

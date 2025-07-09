@@ -25,19 +25,19 @@ be numeric as a \var{EPSG} number;
 a character string as a \var{wkt};
 a character string as a \var{proj4} (not recommended because outdated);
 or of a class including
-  \code{\link[raster:Raster-class]{raster::Raster}},
-  \code{\link[sp:Spatial-class]{sp::Spatial}},
-  \code{\link[sp:CRS-class]{sp::CRS}},
-  or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
+\code{\link[raster:Raster-class]{raster::Raster}},
+\code{\link[sp:Spatial-class]{sp::Spatial}},
+\code{\link[sp:CRS-class]{sp::CRS}},
+or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
 \item{...}{Currently, unused and silently ignored.}
 }
 \value{
 A \code{data.frame} with four columns: \var{\dQuote{Longitude}},
-  \var{\dQuote{Latitude}}, \var{\dQuote{km2}}, and \var{\dQuote{rel}};
-  and one row for each site of \code{sites}.
-  Cell area on ellipsoid, based on \code{grid}, in square-kilometer
-  \code{km2} and as fraction of maximal cell area on the equator \code{rel}.
+\var{\dQuote{Latitude}}, \var{\dQuote{km2}}, and \var{\dQuote{rel}};
+and one row for each site of \code{sites}.
+Cell area on ellipsoid, based on \code{grid}, in square-kilometer
+\code{km2} and as fraction of maximal cell area on the equator \code{rel}.
 }
 \description{
 Calculate area extent of grid cells

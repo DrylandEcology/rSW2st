@@ -2,7 +2,13 @@
 
 #--- rSW2st: use development version
 # load "methods" in case this code is run via 'Rscript'
-library("methods") # nolint: undesirable_function_linter, unused_import_linter.
+
+# nolint start: undesirable_function_linter, unused_import_linter.
+# nolint start: library_call_linter.
+library("methods")
+# nolint end
+# nolint end
+
 stopifnot(requireNamespace("pkgload"))
 
 pkgload::load_all()

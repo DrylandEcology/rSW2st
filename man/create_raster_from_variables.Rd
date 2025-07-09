@@ -28,9 +28,9 @@ create_raster_from_variables(
 }
 \value{
 A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
-  (if \code{data} is a vector) or
-  \code{\link[raster:RasterBrick-class]{raster::RasterBrick}}
-  (if \code{data} is two-dimensional).
+(if \code{data} is a vector) or
+\code{\link[raster:RasterBrick-class]{raster::RasterBrick}}
+(if \code{data} is two-dimensional).
 }
 \description{
 Fills a raster grid with variable values associated with geographic locations

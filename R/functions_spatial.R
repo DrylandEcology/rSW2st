@@ -22,7 +22,7 @@
 #'
 #' @examples
 #' xy <- as_points(0.5 + cbind(0:9, 0:9), crs = 6350, to_class = "sf")
-#' variogram_range(xy)
+#' try(variogram_range(xy)) ## requires packages "automap" and "gstat"
 #'
 #' @export
 variogram_range <- function(
@@ -34,7 +34,7 @@ variogram_range <- function(
 ) {
 
   stopifnot(
-    requireNamespace("automap"),
+    requireNamespace("automap"), # nolint: missing_package_linter
     requireNamespace("gstat")
   )
 
@@ -42,7 +42,7 @@ variogram_range <- function(
     x <- stars::st_as_stars(x)
   }
 
-  points <- if (inherits(x, "stars")) {
+  pts <- if (inherits(x, "stars")) {
     sf::st_as_sf(x, as_points = TRUE, merge = FALSE)
 
   } else {
@@ -50,25 +50,25 @@ variogram_range <- function(
   }
 
   # question:
-  # should all points have equal or unique value, e.g., seq_len(nrow(points))
-  points[, "target"] <- 1
+  # should all points have equal or unique value, e.g., seq_len(nrow(pts))
+  pts[, "target"] <- 1
 
 
   if (!is.null(sub_samplepoints_N)) {
     set.seed(seed)
-    tmp <- sample(
-      seq_len(nrow(points)),
-      sub_samplepoints_N,
+    tmp <- sample.int(
+      n = nrow(pts),
+      size = sub_samplepoints_N,
       replace = FALSE
     )
-    points <- points[tmp, ]
+    pts <- pts[tmp, ]
   }
 
-  points_prj <- sf::st_transform(
-    points,
+  pts_prj <- sf::st_transform(
+    pts,
     crs = if (project_to_utm) {
       # --> variogram will calculate Euclidean distances in map units
-      rSW2st::epsg_for_utm(points)
+      rSW2st::epsg_for_utm(pts)
     } else {
       # --> variogram will calculate great circle distances(!)
       "OGC:CRS84"
@@ -77,11 +77,13 @@ variogram_range <- function(
 
 
   #--- determine variogram; see gstat::variogram
+  # nolint start: missing_package_linter, namespace_linter.
   fittedVar <- automap::autofitVariogram(
     target ~ 1,
-    input_data = points_prj,
+    input_data = pts_prj,
     miscFitOptions = list(merge.small.bins = TRUE)
   )
+  # nolint end
 
   #--- variogram range
   # estimate is only valid if some variation in data (i.e., sill > 0)

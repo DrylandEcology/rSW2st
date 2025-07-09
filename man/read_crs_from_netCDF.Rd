@@ -28,7 +28,7 @@ Read \var{crs} projection from a \var{netCDF}
 }
 \section{Details}{
 
-  Example code is available in the documentation of
-  \code{\link{read_netCDF}}.
+Example code is available in the documentation of
+\code{\link{read_netCDF}}.
 }
 
