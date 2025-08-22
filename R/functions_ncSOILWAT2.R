@@ -599,6 +599,64 @@ setSpatialBoundsNCSW <- function(
 }
 
 
+#' Add a station/site dimension and coordinate variable
+#'
+#' @inheritParams ncsw
+#'
+#' @export
+setAxisSiteNCSW <- function(
+  x,
+  siteValues,
+  nameAxis = "site",
+  units = "1",
+  dataType = "NC_INT"
+) {
+  dataType <- ncDataType(dataType[[1L]])
+
+  if (inherits(x, "NetCDF")) {
+    xnc <- x
+  } else if (inherits(x, "character")) {
+    xnc <- RNetCDF::open.nc(x, write = TRUE)
+    on.exit(RNetCDF::close.nc(xnc))
+  } else {
+    stop(
+      "Class ", class(x), " not implemented for argument 'x'.",
+      call. = FALSE
+    )
+  }
+
+  #--- Create dimension
+  res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
+  if (inherits(res, "try-error")) {
+    RNetCDF::dim.def.nc(
+      xnc, dimname = nameAxis, dimlength = length(siteValues)
+    )
+  }
+
+  #--- Create variable
+  res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
+  if (inherits(res, "try-error")) {
+    RNetCDF::var.def.nc(
+      xnc, varname = nameAxis, vartype = dataType, dimensions = nameAxis
+    )
+  }
+
+  RNetCDF::var.put.nc(xnc, variable = nameAxis, data = siteValues)
+
+
+  #--- Variable attributes
+  RNetCDF::att.put.nc(
+    xnc, nameAxis, "long_name", "NC_CHAR", value = "simulation site"
+  )
+
+  RNetCDF::att.put.nc(
+    xnc, nameAxis, "cf_role", "NC_CHAR", value = "timeseries_id"
+  )
+
+  RNetCDF::att.put.nc(xnc, nameAxis, "units", "NC_CHAR", value = "1")
+}
+
+
 #' Add a vertical dimension and coordinate variable (`Z`-axis)
 #'
 #' @inheritParams ncsw
