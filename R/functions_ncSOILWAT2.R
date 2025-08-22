@@ -192,7 +192,11 @@ uniqueDifferences <- function(
 }
 
 
-#' Write a `terra` raster object to a `netCDF` file suitable for `SOILWAT2`
+#' Write spatial objects to a `netCDF` file suitable for `SOILWAT2`
+#'
+#' @section Details:
+#' `writeTerraToNCSW()` writes a `terra` raster object to a `netCDF` file
+#' suitable for `SOILWAT2` simulations.
 #'
 #' @inheritParams ncsw
 #' @param filename A character string. The file name of the `netCDF` file

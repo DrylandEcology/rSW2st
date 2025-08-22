@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_ncSOILWAT2.R
 \name{writeTerraToNCSW}
 \alias{writeTerraToNCSW}
-\title{Write a \code{terra} raster object to a \code{netCDF} file suitable for \code{SOILWAT2}}
+\title{Write spatial objects to a \code{netCDF} file suitable for \code{SOILWAT2}}
 \usage{
 writeTerraToNCSW(
   x,
@@ -58,5 +58,11 @@ dimension and coordinate variable.}
 Global attributes to delete.}
 }
 \description{
-Write a \code{terra} raster object to a \code{netCDF} file suitable for \code{SOILWAT2}
+Write spatial objects to a \code{netCDF} file suitable for \code{SOILWAT2}
 }
+\section{Details}{
+
+\code{writeTerraToNCSW()} writes a \code{terra} raster object to a \code{netCDF} file
+suitable for \code{SOILWAT2} simulations.
+}
+
