@@ -16,9 +16,9 @@ create_netCDF(
   xy_attributes = list(name = c("lon", "lat"), standard_name = c("longitude",
     "latitude"), long_name = c("Longitude", "Latitude"), units = c("degrees_east",
     "degrees_north")),
-  crs_attributes = list(crs_wkt = sf::st_crs("OGC:CRS84")$Wkt, grid_mapping_name =
-    "latitude_longitude", longitude_of_prime_meridian = 0, semi_major_axis = 6378137,
-    inverse_flattening = 298.257223563),
+  crs_attributes = list(long_name = "WGS84", crs_wkt = sf::st_crs("OGC:CRS84")$Wkt,
+    grid_mapping_name = "latitude_longitude", longitude_of_prime_meridian = 0,
+    semi_major_axis = 6378137, inverse_flattening = 298.257223563),
   check_crs = TRUE,
   time_values = NULL,
   type_timeaxis = c("timeseries", "climatology"),

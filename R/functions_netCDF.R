@@ -346,6 +346,7 @@ create_netCDF <- function(
     units = c("degrees_east", "degrees_north")
   ),
   crs_attributes = list(
+    long_name = "WGS84",
     crs_wkt = sf::st_crs("OGC:CRS84")$Wkt,
     grid_mapping_name = "latitude_longitude",
     longitude_of_prime_meridian = 0.0,
@@ -417,15 +418,7 @@ create_netCDF <- function(
 
   data_type <- match.arg(data_type)
 
-  NAflag <- switch(
-    data_type,
-    char = NULL,
-    byte = NULL,
-    short = -128L,
-    integer = -2147483647L,
-    float = -3.4e+38,
-    double = -1.7e+308
-  )
+  NAflag <- fillValue(data_type)
 
 
   # Three data structure situations:
@@ -545,12 +538,12 @@ create_netCDF <- function(
 
   #--- crs attributes setup & info
   if ("crs_wkt" %in% names(crs_attributes)) {
-    crs_wkt <- crs_attributes[["crs_wkt"]]
+    crs_wkt_user <- crs_attributes[["crs_wkt"]]
     crs_attributes[["crs_wkt"]] <- NULL
 
     # check that CRS is valid
-    crs_wkt <- try(sf::st_crs(crs_wkt), silent = TRUE)
-    if (!inherits(crs_wkt, "crs") || crs_wkt == sf::NA_crs_) {
+    crs_used <- try(sf::st_crs(crs_wkt_user), silent = TRUE)
+    if (!inherits(crs_used, "crs") || crs_used == sf::NA_crs_) {
       stop(
         "`crs_attributes[[\"crs_wkt\"]]` does not represent a valid CRS.",
         call. = FALSE
@@ -571,7 +564,7 @@ create_netCDF <- function(
   # `xyspace` is allowed to be an object without a crs
   crs_xyspace <- try(suppressWarnings(sf::st_crs(xyspace)), silent = TRUE)
   if (!inherits(crs_xyspace, "crs") || crs_xyspace == sf::NA_crs_) {
-    crs_xyspace <- crs_wkt
+    crs_xyspace <- crs_used
 
     if (verbose) {
       message(
@@ -583,11 +576,11 @@ create_netCDF <- function(
 
 
   # check that CRS definition matches CRS of xyspace (grid or locations)
-  if (crs_xyspace != crs_wkt) {
+  if (crs_xyspace != crs_used) {
     msg <- paste0(
       "The CRS given in `crs_attributes[[\"crs_wkt\"]]` needs to ",
       "match the CRS of the `xyspace` object. Currently, ",
-      "`crs_attributes[[\"crs_wkt\"]]` is ", shQuote(crs_wkt$Wkt),
+      "`crs_attributes[[\"crs_wkt\"]]` is ", shQuote(crs_used$Wkt),
       " and the CRS of `xyspace` is ", shQuote(crs_xyspace$Wkt)
     )
 
@@ -649,7 +642,7 @@ create_netCDF <- function(
 
   } else {
     locs <- try(
-      as_points(xyspace, to_class = "sf", crs = crs_wkt),
+      as_points(xyspace, to_class = "sf", crs = crs_used),
       silent = TRUE
     )
 
@@ -1038,7 +1031,7 @@ create_netCDF <- function(
   } else {
     idim <- ncdf4::ncdim_def(
       name = "site",
-      longname = "SOILWAT2 simulation sites",
+      longname = "simulation site",
       units = "1",
       vals = seq_len(n_sites)
     )
@@ -1121,9 +1114,7 @@ create_netCDF <- function(
       longname = xy_attributes[["long_name"]][[1L]],
       units = xy_attributes[["units"]][[1L]],
       dim = list(idim),
-      compression = nc_deflate,
-      chunksizes = n_sites,
-      missval = NAflag,
+      missval = NULL,
       prec = "double"
     )
 
@@ -1132,9 +1123,7 @@ create_netCDF <- function(
       longname = xy_attributes[["long_name"]][[2L]],
       units = xy_attributes[["units"]][[2L]],
       dim = list(idim),
-      compression = nc_deflate,
-      chunksizes = n_sites,
-      missval = NAflag,
+      missval = NULL,
       prec = "double"
     )
 
@@ -1312,20 +1301,26 @@ create_netCDF <- function(
   }
 
   #--- add dimension attributes
+  ncdf4::ncatt_put(nc, xy_attributes[["name"]][[1L]], "axis", "X")
+  ncdf4::ncatt_put(nc, xy_attributes[["name"]][[2L]], "axis", "Y")
+
   if (is_gridded) {
-    ncdf4::ncatt_put(nc, xy_attributes[["name"]][[1L]], "axis", "X")
     ncdf4::ncatt_put(
       nc,
       xy_attributes[["name"]][[1L]],
       "bounds",
       bnds_name[[1L]]
     )
-    ncdf4::ncatt_put(nc, xy_attributes[["name"]][[2L]], "axis", "Y")
     ncdf4::ncatt_put(
       nc,
       xy_attributes[["name"]][[2L]],
       "bounds",
       bnds_name[[2L]]
+    )
+
+  } else {
+    ncdf4::ncatt_put(
+      nc, varid = "site", attname = "cf_role", attval = "timeseries_id"
     )
   }
 
@@ -1396,43 +1391,24 @@ create_netCDF <- function(
     nc,
     "crs",
     attname = "crs_wkt",
-    attval = crs_wkt$Wkt
+    attval = crs_wkt_user
   )
 
 
   #--- add global attributes
   ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.8")
 
-  tmp_version_netcdf <- try(
-    system2("nc-config", "--version", stdout = TRUE, stderr = TRUE),
-    silent = TRUE
-  )
-
-  ncdf4::ncatt_put(
-    nc,
-    varid = 0,
-    attname = "created_by",
-    attval = paste0(
-      R.version[["version.string"]],
-      ", R package ",
-      "ncdf4 v", getNamespaceVersion("ncdf4"),
-      if (!inherits(tmp_version_netcdf, "try-error")) {
-        paste0(", and ", tmp_version_netcdf)
-      }
-    )
-  )
-
   ncdf4::ncatt_put(
     nc,
     varid = 0,
     attname = "creation_date",
-    attval = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+    attval = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ")
   )
 
   if (!missing(global_attributes)) {
     ns_att_glob <- names(global_attributes)
 
-    tmp <- c("Conventions", "created_by", "creation_date")
+    tmp <- c("Conventions", "creation_date")
     if (has_T_timeAxis == "none") {
       tmp <- c(tmp, "time_label", "time_title")
     }
@@ -1457,15 +1433,6 @@ create_netCDF <- function(
     }
   }
 
-  if (has_T_timeAxis == "none") {
-    ncdf4::ncatt_put(nc, varid = 0, attname = "time_label", attval = "None")
-    ncdf4::ncatt_put(
-      nc,
-      varid = 0,
-      attname = "time_title",
-      attval = "No temporal dimensions ... fixed field"
-    )
-  }
 
 
   #------ Add values (if provided) ---------------------------------------------
