@@ -19,7 +19,8 @@ setVariableNCSW(
   cell_method = NULL,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
-  attributes = NULL
+  attributes = NULL,
+  addFillValue = TRUE
 )
 }
 \arguments{

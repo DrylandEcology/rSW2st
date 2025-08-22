@@ -1095,8 +1095,15 @@ setVariableNCSW <- function(
   cell_method = NULL,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
-  attributes = NULL
+  attributes = NULL,
+  addFillValue = TRUE
 ) {
+  if (length(varName) != 1L) {
+    stop(
+      "Process one variable at a time, currently n = ", length(varName),
+      call. = FALSE
+    )
+  }
   varName <- as.character(varName[[1L]])
   dataType <- ncDataType(dataType[[1L]])
 
@@ -1128,6 +1135,7 @@ setVariableNCSW <- function(
       shuffle = !anyNA(deflate)
     )
 
+    if (isTRUE(addFillValue)) {
       RNetCDF::att.put.nc(
         xnc,
         variable = varName,
@@ -1135,6 +1143,7 @@ setVariableNCSW <- function(
         type = dataType,
         value = fillValue(dataType)
       )
+    }
   }
 
   #--- Write values
