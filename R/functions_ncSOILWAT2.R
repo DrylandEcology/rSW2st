@@ -6,7 +6,7 @@
 #' an object of class `"NetCDF"` from the `RNetCDF` package
 #' (an open connection to a `NetCDF` dataset that will be kept open).
 #' @param attributes A named vector or named list of character strings.
-#' @param dataType A character string. A `netCDF` data type.
+#' @param dataType A character string. A `netCDF` data type, see [ncDataType()].
 #' @param nameDimX A character string. The name of the `X`-axis dimension and
 #' coordinate variable.
 #' @param nameDimY A character string. The name of the `Y`-axis dimension and
@@ -28,6 +28,69 @@
 NULL
 #--- ncsw ------
 
+#' Translate to `netCDF` data types
+#'
+#' @inheritParams ncsw
+#' @param stopOnError A logical value.
+#'
+#' @return A standardized `netCDF` library data type.
+#' If not found, then return value depends on `stopOnError`:
+#'    - if `TRUE`, then signal an error
+#'    - if `FALSE`, then return unmodified value of `dataType`
+#'
+#' @examples
+#' ncDataType("integer")
+#' ncDataType("noType", stopOnError = FALSE)
+#'
+#' @export
+ncDataType <- function(dataType, stopOnError = TRUE) {
+  switch(
+    EXPR = toupper(dataType),
+
+    BYTE = ,
+    NC_BYTE = "NC_BYTE",
+
+    UBYTE = ,
+    NC_UBYTE = "NC_UBYTE",
+
+    CHAR = ,
+    NC_CHAR = "NC_CHAR",
+
+    SHORT = ,
+    NC_SHORT = "NC_SHORT",
+
+    USHORT = ,
+    NC_USHORT = "NC_USHORT",
+
+    INT = ,
+    INTEGER = ,
+    NC_INT = "NC_INT",
+
+    UINT = ,
+    NC_UINT = "NC_UINT",
+
+    INT64 = ,
+    NC_INT64 = "NC_INT64",
+
+    UINT64 = ,
+    NC_UINT64 = "NC_UINT64",
+
+    FLOAT = ,
+    NC_FLOAT = "NC_FLOAT",
+
+    DOUBLE = ,
+    NC_DOUBLE = "NC_DOUBLE",
+
+    STRING = ,
+    NC_STRING = "NC_STRING",
+
+    if (isTRUE(stopOnError)) {
+      stop(shQuote(dataType), " is not implemented.", call. = FALSE)
+    } else {
+      dataType
+    }
+  )
+}
 
 #' Identify the fill value corresponding to a data type
 #'
@@ -39,27 +102,43 @@ NULL
 #' @export
 fillValue <- function(dataType) {
   switch(
-    EXPR = toupper(dataType),
+    EXPR = toupper(ncDataType(dataType, stopOnError = FALSE)),
 
-    SHORT = ,
+    NC_BYTE = ,
+    NC_FILL_BYTE = -127L,
+
+    NC_UBYTE = ,
+    NC_FILL_UBYTE = 255L,
+
+    NC_CHAR = ,
+    NC_FILL_CHAR = 0,
+
     NC_SHORT = ,
-    NC_FILL_SHORT = -32768,
+    NC_FILL_SHORT = -32768L,
 
-    INT = ,
-    INTEGER = ,
+    NC_USHORT = ,
+    NC_FILL_USHORT = 65535L,
+
     NC_INT = ,
-    NC_FILL_INT = -2147483647,
+    NC_FILL_INT = -2147483647L,
 
-    FLOAT = ,
+    NC_UINT = ,
+    NC_FILL_UINT = 4294967295,
+
+    NC_INT64 = ,
+    NC_FILL_INT64 = -9223372036854775806,
+
+    NC_UINT64 = ,
+    NC_FILL_UINT64 = 18446744073709551614,
+
     NC_FLOAT = ,
     NC_FILL_FLOAT = ,
-    DOUBLE = ,
+
     NC_DOUBLE = ,
     NC_FILL_DOUBLE = 9.9692099683868690e+36,
 
-    BYTE = ,
-    NC_BYTE = ,
-    NC_FILL_BYTE = -127,
+    NC_STRING = ,
+    NC_FILL_STRING = "",
 
     stop(shQuote(dataType), " is not implemented.", call. = FALSE)
   )
@@ -144,7 +223,7 @@ writeTerraToNCSW <- function(
   deleteGlobalAttributes = c("created_by", "created_date", "date")
 ) {
 
-  dataType <- match.arg(dataType)
+  dataType <- match.arg(dataType) # terra dataType
 
   if (increasingLat) {
     x <- terra::flip(x, direction = "vertical")
@@ -542,6 +621,7 @@ setAxisVerticalNCSW <- function(
   dataType = "NC_INT"
 ) {
   verticalType <- match.arg(verticalType)
+  dataType <- ncDataType(dataType[[1L]])
 
   if (inherits(x, "NetCDF")) {
     xnc <- x
@@ -567,8 +647,7 @@ setAxisVerticalNCSW <- function(
   res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::var.def.nc(
-      xnc,
-      varname = nameAxis, vartype = dataType, dimensions = nameAxis
+      xnc, varname = nameAxis, vartype = dataType, dimensions = nameAxis
     )
   }
 
@@ -660,7 +739,7 @@ setAxisPFTsNCSW <- function(
   nameAxis = "pft",
   dataType = c("NC_STRING", "NC_BYTE")
 ) {
-  dataType <- match.arg(dataType)
+  dataType <- ncDataType(dataType[[1L]])
 
   if (inherits(x, "NetCDF")) {
     xnc <- x
@@ -686,8 +765,7 @@ setAxisPFTsNCSW <- function(
   res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::var.def.nc(
-      xnc,
-      varname = nameAxis, vartype = dataType, dimensions = nameAxis
+      xnc, varname = nameAxis, vartype = dataType, dimensions = nameAxis
     )
   }
 
@@ -736,7 +814,7 @@ setAxisTimeNCSW <- function(
   dataType = "NC_DOUBLE"
 ) {
   calendar <- as.character(calendar[[1L]])
-  dataType <- match.arg(dataType)
+  dataType <- ncDataType(dataType[[1L]])
 
   if (inherits(x, "NetCDF")) {
     xnc <- x
@@ -825,6 +903,7 @@ setAxisMonthClimatologyNCSW <- function(
   nameAxis = "time",
   dataType = "NC_DOUBLE"
 ) {
+  dataType <- ncDataType(dataType[[1L]])
 
   if (inherits(x, "NetCDF")) {
     xnc <- x
@@ -950,7 +1029,7 @@ setVariableNCSW <- function(
   start = NA,
   count = NA,
   var_chunksizes_xyzt = NA,
-  dataType = c("NC_DOUBLE", "NC_FLOAT"),
+  dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
   long_name = NULL,
@@ -961,6 +1040,7 @@ setVariableNCSW <- function(
   attributes = NULL
 ) {
   varName <- as.character(varName[[1L]])
+  dataType <- ncDataType(dataType[[1L]])
 
   if (inherits(x, "NetCDF")) {
     xnc <- x
@@ -977,7 +1057,6 @@ setVariableNCSW <- function(
   #--- Create variable
   res <- try(RNetCDF::var.inq.nc(xnc, varName), silent = TRUE)
   if (inherits(res, "try-error")) {
-    dataType <- match.arg(dataType)
     doChunk <- !anyNA(var_chunksizes_xyzt)
 
     RNetCDF::var.def.nc(
@@ -991,11 +1070,13 @@ setVariableNCSW <- function(
       shuffle = !anyNA(deflate)
     )
 
-    RNetCDF::att.put.nc(
-      xnc,
-      variable = varName, name = "_FillValue", type = dataType,
-      value = fillValue(dataType)
-    )
+      RNetCDF::att.put.nc(
+        xnc,
+        variable = varName,
+        name = "_FillValue",
+        type = dataType,
+        value = fillValue(dataType)
+      )
   }
 
   #--- Write values

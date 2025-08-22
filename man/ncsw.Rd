@@ -10,7 +10,7 @@ an object of class \code{"NetCDF"} from the \code{RNetCDF} package
 
 \item{attributes}{A named vector or named list of character strings.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 
 \item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
 coordinate variable.}

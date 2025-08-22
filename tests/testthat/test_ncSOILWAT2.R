@@ -1,5 +1,24 @@
 
 
+#------ Tests for `ncDataType()` ------
+test_that("ncDataType", {
+  types <- c(
+    "SHORT", "NC_SHORT",
+    "INT", "INTEGER", "NC_INT",
+    "FLOAT", "NC_FLOAT",
+    "DOUBLE", "NC_DOUBLE",
+    "BYTE", "NC_BYTE"
+  )
+
+  for (type in types) {
+    expect_no_condition(ncDataType(type))
+  }
+
+  expect_error(ncDataType("noType"))
+  expect_no_condition(ncDataType("noType", stopOnError = FALSE))
+})
+
+
 #------ Tests for `fillValue()` ------
 test_that("fillValue", {
   types <- c(

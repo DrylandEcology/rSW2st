@@ -11,7 +11,7 @@ setVariableNCSW(
   start = NA,
   count = NA,
   var_chunksizes_xyzt = NA,
-  dataType = c("NC_DOUBLE", "NC_FLOAT"),
+  dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
   long_name = NULL,
@@ -42,7 +42,7 @@ see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
 \item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 
 \item{dimensions}{A vector, see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 

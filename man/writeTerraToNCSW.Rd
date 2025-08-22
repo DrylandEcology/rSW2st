@@ -31,7 +31,7 @@ to be created.}
 \item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 
 \item{increasingLat}{A logical value. Sort \code{Y}-axis values increasingly.}
 

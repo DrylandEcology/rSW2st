@@ -22,7 +22,7 @@ representing plant functional types.}
 \item{nameAxis}{A character string. The name of the axis dimension and
 associated coordinate variable.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 }
 \description{
 Add a plant functional type dimension and coordinate variable

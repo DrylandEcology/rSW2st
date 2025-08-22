@@ -26,7 +26,7 @@ which the climatology represents.}
 \item{nameAxis}{A character string. The name of the axis dimension and
 associated coordinate variable.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 }
 \description{
 Add a monthly climatology dimension and coordinate variable

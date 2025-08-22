@@ -28,7 +28,7 @@ associated coordinate variable.}
 
 \item{calendar}{A character string representing the calendar type.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 }
 \description{
 Add a time dimension and coordinate variable (\code{T}-axis)

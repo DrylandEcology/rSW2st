@@ -36,7 +36,7 @@ associated coordinate variable.}
 
 \item{units}{A character string. The length units of \code{verticalType}.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 }
 \description{
 Add a vertical dimension and coordinate variable (\code{Z}-axis)
