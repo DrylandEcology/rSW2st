@@ -1,10 +1,39 @@
 
+openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
+  closeOnExit <- FALSE
+
+  if (inherits(x, "ncdf4")) {
+    x <- x[["filename"]]
+  }
+
+  if (inherits(x, "NetCDF")) {
+    xnc <- x
+  } else if (inherits(x, "character")) {
+    xnc <- RNetCDF::open.nc(x, write = write)
+    closeOnExit <- TRUE
+  } else if (isTRUE(stopOnError)) {
+    stop(
+      "Class ", class(x), " not implemented for argument 'x'.",
+      call. = FALSE
+    )
+  } else {
+    xnc <- x
+  }
+
+  list(con = xnc, closeOnExit = closeOnExit)
+}
+
 
 #' `netCDF` functionality suitable for `SOILWAT2`
 #'
-#' @param x A character string (file name that will be opened and closed) or
-#' an object of class `"NetCDF"` from the `RNetCDF` package
-#' (an open connection to a `NetCDF` dataset that will be kept open).
+#' @param x A character string (file name that will be opened and closed),
+#' an object of class `"NetCDF"` from the `RNetCDF` package (kept open), or
+#' an object of class `"ncdf4"` from the `ncdf4` package (kept open).
+#' @param long_name A character string. The `"long_name"` attribute.
+#' @param units A character string.  The `"units"` attribute.
+#' @param cell_method A character string. The `"cell_method"` attribute.
+#' @param coordinates A character string. The `"coordinates"` attribute.
+#' @param grid_mapping A character string. The `"grid_mapping"` attribute.
 #' @param attributes A named vector or named list of character strings.
 #' @param dataType A character string. A `netCDF` data type, see [ncDataType()].
 #' @param nameDimX A character string. The name of the `X`-axis dimension and
@@ -14,6 +43,9 @@
 #' @param nameCRS A character string. The name of the `CRS` variable.
 #' @param nameAxis A character string. The name of the axis dimension and
 #' associated coordinate variable.
+#' @param values A numeric object. The values to write a variable if not `NULL`.
+#' @param siteValues A numeric object. The values of the discrete `site` axis
+#' variable.
 #' @param timeValues A numeric vector. The values of the time axis variable.
 #' @param verticalValues A numeric vector. The values of the vertical axis
 #' variable.
@@ -21,6 +53,7 @@
 #' representing plant functional types.
 #' @param var_chunksizes_xyzt A numeric vector. The chunk sizes if not `NA`,
 #' see [`RNetCDF::var.def.nc()`] for more detail.
+#' @param isUnlimitedDim A logical value. Define the new dimension as unlimited?
 #'
 #'
 #'
@@ -84,11 +117,13 @@ ncDataType <- function(dataType, stopOnError = TRUE) {
     STRING = ,
     NC_STRING = "NC_STRING",
 
+    # nolint start: unnecessary_nesting_linter.
     if (isTRUE(stopOnError)) {
       stop(shQuote(dataType), " is not implemented.", call. = FALSE)
     } else {
       dataType
     }
+    # nolint end: unnecessary_nesting_linter.
   )
 }
 
@@ -227,6 +262,9 @@ writeTerraToNCSW <- function(
   deleteGlobalAttributes = c("created_by", "created_date", "date")
 ) {
 
+  # `terra::writeCDF()` uses "ncdf4" but it is a suggested package
+  stopifnot(requireNamespace("ncdf4", quietly = TRUE))
+
   dataType <- match.arg(dataType) # terra dataType
 
   if (increasingLat) {
@@ -324,35 +362,27 @@ writeTerraToNCSW <- function(
 }
 
 
-#' Create a `CRS` variable with `WGS84` attributes
+#' Create a `CRS` variable
 #'
 #' @inheritParams ncsw
+#' @param grid_mapping_name A character string. The `"grid_mapping_name"`
+#' attribute.
+#' @param crs_wkt A character string. The `"crs_wkt"` attribute.
 #'
-#' @examples
-#' fn <- tempfile(fileext = ".nc")
-#' nc <- RNetCDF::create.nc(fn, format = "netcdf4")
-#' setCRSWGS84NCSW(nc, nameCRS = "crs")
-#'
-#' RNetCDF::print.nc(nc)
-#' RNetCDF::close.nc(nc)
-#' unlink(fn)
+#' @return [setCRSNCSW()]: creates a `CRS` variable with custom attributes
 #'
 #' @export
-setCRSWGS84NCSW <- function(x, nameCRS) {
+setCRSNCSW <- function(
+  x,
+  nameCRS = "crs",
+  grid_mapping_name = NULL,
+  crs_wkt = NULL,
+  attributes = NULL
+) {
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
-
-  #--- Create variable
   res <- try(RNetCDF::var.inq.nc(xnc, nameCRS), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::var.def.nc(
@@ -361,41 +391,62 @@ setCRSWGS84NCSW <- function(x, nameCRS) {
   }
 
   #--- Attributes
-  RNetCDF::att.put.nc(
-    xnc, nameCRS, "grid_mapping_name", "NC_CHAR",
-    value = "latitude_longitude"
+  tmp <- c(
+    if (!is.null(grid_mapping_name)) {
+      list(grid_mapping_name = grid_mapping_name)
+    },
+    if (!is.null(crs_wkt)) list(crs_wkt = crs_wkt),
+    if (!is.null(attributes)) as.list(attributes)
   )
+  tmp <- tmp[unique(names(tmp))]
+  tmp <- tmp[lengths(tmp) > 0L]
 
-  RNetCDF::att.put.nc(
-    xnc, nameCRS, "long_name", "NC_CHAR",
-    value = "WGS84"
-  )
+  for (k in seq_along(tmp)) {
+    RNetCDF::att.put.nc(
+      xnc,
+      variable = nameCRS,
+      name = names(tmp)[[k]],
+      type = get_nc_type(tmp[[k]]),
+      value = tmp[[k]]
+    )
+  }
+}
 
-  RNetCDF::att.put.nc(
-    xnc, nameCRS, "crs_wkt", "NC_CHAR",
-    value = paste0(
+#' @rdname read_netCDF
+#'
+#' @inheritParams ncsw
+#'
+#' @return [setCRSWGS84NCSW()]: creates a `CRS` variable with `WGS84` attributes
+#'
+#' @examples
+#' fn <- tempfile(fileext = ".nc")
+#' nc <- RNetCDF::create.nc(fn, format = "netcdf4")
+#' setCRSWGS84NCSW(nc)
+#'
+#' RNetCDF::print.nc(nc)
+#' RNetCDF::close.nc(nc)
+#' unlink(fn)
+#'
+#' @export
+setCRSWGS84NCSW <- function(x, nameCRS = "crs") {
+  setCRSNCSW(
+    x,
+    nameCRS = nameCRS,
+    grid_mapping_name = "latitude_longitude",
+    crs_wkt = paste0(
       'GEOGCS["WGS 84",DATUM["WGS_1984",',
       'SPHEROID["WGS 84",6378137,298.257223563,',
       'AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],',
       'PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],',
       'UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],',
       'AUTHORITY["EPSG","4326"]]'
+    ),
+    attributes = list(
+      long_name = "WGS84",
+      longitude_of_prime_meridian = 0.0,
+      semi_major_axis = 6378137.0,
+      inverse_flattening = 298.257223563
     )
-  )
-
-  RNetCDF::att.put.nc(
-    xnc, nameCRS, "longitude_of_prime_meridian", "NC_DOUBLE",
-    value = 0.0
-  )
-
-  RNetCDF::att.put.nc(
-    xnc, nameCRS, "semi_major_axis", "NC_DOUBLE",
-    value = 6378137.0
-  )
-
-  RNetCDF::att.put.nc(
-    xnc, nameCRS, "inverse_flattening", "NC_DOUBLE",
-    value = 298.257223563
   )
 }
 
@@ -418,17 +469,11 @@ checkSpatialNCSW <- function(
   expectedSpatialExtent = c(xmin = NA, xmax = NA, ymin = NA, ymax = NA),
   tolerance = sqrt(.Machine[["double.eps"]])
 ) {
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+
+  ox <- openRnetCDF(x, write = FALSE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   #--- Check spatial dimensions
   if (!anyNA(expectedSpatialDims)) {
@@ -478,17 +523,10 @@ renameSpatialNCSW <- function(
   nameCRS = c(orig = "crs", to = "crs_geogsc")
 ) {
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   if (!is.null(nameDimX) && !identical(nameDimX[["orig"]], nameDimX[["to"]])) {
     RNetCDF::dim.rename.nc(xnc, nameDimX[["orig"]], newname = nameDimX[["to"]])
@@ -506,24 +544,92 @@ renameSpatialNCSW <- function(
 }
 
 
-#' Set spatial bounds on x-axis and y-axis
+#' Set bounds for a coordinate variable
 #'
 #' @inheritParams ncsw
-#' @param nameBnds A character string. The name of the bounds dimension.
+#' @param nameBndsDim A character string. The name of the bounds dimension.
+#' @param nameDim A character string. The name of the associated dimensions.
+#' @param nameBndsVar A character string. The name of the selected axis bounds
+#' variable.
 #' @param nameBndsX A character string. The name of the `X`-axis bounds
 #' variable.
 #' @param nameBndsY A character string. The name of the `Y`-axis bounds
+#' variable.
+#' @param valuesBnds A numeric vector. The values of the selected axis bounds
 #' variable.
 #' @param valuesBndsX A numeric vector. The values of the `X`-axis bounds
 #' variable. Values will derived from `X`-axis variable assuming
 #' symmetric bounds if `NULL`.
 #' @param valuesBndsY A numeric vector. The values of the `Y`-axis bounds
 #' symmetric bounds if `NULL`.
+#' @param calculateValuesBndsIfMissing A logical value. The values of
+#' the selected axis bounds will derived from the associated axis variable
+#' assuming symmetric bounds.
+#' @param boundsAttributeName A character vector. The name of the bounds
+#' attribute that is added to the `nameDim` variable. In most cases, this
+#' attribute's name is `"bounds"` or `"climatology"`.
+#'
+#' @return [setAxisBoundsNCSW()]: set bounds on a selected axis.
+#'
+#' @export
+setAxisBoundsNCSW <- function(
+  x,
+  nameBndsVar,
+  nameDim,
+  valuesBnds = NULL,
+  calculateValuesBndsIfMissing = FALSE,
+  boundsAttributeName = "bounds",
+  nameBndsDim = "bnds"
+) {
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
+
+  #--- Create dimension
+  res <- try(RNetCDF::dim.inq.nc(xnc, nameBndsDim), silent = TRUE)
+  if (inherits(res, "try-error")) {
+    RNetCDF::dim.def.nc(xnc, nameBndsDim, dimlength = 2L)
+  }
+
+  #--- Create bound variable
+  res <- try(RNetCDF::var.inq.nc(xnc, nameBndsVar), silent = TRUE)
+  if (inherits(res, "try-error")) {
+    RNetCDF::var.def.nc(
+      xnc,
+      varname = nameBndsVar,
+      vartype = "NC_DOUBLE",
+      dimensions = c(nameBndsDim, nameDim),
+      deflate = 5L,
+      shuffle = TRUE
+    )
+
+    if (is.null(valuesBnds) && isTRUE(calculateValuesBndsIfMissing)) {
+      valuesAxis <- RNetCDF::var.get.nc(xnc, nameDim)
+      res <- abs(uniqueDifferences(valuesAxis)[[1L]])
+
+      valuesBnds <- apply(
+        rbind(valuesAxis - res / 2, valuesAxis + res / 2),
+        MARGIN = 2L,
+        sort
+      )
+    }
+
+    RNetCDF::var.put.nc(xnc, nameBndsVar, data = valuesBnds)
+    RNetCDF::att.put.nc(
+      xnc, nameDim, boundsAttributeName, "NC_CHAR", value = nameBndsVar
+    )
+  }
+}
+
+#' @rdname setAxisBoundsNCSW
+#'
+#' @return [setSpatialBoundsNCSW()]: set spatial bounds on x-axis and y-axis.
 #'
 #' @export
 setSpatialBoundsNCSW <- function(
   x,
-  nameBnds = "bnds",
+  nameBndsDim = "bnds",
   nameBndsX = "lon_bnds",
   nameBndsY = "lat_bnds",
   nameDimX = "longitude",
@@ -531,109 +637,60 @@ setSpatialBoundsNCSW <- function(
   valuesBndsX = NULL,
   valuesBndsY = NULL
 ) {
+  setAxisBoundsNCSW(
+    x,
+    nameBndsVar = nameBndsX,
+    nameDim = nameDimX,
+    valuesBnds = valuesBndsX,
+    calculateValuesBndsIfMissing = TRUE,
+    nameBndsDim = nameBndsDim
+  )
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
-
-  #--- Create dimension
-  res <- try(RNetCDF::dim.inq.nc(xnc, nameBnds), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::dim.def.nc(xnc, nameBnds, dimlength = 2L)
-  }
-
-  #--- Create x-axis bounds
-  res <- try(RNetCDF::var.inq.nc(xnc, nameBndsX), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::var.def.nc(
-      xnc, nameBndsX, "NC_DOUBLE",
-      dimensions = c(nameBnds, nameDimX),
-      deflate = 5,
-      shuffle = TRUE
-    )
-
-    if (is.null(valuesBndsX)) {
-      valuesAxisX <- RNetCDF::var.get.nc(xnc, nameDimX)
-      resX <- abs(uniqueDifferences(valuesAxisX)[[1L]])
-
-      valuesBndsX <- apply(
-        rbind(valuesAxisX - resX / 2, valuesAxisX + resX / 2),
-        MARGIN = 2L,
-        sort
-      )
-    }
-
-    RNetCDF::var.put.nc(xnc, nameBndsX, data = valuesBndsX)
-    RNetCDF::att.put.nc(xnc, nameDimX, "bounds", "NC_CHAR", value = nameBndsX)
-  }
-
-
-  #--- Create y-axis bounds
-  res <- try(RNetCDF::var.inq.nc(xnc, nameBndsY), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::var.def.nc(
-      xnc, nameBndsY, "NC_DOUBLE",
-      dimensions = c(nameBnds, nameDimY),
-      deflate = 5,
-      shuffle = TRUE
-    )
-
-    if (is.null(valuesBndsY)) {
-      valuesAxisY <- RNetCDF::var.get.nc(xnc, nameDimY)
-      resY <- abs(uniqueDifferences(valuesAxisY)[[1L]])
-
-      valuesBndsY <- apply(
-        rbind(valuesAxisY + resY / 2, valuesAxisY - resY / 2),
-        MARGIN = 2L,
-        sort
-      )
-    }
-
-    RNetCDF::var.put.nc(xnc, nameBndsY, data = valuesBndsY)
-    RNetCDF::att.put.nc(xnc, nameDimY, "bounds", "NC_CHAR", value = nameBndsY)
-  }
+  setAxisBoundsNCSW(
+    x,
+    nameBndsVar = nameBndsY,
+    nameDim = nameDimY,
+    valuesBnds = valuesBndsY,
+    calculateValuesBndsIfMissing = TRUE,
+    nameBndsDim = nameBndsDim
+  )
 }
 
 
-#' Add a station/site dimension and coordinate variable
+#' Add a dimension and associated (coordinate) variable
 #'
 #' @inheritParams ncsw
+#' @param axis A character string. The `"axis"` attribute.
 #'
 #' @export
-setAxisSiteNCSW <- function(
+setAxisNCSW <- function(
   x,
-  siteValues,
-  nameAxis = "site",
-  units = "1",
-  dataType = "NC_INT"
+  nameAxis,
+  dataType,
+  values = NULL,
+  isUnlimitedDim = FALSE,
+  axis = NULL,
+  long_name = NULL,
+  units = NULL,
+  attributes = NULL
 ) {
   dataType <- ncDataType(dataType[[1L]])
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  if (!is.null(axis)) stopifnot(axis %in% c("X", "Y", "Z", "T"))
+
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   #--- Create dimension
   res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::dim.def.nc(
-      xnc, dimname = nameAxis, dimlength = length(siteValues)
+      xnc,
+      dimname = nameAxis,
+      dimlength = length(values),
+      unlim = isUnlimitedDim
     )
   }
 
@@ -645,25 +702,64 @@ setAxisSiteNCSW <- function(
     )
   }
 
-  RNetCDF::var.put.nc(xnc, variable = nameAxis, data = siteValues)
+  if (!is.null(values)) {
+    RNetCDF::var.put.nc(xnc, variable = nameAxis, data = values)
+  }
 
 
   #--- Variable attributes
-  RNetCDF::att.put.nc(
-    xnc, nameAxis, "long_name", "NC_CHAR", value = "simulation site"
+  tmp <- c(
+    if (!is.null(axis)) list(axis = axis),
+    if (!is.null(long_name)) list(long_name = long_name),
+    if (!is.null(units)) list(units = units),
+    if (!is.null(attributes)) as.list(attributes)
   )
+  tmp <- tmp[unique(names(tmp))]
+  tmp <- tmp[lengths(tmp) > 0L]
 
-  RNetCDF::att.put.nc(
-    xnc, nameAxis, "cf_role", "NC_CHAR", value = "timeseries_id"
-  )
-
-  RNetCDF::att.put.nc(xnc, nameAxis, "units", "NC_CHAR", value = "1")
+  for (k in seq_along(tmp)) {
+    RNetCDF::att.put.nc(
+      xnc,
+      variable = nameAxis,
+      name = names(tmp)[[k]],
+      type = "NC_CHAR",
+      value = as.character(tmp[[k]])
+    )
+  }
 }
 
 
-#' Add a vertical dimension and coordinate variable (`Z`-axis)
+#' @rdname setAxisNCSW
 #'
-#' @inheritParams ncsw
+#' @return [setAxisSiteNCSW()] adds a station/site dimension and associated
+#' coordinate variable.
+#'
+#' @export
+setAxisSiteNCSW <- function(
+  x,
+  siteValues,
+  nameAxis = "site",
+  units = "1",
+  dataType = "NC_INT"
+) {
+  setAxisNCSW(
+    x,
+    nameAxis = nameAxis,
+    dataType = dataType,
+    values = siteValues,
+    axis = NULL,
+    long_name = "simulation site",
+    units = units,
+    attributes = c(cf_role = "timeseries_id")
+  )
+}
+
+
+#' @rdname setAxisNCSW
+#'
+#' @return [setAxisVerticalNCSW()] adds a vertical dimension and associated
+#' coordinate variable (`Z`-axis).
+#'
 #' @param verticalUpperBound A numerical vector. The upper (top) soil depths
 #' (bounds) of each soil layer (as defined by `verticalValues`).
 #' @param verticalLowerBound A numerical vector. The lower (bottom) soil depths
@@ -683,114 +779,61 @@ setAxisVerticalNCSW <- function(
   dataType = "NC_INT"
 ) {
   verticalType <- match.arg(verticalType)
-  dataType <- ncDataType(dataType[[1L]])
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
 
-  #--- Create dimension
-  res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::dim.def.nc(
-      xnc, dimname = nameAxis, dimlength = length(verticalValues)
-    )
-  }
-
-  #--- Create variable
-  res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::var.def.nc(
-      xnc, varname = nameAxis, vartype = dataType, dimensions = nameAxis
-    )
-  }
-
-  RNetCDF::var.put.nc(
+  setAxisNCSW(
     xnc,
-    variable = nameAxis,
-    data = switch(
+    nameAxis = nameAxis,
+    dataType = dataType,
+    values = switch(
       EXPR = verticalType,
       values = verticalValues,
       layers = seq_along(verticalValues)
-    )
-  )
-
-
-  #--- Variable attributes
-  RNetCDF::att.put.nc(xnc, nameAxis, "axis", "NC_CHAR", value = "Z")
-
-  RNetCDF::att.put.nc(
-    xnc, nameAxis, "standard_name", "NC_CHAR", value = "depth"
-  )
-
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis,
-    name = "long_name",
-    type = "NC_CHAR",
-    value = switch(
+    ),
+    axis = "Z",
+    long_name = switch(
       EXPR = verticalType,
       values = "soil depth",
       layers = "soil layer"
+    ),
+    units = if (identical(verticalType, "values")) units,
+    attributes = c(
+      standard_name = "depth",
+      positive = "down",
+      comment = if (identical(verticalType, "layers")) {
+        "dimensionless vertical coordinate"
+      }
     )
   )
-
-  RNetCDF::att.put.nc(xnc, nameAxis, "positive", "NC_CHAR", value = "down")
-
-  if (!is.null(units) && identical(verticalType, "values")) {
-    RNetCDF::att.put.nc(xnc, nameAxis, "units", "NC_CHAR", value = units)
-  }
-
-  if (identical(verticalType, "layers")) {
-    RNetCDF::att.put.nc(
-      xnc,
-      variable = "vertical", name = "comment", type = "NC_CHAR",
-      value = "dimensionless vertical coordinate"
-    )
-  }
-
 
   #--- Vertical bounds
   if (
     identical(verticalType, "values") &&
       !is.null(verticalUpperBound) && !is.null(verticalLowerBound)
   ) {
-    RNetCDF::att.put.nc(
-      xnc, nameAxis, "bounds", "NC_CHAR", value = "vertical_bnds"
-    )
-
-    res <- try(RNetCDF::var.inq.nc(xnc, "vertical_bnds"), silent = TRUE)
-    if (inherits(res, "try-error")) {
-      RNetCDF::var.def.nc(
-        xnc, "vertical_bnds", "NC_DOUBLE",
-        dimensions = c("bnds", nameAxis),
-        deflate = 5,
-        shuffle = TRUE
-      )
-    }
-
     vertical_bnds <- apply(
       rbind(verticalUpperBound, verticalLowerBound),
       MARGIN = 2L,
       sort
     )
 
-    RNetCDF::var.put.nc(xnc, "vertical_bnds", data = vertical_bnds)
+    setAxisBoundsNCSW(
+      xnc,
+      nameBndsVar = paste0(nameAxis, "_bnds"),
+      nameDim = nameAxis,
+      valuesBnds = vertical_bnds
+    )
   }
 }
 
 
-#' Add a plant functional type dimension and coordinate variable
+#' @rdname setAxisNCSW
 #'
-#' @inheritParams ncsw
+#' @return [setAxisPFTsNCSW()] adds a plant functional type dimension and
+#' associated coordinate variable.
 #'
 #' @export
 setAxisPFTsNCSW <- function(
@@ -803,55 +846,32 @@ setAxisPFTsNCSW <- function(
 ) {
   dataType <- ncDataType(dataType[[1L]])
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
+  setAxisNCSW(
+    xnc,
+    nameAxis = nameAxis,
+    dataType = dataType,
+    values = if (identical(dataType, "NC_STRING")) {
+      pftValues
+    } else if (identical(dataType, "NC_BYTE")) {
+      seq_along(pftValues)
+    },
+    axis = NULL,
+    long_name = NULL,
+    units = NULL,
+    attributes = c(
+      standard_name = "biological_taxon_name",
+      flag_meanings = if (identical(dataType, "NC_BYTE")) {
+        paste(pftValues, collapse = " ")
+      }
     )
-  }
-
-  #--- Create dimension
-  res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::dim.def.nc(
-      xnc, dimname = nameAxis, dimlength = length(pftValues)
-    )
-  }
-
-  #--- Create variable
-  res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::var.def.nc(
-      xnc, varname = nameAxis, vartype = dataType, dimensions = nameAxis
-    )
-  }
-
-  if (identical(dataType, "NC_STRING")) {
-    RNetCDF::var.put.nc(xnc, nameAxis, data = pftValues)
-  } else if (identical(dataType, "NC_BYTE")) {
-    RNetCDF::var.put.nc(xnc, nameAxis, data = seq_along(pftValues))
-  }
-
-
-  #--- Variable attributes
-  RNetCDF::att.put.nc(
-    xnc, nameAxis, "standard_name", "NC_CHAR", value = "biological_taxon_name"
   )
 
-  if (identical(dataType, "NC_BYTE")) {
-    RNetCDF::att.put.nc(
-      xnc,
-      variable = nameAxis,
-      name = "flag_meanings",
-      type = "NC_CHAR",
-      value = paste(pftValues, collapse = " ")
-    )
 
+  if (identical(dataType, "NC_BYTE")) {
     RNetCDF::att.put.nc(
       xnc, nameAxis, "flag_values", "NC_BYTE", value = seq_along(pftValues)
     )
@@ -859,99 +879,66 @@ setAxisPFTsNCSW <- function(
 }
 
 
-#' Add a time dimension and coordinate variable (`T`-axis)
+#' @rdname setAxisNCSW
+#'
+#' @return [setAxisTimeNCSW()] adds a time dimension and associated
+#' coordinate variable (`T`-axis).
 #'
 #' @inheritParams ncsw
 #' @param startYear An integer value. The calendar year used as reference
-#' in the time units `"days since ...`.
+#' in the time units `"days since ...`. `timeUnits` takes precedence if both
+#' are provided.
+#' @param timeUnits A character string. The time units,
+#' e.g., `"days since ...`. `timeUnits` takes precedence over `startYear`
+#' if both are provided.
 #' @param calendar A character string representing the calendar type.
 #'
 #' @export
 setAxisTimeNCSW <- function(
   x,
-  startYear,
   timeValues,
+  startYear = NULL,
+  timeUnits = NULL,
   nameAxis = "time",
   calendar = c("standard", "365_day", "366_day"),
-  dataType = "NC_DOUBLE"
+  dataType = "NC_DOUBLE",
+  isUnlimitedDim = FALSE
 ) {
-  calendar <- as.character(calendar[[1L]])
-  dataType <- ncDataType(dataType[[1L]])
+  stopifnot(!is.null(startYear) || !is.null(timeUnits))
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
+  if (is.null(timeUnits)) {
+    timeUnits <- paste0("days since ", startYear, "-01-01 00:00:00")
   }
-
-  time_unit <- paste0("days since ", startYear, "-01-01 00:00:00")
 
   if (!isTRUE(is.numeric(timeValues))) {
     timeValues <- RNetCDF::utinvcal.nc(
-      time_unit,
+      timeUnits,
       value = as.POSIXct(timeValues)
     )
   }
 
-
-  #--- Create dimension
-  res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::dim.def.nc(
-      xnc, dimname = nameAxis, dimlength = length(timeValues)
+  setAxisNCSW(
+    x,
+    nameAxis = nameAxis,
+    dataType = dataType,
+    values = timeValues,
+    isUnlimitedDim = isUnlimitedDim,
+    axis = "T",
+    long_name = nameAxis,
+    units = timeUnits,
+    attributes = c(
+      standard_name = nameAxis,
+      calendar = as.character(calendar[[1L]])
     )
-  }
-
-  #--- Create variable
-  res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::var.def.nc(
-      xnc,
-      varname = nameAxis, vartype = dataType, dimensions = nameAxis
-    )
-  }
-
-  RNetCDF::var.put.nc(xnc, variable = nameAxis, data = timeValues)
-
-
-  #--- Variable attributes
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis, name = "units", type = "NC_CHAR",
-    value = time_unit
-  )
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis, name = "long_name", type = "NC_CHAR",
-    value = nameAxis
-  )
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis, name = "axis", type = "NC_CHAR",
-    value = "T"
-  )
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis, name = "standard_name", type = "NC_CHAR",
-    value = nameAxis
-  )
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis, name = "calendar", type = "NC_CHAR",
-    value = calendar
   )
 }
 
 
-#' Add a monthly climatology dimension and coordinate variable
+#' @rdname setAxisNCSW
 #'
-#' @inheritParams ncsw
+#' @return [setAxisMonthClimatologyNCSW()] adds a monthly climatology dimension
+#' and associated coordinate variable.
+#'
 #' @param startYear An integer value. The first calendar year of the period
 #' which the climatology represents.
 #' @param endYear An integer value. The last calendar year of the period
@@ -967,17 +954,10 @@ setAxisMonthClimatologyNCSW <- function(
 ) {
   dataType <- ncDataType(dataType[[1L]])
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   time_unit <- paste0("days since ", startYear, "-01-01 00:00:00")
 
@@ -1002,32 +982,8 @@ setAxisMonthClimatologyNCSW <- function(
     dataType = dataType
   )
 
-  varName <- "climatology_bounds"
-  RNetCDF::att.put.nc(
-    xnc,
-    variable = nameAxis, name = "climatology", type = "NC_CHAR",
-    value = varName
-  )
 
-  #--- Create bounds dimension
-  res <- try(RNetCDF::dim.inq.nc(xnc, "bnds"), silent = TRUE)
-  if (
-    inherits(res, "try-error") && grepl("Invalid dimension", res, fixed = TRUE)
-  ) {
-    RNetCDF::dim.def.nc(xnc, dimname = "bnds", dimlength = 2L)
-  }
-
-  #--- Create bounds variable
-  res <- try(RNetCDF::var.inq.nc(xnc, varName), silent = TRUE)
-  if (inherits(res, "try-error")) {
-    RNetCDF::var.def.nc(
-      xnc,
-      varname = varName,
-      vartype = dataType,
-      dimensions = c("bnds", nameAxis)
-    )
-  }
-
+  #--- Create bounds
   cbnds <- rbind(
     start = RNetCDF::utinvcal.nc(
       time_unit,
@@ -1048,7 +1004,13 @@ setAxisMonthClimatologyNCSW <- function(
     )
   )
 
-  RNetCDF::var.put.nc(xnc, variable = varName, data = cbnds, count = c(2L, 12L))
+  setAxisBoundsNCSW(
+    xnc,
+    nameBndsVar = "climatology_bounds",
+    nameDim = nameAxis,
+    valuesBnds = cbnds,
+    boundsAttributeName = "climatology"
+  )
 }
 
 
@@ -1056,8 +1018,6 @@ setAxisMonthClimatologyNCSW <- function(
 #'
 #' @inheritParams ncsw
 #' @param varName A character string. The name of the variable.
-#' @param values An object. The values to write to the
-#' `netCDF` variable `varName` if not `NULL`,
 #' see [`RNetCDF::var.put.nc()`] for more detail.
 #' @param start A numeric vector. The start indices at which to write values,
 #' see [`RNetCDF::var.put.nc()`] for more detail.
@@ -1066,11 +1026,8 @@ setAxisMonthClimatologyNCSW <- function(
 #' @param dimensions A vector, see [`RNetCDF::var.def.nc()`] for more detail.
 #' @param deflate A numeric value or `NA`,
 #' see [`RNetCDF::var.def.nc()`] for more detail.
-#' @param long_name A character string. Attribute of variable `varName`.
-#' @param units A character string. Attribute of variable `varName`.
-#' @param cell_method A character string. Attribute of variable `varName`.
-#' @param coordinates A character string. Attribute of variable `varName`.
-#' @param grid_mapping A character string. Attribute of variable `varName`.
+#' @param addFillValue A logical value. Add a `"_FillValue"` attribute? The
+#' value is determined by `dataType` and [fillValue()].
 #'
 #' @section Details:
 #'   1. Create variable of `dataType` and `dimensions` if not present,
@@ -1111,17 +1068,10 @@ setVariableNCSW <- function(
   varName <- as.character(varName[[1L]])
   dataType <- ncDataType(dataType[[1L]])
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   #--- Create variable
   res <- try(RNetCDF::var.inq.nc(xnc, varName), silent = TRUE)
@@ -1166,6 +1116,7 @@ setVariableNCSW <- function(
     if (!is.null(cell_method)) list(cell_method = cell_method),
     if (!is.null(attributes)) as.list(attributes)
   )
+  tmp <- tmp[unique(names(tmp))]
   tmp <- tmp[lengths(tmp) > 0L]
 
   for (k in seq_along(tmp)) {
@@ -1205,17 +1156,10 @@ setVariableNCSW <- function(
 #' @export
 setGlobalAttributesNCSW <- function(x, attributes) {
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   for (k in seq_along(attributes)) {
     RNetCDF::att.put.nc(
@@ -1245,17 +1189,10 @@ setGlobalAttributesNCSW <- function(x, attributes) {
 #' @export
 deleteGlobalAttributesNCSW <- function(x, attributes) {
 
-  if (inherits(x, "NetCDF")) {
-    xnc <- x
-  } else if (inherits(x, "character")) {
-    xnc <- RNetCDF::open.nc(x, write = TRUE)
-    on.exit(RNetCDF::close.nc(xnc))
-  } else {
-    stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
-      call. = FALSE
-    )
-  }
+  ox <- openRnetCDF(x, write = TRUE)
+  xnc <- ox[["con"]]
+  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+
 
   for (k in seq_along(attributes)) {
     try(

@@ -4,9 +4,19 @@
 \alias{ncsw}
 \title{\code{netCDF} functionality suitable for \code{SOILWAT2}}
 \arguments{
-\item{x}{A character string (file name that will be opened and closed) or
-an object of class \code{"NetCDF"} from the \code{RNetCDF} package
-(an open connection to a \code{NetCDF} dataset that will be kept open).}
+\item{x}{A character string (file name that will be opened and closed),
+an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
+
+\item{long_name}{A character string. The \code{"long_name"} attribute.}
+
+\item{units}{A character string.  The \code{"units"} attribute.}
+
+\item{cell_method}{A character string. The \code{"cell_method"} attribute.}
+
+\item{coordinates}{A character string. The \code{"coordinates"} attribute.}
+
+\item{grid_mapping}{A character string. The \code{"grid_mapping"} attribute.}
 
 \item{attributes}{A named vector or named list of character strings.}
 
@@ -23,6 +33,11 @@ coordinate variable.}
 \item{nameAxis}{A character string. The name of the axis dimension and
 associated coordinate variable.}
 
+\item{values}{A numeric object. The values to write a variable if not \code{NULL}.}
+
+\item{siteValues}{A numeric object. The values of the discrete \code{site} axis
+variable.}
+
 \item{timeValues}{A numeric vector. The values of the time axis variable.}
 
 \item{verticalValues}{A numeric vector. The values of the vertical axis
@@ -33,6 +48,8 @@ representing plant functional types.}
 
 \item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
+\item{isUnlimitedDim}{A logical value. Define the new dimension as unlimited?}
 }
 \description{
 \code{netCDF} functionality suitable for \code{SOILWAT2}

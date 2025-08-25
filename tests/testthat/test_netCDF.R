@@ -135,7 +135,7 @@ test_that("get_xyspace", {
     var_attributes = list(name = "test", units = "1")
   )
 
-  list_grids[["nc"]] <- ncdf4::nc_open(fname_nc)
+  list_grids[["nc"]] <- RNetCDF::open.nc(fname_nc)
 
 
   # 8) a filename pointing to a netCDF on disk
@@ -157,7 +157,7 @@ test_that("get_xyspace", {
 
 
   # Clean up
-  ncdf4::nc_close(list_grids[["nc"]])
+  RNetCDF::close.nc(list_grids[["nc"]])
   unlink(fname_nc)
 })
 

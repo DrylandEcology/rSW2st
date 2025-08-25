@@ -11,13 +11,14 @@ read_attributes_from_netCDF(
   xy_names = c("lon", "lat"),
   time_name = "time",
   vertical_name = "vertical",
-  nc_name_crs = "crs"
+  nc_name_crs = "crs",
+  meta = NULL
 )
 }
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
-a character string as file name or an object of class \var{ncdf4} derived
-from \code{ncdf4::nc_open}.}
+a character string as file name, an object of class \var{"NetCDF"},
+or an object of class \var{"ncdf4"}.}
 
 \item{group}{A character string. Specifies which attributes to extract.}
 
@@ -36,6 +37,9 @@ to the vertical axis.}
 \item{nc_name_crs}{A character string. The name of the \var{crs} variable
 in the \var{netCDF}.
 Function \code{\link{create_netCDF}} hard codes \var{"crs"}.}
+
+\item{meta}{A named list. Description of the content of the \var{netCDF}
+file. For internal purposes.}
 }
 \value{
 A named list
