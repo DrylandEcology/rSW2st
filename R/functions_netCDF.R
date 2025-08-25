@@ -2735,12 +2735,17 @@ get_data_dims <- function(
 #'
 #' @return A text string of supported `netCDF` data types. Supported
 #' types are:
-#' `"NC_INT"`, `"NC_DOUBLE"`, `"NC_STRING"`
+#' `"NC_INT"`, `"NC_DOUBLE"`, `"NC_CHAR"`
+#'
+#' @section Details:
+#' The data type for a character object is `"NC_CHAR"`
+#' (and not `"NC_STRING"`) because `"NC_STRING"` is not fully supported.
+#'
 #'
 #' @seealso [RNetCDF::var.def.nc()]
 #'
 #' @examples
-#' get_nc_type("test") ## "NC_STRING"
+#' get_nc_type("test") ## "NC_CHAR"
 #' get_nc_type(c(1L, 5L)) ## "NC_INT"
 #' get_nc_type(1) ## "NC_DOUBLE"
 #' \dontrun{get_nc_type(TRUE)} ## error
@@ -2751,7 +2756,7 @@ get_nc_type <- function(x) {
     EXPR = storage.mode(x),
     integer = "NC_INT",
     double = "NC_DOUBLE",
-    character = "NC_STRING",
+    character = "NC_CHAR",
     stop(
       shQuote(storage.mode(x)), " is not implemented.",
       call. = FALSE

@@ -12,13 +12,19 @@ get_nc_type(x)
 \value{
 A text string of supported \code{netCDF} data types. Supported
 types are:
-\code{"NC_INT"}, \code{"NC_DOUBLE"}, \code{"NC_STRING"}
+\code{"NC_INT"}, \code{"NC_DOUBLE"}, \code{"NC_CHAR"}
 }
 \description{
 Guess \code{netCDF} data type of an object
 }
+\section{Details}{
+
+The data type for a character object is \code{"NC_CHAR"}
+(and not \code{"NC_STRING"}) because \code{"NC_STRING"} is not fully supported.
+}
+
 \examples{
-get_nc_type("test") ## "NC_STRING"
+get_nc_type("test") ## "NC_CHAR"
 get_nc_type(c(1L, 5L)) ## "NC_INT"
 get_nc_type(1) ## "NC_DOUBLE"
 \dontrun{get_nc_type(TRUE)} ## error
