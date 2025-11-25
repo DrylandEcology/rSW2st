@@ -1,4 +1,4 @@
-# rSW2st v0.3.1-devel
+# rSW2st v0.3.1
 
 * Code now uses functionality from the `"RNetCDF"` package
   replacing the use of the `"ncdf4"` package (#8; @dschlaep).
