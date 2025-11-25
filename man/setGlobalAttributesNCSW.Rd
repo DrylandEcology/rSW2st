@@ -7,9 +7,9 @@
 setGlobalAttributesNCSW(x, attributes)
 }
 \arguments{
-\item{x}{A character string (file name that will be opened and closed) or
-an object of class \code{"NetCDF"} from the \code{RNetCDF} package
-(an open connection to a \code{NetCDF} dataset that will be kept open).}
+\item{x}{A character string (file name that will be opened and closed),
+an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
 
 \item{attributes}{A named vector or named list of character strings.}
 }

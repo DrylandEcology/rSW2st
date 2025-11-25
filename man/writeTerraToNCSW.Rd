@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_ncSOILWAT2.R
 \name{writeTerraToNCSW}
 \alias{writeTerraToNCSW}
-\title{Write a \code{terra} raster object to a \code{netCDF} file suitable for \code{SOILWAT2}}
+\title{Write spatial objects to a \code{netCDF} file suitable for \code{SOILWAT2}}
 \usage{
 writeTerraToNCSW(
   x,
@@ -21,9 +21,9 @@ writeTerraToNCSW(
 )
 }
 \arguments{
-\item{x}{A character string (file name that will be opened and closed) or
-an object of class \code{"NetCDF"} from the \code{RNetCDF} package
-(an open connection to a \code{NetCDF} dataset that will be kept open).}
+\item{x}{A character string (file name that will be opened and closed),
+an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
 
 \item{filename}{A character string. The file name of the \code{netCDF} file
 to be created.}
@@ -31,7 +31,7 @@ to be created.}
 \item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 
 \item{increasingLat}{A logical value. Sort \code{Y}-axis values increasingly.}
 
@@ -58,5 +58,11 @@ dimension and coordinate variable.}
 Global attributes to delete.}
 }
 \description{
-Write a \code{terra} raster object to a \code{netCDF} file suitable for \code{SOILWAT2}
+Write spatial objects to a \code{netCDF} file suitable for \code{SOILWAT2}
 }
+\section{Details}{
+
+\code{writeTerraToNCSW()} writes a \code{terra} raster object to a \code{netCDF} file
+suitable for \code{SOILWAT2} simulations.
+}
+

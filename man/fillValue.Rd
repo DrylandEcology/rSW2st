@@ -7,7 +7,7 @@
 fillValue(dataType)
 }
 \arguments{
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 }
 \description{
 Identify the fill value corresponding to a data type

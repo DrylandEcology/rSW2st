@@ -11,7 +11,7 @@ setVariableNCSW(
   start = NA,
   count = NA,
   var_chunksizes_xyzt = NA,
-  dataType = c("NC_DOUBLE", "NC_FLOAT"),
+  dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
   long_name = NULL,
@@ -19,19 +19,19 @@ setVariableNCSW(
   cell_method = NULL,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
-  attributes = NULL
+  attributes = NULL,
+  addFillValue = TRUE
 )
 }
 \arguments{
-\item{x}{A character string (file name that will be opened and closed) or
-an object of class \code{"NetCDF"} from the \code{RNetCDF} package
-(an open connection to a \code{NetCDF} dataset that will be kept open).}
+\item{x}{A character string (file name that will be opened and closed),
+an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
 
-\item{varName}{A character string. The name of the variable.}
-
-\item{values}{An object. The values to write to the
-\code{netCDF} variable \code{varName} if not \code{NULL},
+\item{varName}{A character string. The name of the variable.
 see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
+
+\item{values}{A numeric object. The values to write a variable if not \code{NULL}.}
 
 \item{start}{A numeric vector. The start indices at which to write values,
 see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
@@ -42,24 +42,27 @@ see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
 \item{var_chunksizes_xyzt}{A numeric vector. The chunk sizes if not \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
-\item{dataType}{A character string. A \code{netCDF} data type.}
+\item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 
 \item{dimensions}{A vector, see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
 \item{deflate}{A numeric value or \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
-\item{long_name}{A character string. Attribute of variable \code{varName}.}
+\item{long_name}{A character string. The \code{"long_name"} attribute.}
 
-\item{units}{A character string. Attribute of variable \code{varName}.}
+\item{units}{A character string.  The \code{"units"} attribute.}
 
-\item{cell_method}{A character string. Attribute of variable \code{varName}.}
+\item{cell_method}{A character string. The \code{"cell_method"} attribute.}
 
-\item{coordinates}{A character string. Attribute of variable \code{varName}.}
+\item{coordinates}{A character string. The \code{"coordinates"} attribute.}
 
-\item{grid_mapping}{A character string. Attribute of variable \code{varName}.}
+\item{grid_mapping}{A character string. The \code{"grid_mapping"} attribute.}
 
 \item{attributes}{A named vector or named list of character strings.}
+
+\item{addFillValue}{A logical value. Add a \code{"_FillValue"} attribute? The
+value is determined by \code{dataType} and \code{\link[=fillValue]{fillValue()}}.}
 }
 \description{
 Add a variable

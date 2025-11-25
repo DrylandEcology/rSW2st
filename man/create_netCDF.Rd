@@ -16,23 +16,23 @@ create_netCDF(
   xy_attributes = list(name = c("lon", "lat"), standard_name = c("longitude",
     "latitude"), long_name = c("Longitude", "Latitude"), units = c("degrees_east",
     "degrees_north")),
-  crs_attributes = list(crs_wkt = sf::st_crs("OGC:CRS84")$Wkt, grid_mapping_name =
-    "latitude_longitude", longitude_of_prime_meridian = 0, semi_major_axis = 6378137,
-    inverse_flattening = 298.257223563),
+  crs_attributes = list(long_name = "WGS84", crs_wkt = sf::st_crs("OGC:CRS84")$Wkt,
+    grid_mapping_name = "latitude_longitude", longitude_of_prime_meridian = 0,
+    semi_major_axis = 6378137, inverse_flattening = 298.257223563),
   check_crs = TRUE,
   time_values = NULL,
   type_timeaxis = c("timeseries", "climatology"),
   time_attributes = list(units = "days since 1900-01-01", calendar = "standard", unlim =
     FALSE),
-  time_bounds = matrix(NA, nrow = length(time_values), ncol = 2),
+  time_bounds = matrix(NA, nrow = length(time_values), ncol = 2L),
   vertical_values = NULL,
   vertical_attributes = list(units = "", positive = "down"),
-  vertical_bounds = matrix(NA, nrow = length(vertical_values), ncol = 2),
+  vertical_bounds = matrix(NA, nrow = length(vertical_values), ncol = 2L),
   global_attributes = list(title = "Title"),
   overwrite = FALSE,
   nc_compression = FALSE,
   nc_shuffle = TRUE,
-  nc_deflate = 5,
+  nc_deflate = 5L,
   nc_chunks = "by_zt",
   verbose = FALSE
 )
@@ -302,7 +302,7 @@ nc_att_xy <- list(
 )
 
 ## Write netCDF for gridded data
-tmp_nc[["xyt2"]] <- sub(".nc", "2.nc", tmp_nc[["xyt"]])
+tmp_nc[["xyt2"]] <- sub(".nc$", "2.nc", tmp_nc[["xyt"]])
 
 create_netCDF(
   filename = tmp_nc[["xyt2"]],
@@ -322,7 +322,7 @@ all.equal(data_xyt2[["data"]], data_xyt[["data"]])
 
 
 ## Write netCDF for discrete data
-tmp_nc[["szt2"]] <- sub(".nc", "2.nc", tmp_nc[["szt"]])
+tmp_nc[["szt2"]] <- sub(".nc$", "2.nc", tmp_nc[["szt"]])
 
 create_netCDF(
   filename = tmp_nc[["szt2"]],

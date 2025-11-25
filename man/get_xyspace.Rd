@@ -17,8 +17,9 @@ get_xyspace(
 Regular, rectangular grids are the only currently supported grid.
 This can be \itemize{
 \item an object identifying a \var{netCDF} file, i.e.,
-a character string as file name or
-an object of class \var{ncdf4} derived from \code{ncdf4::nc_open}
+a character string as file name,
+an object of class \var{NetCDF}, or
+an object of class \var{ncdf4}.
 \item a \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
 object,
 \item a \code{\link[terra:SpatRaster-class]{terra::SpatRaster}}

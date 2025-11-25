@@ -8,8 +8,8 @@ read_crs_from_netCDF(x, nc_name_crs = "crs", nc_name_crs_wkt = "crs_wkt")
 }
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
-a character string as file name or an object of class \var{ncdf4} derived
-from \code{ncdf4::nc_open}.}
+a character string as file name, an object of class \var{"NetCDF"},
+or an object of class \var{"ncdf4"}.}
 
 \item{nc_name_crs}{A character string. The name of the \var{crs} variable
 in the \var{netCDF}.

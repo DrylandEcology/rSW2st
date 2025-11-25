@@ -31,6 +31,7 @@ read_netCDF_as_array(
   vertical_ids = -1,
   collapse_degen = TRUE,
   load_values = TRUE,
+  meta = NULL,
   ...
 )
 
@@ -63,8 +64,8 @@ read_netCDF_as_terra(
 }
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
-a character string as file name or an object of class \var{ncdf4} derived
-from \code{ncdf4::nc_open}.}
+a character string as file name, an object of class \var{"NetCDF"},
+or an object of class \var{"ncdf4"}.}
 
 \item{method}{A character string. Determines how the \var{netCDF} is read
 and if a spatial subset (by \code{locations}) is extracted.}
@@ -115,6 +116,9 @@ collapsed. A degenerate variable dimension, in the case of a
 \item{load_values}{A logical value. If \code{FALSE}, then data values are
 not returned
 (i.e., element "data" of the returned object will be \code{NULL}).}
+
+\item{meta}{A named list. Description of the content of the \var{netCDF}
+file. For internal purposes.}
 }
 \value{
 A named list including a data \var{array}
@@ -131,6 +135,12 @@ Read a \var{netCDF} as produced by \code{create_netCDF}
 Reading discrete \var{netCDF}s,
 i.e., cases \var{"szt"}, \var{"st"}, \var{"sz"}, and \var{"s"},
 is mostly supported; see examples.
+
+ \code{\link[=read_netCDF_as_stars]{read_netCDF_as_stars()}} via \code{\link[stars:read_ncdf]{stars::read_ncdf()}} uses
+\code{\link[ncdfgeom:read_timeseries_dsg]{ncdfgeom::read_timeseries_dsg()}} to read data
+if there is a global attribute \code{featureType = "timeseries"}; however, this
+fails if there are no \code{"geometry"} data.
+See examples for a work-around.
 }
 
 \section{Details}{
@@ -138,9 +148,9 @@ is mostly supported; see examples.
 around \code{\link[raster:raster]{raster::raster}},
 but makes an extra attempt to correctly set the \var{crs} object.
 
- \code{\link{read_netCDF_as_stars}} is a thin wrapper
-around \code{\link[stars:read_ncdf]{stars::read_ncdf}},
-but makes an extra attempt to correctly set the \var{crs} object.
+ \code{\link[=read_netCDF_as_stars]{read_netCDF_as_stars()}} is a thin wrapper
+around \code{\link[stars:read_ncdf]{stars::read_ncdf()}}, but makes an extra attempt to correctly set
+the \code{crs} object.
 
  \code{\link{read_netCDF_as_terra}} is a thin wrapper
 around \code{\link[terra:rast]{terra::rast}},
@@ -224,6 +234,11 @@ stars_xyt <- read_netCDF(
 )
 plot(stars_xyt)
 
+# Hack that stars::read_ncdf() is not treating it as time series (see notes)
+setGlobalAttributesNCSW(
+  tmp_nc[["szt"]],
+  attributes = c(featureType = "featureType", frequency = "timeseries-wog")
+)
 stars_szt <- read_netCDF(
   tmp_nc[["szt"]],
   method = "stars",
