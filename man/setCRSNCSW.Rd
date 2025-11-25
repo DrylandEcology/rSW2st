@@ -2,6 +2,7 @@
 % Please edit documentation in R/functions_ncSOILWAT2.R
 \name{setCRSNCSW}
 \alias{setCRSNCSW}
+\alias{setCRSWGS84NCSW}
 \title{Create a \code{CRS} variable}
 \usage{
 setCRSNCSW(
@@ -11,6 +12,8 @@ setCRSNCSW(
   crs_wkt = NULL,
   attributes = NULL
 )
+
+setCRSWGS84NCSW(x, nameCRS = "crs")
 }
 \arguments{
 \item{x}{A character string (file name that will be opened and closed),
@@ -28,7 +31,19 @@ attribute.}
 }
 \value{
 \code{\link[=setCRSNCSW]{setCRSNCSW()}}: creates a \code{CRS} variable with custom attributes
+
+\code{\link[=setCRSWGS84NCSW]{setCRSWGS84NCSW()}}: creates a \code{CRS} variable with \code{WGS84} attributes
 }
 \description{
 Create a \code{CRS} variable
+}
+\examples{
+fn <- tempfile(fileext = ".nc")
+nc <- RNetCDF::create.nc(fn, format = "netcdf4")
+setCRSWGS84NCSW(nc)
+
+RNetCDF::print.nc(nc)
+RNetCDF::close.nc(nc)
+unlink(fn)
+
 }

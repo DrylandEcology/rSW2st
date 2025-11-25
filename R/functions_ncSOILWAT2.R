@@ -412,7 +412,7 @@ setCRSNCSW <- function(
   }
 }
 
-#' @rdname read_netCDF
+#' @rdname setCRSNCSW
 #'
 #' @inheritParams ncsw
 #'
