@@ -23,6 +23,7 @@ Suggests:
     automap,
     gstat,
     lwgeom,
+    ncdfgeom,
     ggplot2,
     ncdf4 (>= 1.17),
     ncmeta (>= 0.3.0),

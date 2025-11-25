@@ -1516,6 +1516,11 @@ populate_netCDF_dev <- function(
 #' )
 #' plot(stars_xyt)
 #'
+#' # Hack that stars::read_ncdf() is not treating it as time series (see notes)
+#' setGlobalAttributesNCSW(
+#'   tmp_nc[["szt"]],
+#'   attributes = c(featureType = "featureType", frequency = "timeseries-wog")
+#' )
 #' stars_szt <- read_netCDF(
 #'   tmp_nc[["szt"]],
 #'   method = "stars",
@@ -2115,10 +2120,17 @@ read_netCDF_as_raster <- function(
 
 #' @rdname read_netCDF
 #'
-#' @section Details: \code{\link{read_netCDF_as_stars}} is a thin wrapper
-#' around \code{\link[stars:read_ncdf]{stars::read_ncdf}},
-#' but makes an extra attempt to correctly set the \var{crs} object.
+#' @section Details: [read_netCDF_as_stars()] is a thin wrapper
+#' around [stars::read_ncdf()], but makes an extra attempt to correctly set
+#' the `crs` object.
 #'
+#' @section Notes: [read_netCDF_as_stars()] via [stars::read_ncdf()] uses
+#' [ncdfgeom::read_timeseries_dsg()] to read data
+#' if there is a global attribute `featureType = "timeseries"`; however, this
+#' fails if there are no `"geometry"` data.
+#' See examples for a work-around.
+#'
+#' @md
 #' @export
 read_netCDF_as_stars <- function(
   x,
@@ -2129,8 +2141,13 @@ read_netCDF_as_stars <- function(
   ...
 ) {
 
-  # `stars::read_ncdf()` uses "ncmeta" but it is a suggested package
-  stopifnot(requireNamespace("ncmeta", quietly = TRUE))
+  stopifnot(
+    # `stars::read_ncdf()` uses "ncmeta" but it is a suggested package
+    requireNamespace("ncmeta", quietly = TRUE),
+    # `stars::read_ncdf()` uses "ncdfgeom" (if `featureType = "timeseries"`),
+    # but it is a suggested package
+    requireNamespace("ncdfgeom", quietly = TRUE)
+  )
 
   e <- expression(
     stars::read_ncdf(x, var = var, ...)

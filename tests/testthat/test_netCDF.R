@@ -495,6 +495,20 @@ test_that("read_netCDF", {
       startsWith(names(tmp_nc[k]), "xy")
     )
 
+    if (!is_netCDF_gridded(fnc, xy_names = c("x", "y"))) {
+      # Site-based netCDF files, i.e., those with global attribute
+      # `featureType = "timeseries"`, error with `stars::read_ncdf()`.
+      # This is because `ncdfgeom::read_timeseries_dsg()` is called and requires
+      # `geometry` information -- which is currently not added by
+      # `create_example_netCDFs()`.
+
+      setGlobalAttributesNCSW(
+        fnc,
+        attributes = c(
+          featureType = "featureType", frequency = "timeseries-withoutGeometry"
+        )
+      )
+    }
 
     # Loop over methods
     for (km in tmp_methods) {
@@ -581,7 +595,6 @@ test_that("read_netCDF", {
       )
     }
   }
-
 
   unlink(unlist(tmp_nc))
 })
