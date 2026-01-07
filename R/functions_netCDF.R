@@ -1328,6 +1328,19 @@ create_netCDF <- function(
     }
 
   } else {
+    varInfo <- RNetCDF::var.inq.nc(xnc, variable = var_names[[1]])
+    if (!identical(varInfo[["ndims"]], length(dim(data)))) {
+      hasDims <- vapply(
+        varInfo[["dimids"]],
+        function(id) {
+          as.integer(RNetCDF::dim.inq.nc(xnc, dimension = id)[["length"]])
+        },
+        FUN.VALUE = NA_integer_
+      )
+      data <- as.vector(data)
+      stopifnot(prod(hasDims) == length(data))
+      data <- array(data, dim = hasDims)
+    }
     RNetCDF::var.put.nc(xnc, variable = var_names[[1L]], data = data)
   }
 }
