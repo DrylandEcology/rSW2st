@@ -287,7 +287,7 @@ writeTerraToNCSW <- function(
   hasVertical <- !is.null(nameAxisVertical) && !is.null(verticalValues)
   hasTime <- !is.null(nameAxisTime) && !is.null(timeValues)
 
-  if (getNamespaceVersion("terra") >= "1.8-42") {
+  if (getNamespaceVersion("terra") >= numeric_version("1.8-42")) {
     if (hasVertical) {
       terra::depthName(x) <- nameAxisVertical
       terra::depth(x) <- verticalValues
