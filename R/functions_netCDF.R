@@ -1899,6 +1899,7 @@ read_netCDF_as_array <- function(
     if (has_time) "t"
   )
 
+  hasMultiVariableDimension <- FALSE
 
   if (load_values) {
     if (has_vertical_subset) {
@@ -1994,10 +1995,11 @@ read_netCDF_as_array <- function(
 
 
     #--- Make sure output structure is as expected/documented
-    if (length(nc_vars) > 1) {
+    if (length(nc_vars) > 1L) {
       if (data_str == "xy" && collapse_degen) {
         # Combine multiple variables to xy-v or s-v
         res <- abind::abind(res, along = n_xy + 1L)
+        hasMultiVariableDimension <- TRUE
 
       } else {
         warning(
@@ -2045,6 +2047,21 @@ read_netCDF_as_array <- function(
       meta = meta
     )
   )
+
+  # Use variables as names of data if applicable
+  if (load_values) {
+    if (data_str == "xy") {
+      if (hasMultiVariableDimension) {
+        dimd <- dim(tmp[["data"]])
+        if (length(dimd) > n_xy && dimd[[n_xy + 1L]] == length(nc_vars)) {
+          dimnames(tmp[["data"]])[n_xy + 1L] <- nc_vars
+        }
+      }
+    } else if (length(tmp[["data"]]) == length(nc_vars)) {
+      names(tmp[["data"]]) <- nc_vars
+    }
+  }
+
 
   if (is_gridded) {
     tmp
