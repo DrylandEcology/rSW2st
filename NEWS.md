@@ -1,3 +1,11 @@
+# rSW2st v0.3.2
+
+* `create_netCDF*()` via internal `.populate_netCDF_nocheck()` now fix
+  a degenerate data dimension.
+* `read_netCDF_as_array()` now returns a named data object using variable names
+  if multiple variables are present.
+
+
 # rSW2st v0.3.1
 
 * Code now uses functionality from the `"RNetCDF"` package
