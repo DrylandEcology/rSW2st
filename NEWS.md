@@ -1,5 +1,9 @@
 # rSW2st v0.3.3-9000
 
+* `setVariableNCSW()` now spells the `"cell_methods"` argument correctly.
+  The previous, incorrect spelling `"cell_method"` is retained for
+  backwards compatibility.
+
 
 # rSW2st v0.3.2
 
