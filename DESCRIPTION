@@ -32,7 +32,6 @@ Suggests:
     raster (>= 3.4.5),
     testthat (>= 3.0.0),
     spelling (>= 2.1.0),
-    lintr (>= 3.2.0),
     covr
 License: GPL-3
 URL: https://github.com/DrylandEcology/rSW2st
