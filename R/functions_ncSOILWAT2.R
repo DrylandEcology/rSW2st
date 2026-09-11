@@ -31,7 +31,10 @@ openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
 #' an object of class `"ncdf4"` from the `ncdf4` package (kept open).
 #' @param long_name A character string. The `"long_name"` attribute.
 #' @param units A character string.  The `"units"` attribute.
-#' @param cell_method A character string. The `"cell_method"` attribute.
+#' @param cell_methods A character string. The `"cell_methods"` attribute.
+#' Previously, misspelled as `"cell_method"`.
+#' @param cell_method A character string. Passed to `"cell_methods"` for
+#' backwards compatibility; will be removed in the version.
 #' @param coordinates A character string. The `"coordinates"` attribute.
 #' @param grid_mapping A character string. The `"grid_mapping"` attribute.
 #' @param attributes A named vector or named list of character strings.
@@ -1034,7 +1037,7 @@ setAxisMonthClimatologyNCSW <- function(
 #'      see [`RNetCDF::var.def.nc()`].
 #'   2. Write values if `values` are not `NULL`
 #'      (using `count` and `start` if provided), see [`RNetCDF::var.put.nc()`].
-#'   3. Add attributes `"long_name"`, `"units"`, `"cell_method"`,
+#'   3. Add attributes `"long_name"`, `"units"`, `"cell_methods"`,
 #'      `"coordinates"` and `"grid_mapping"` if provided.
 #'      If `"long_name"` is not provided and there is no attribute with that
 #'      name, then `varName` is used as value for `"long_name"`.
@@ -1054,6 +1057,7 @@ setVariableNCSW <- function(
   long_name = NULL,
   units = NULL,
   cell_method = NULL,
+  cell_methods = cell_method,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
   attributes = NULL,
@@ -1113,7 +1117,7 @@ setVariableNCSW <- function(
     if (!is.null(units)) list(units = units),
     if (!is.null(coordinates)) list(coordinates = coordinates),
     if (!is.null(grid_mapping)) list(grid_mapping = grid_mapping),
-    if (!is.null(cell_method)) list(cell_method = cell_method),
+    if (!is.null(cell_methods)) list(cell_methods = cell_methods),
     if (!is.null(attributes)) as.list(attributes)
   )
   tmp <- tmp[unique(names(tmp))]

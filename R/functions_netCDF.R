@@ -1209,7 +1209,7 @@ create_netCDF <- function(
       deflate = nc_deflate,
       long_name = var_attributes[["long_name"]],
       units = var_units[[k]],
-      cell_method = NULL,
+      cell_methods = NULL,
       coordinates = var_attributes[["coordinates"]],
       grid_mapping = var_attributes[["grid_mapping"]],
       attributes = lapply(
@@ -1232,7 +1232,7 @@ create_netCDF <- function(
       deflate = nc_deflate,
       long_name = xy_attributes[["long_name"]][[1L]],
       units = xy_attributes[["units"]][[1L]],
-      cell_method = NULL,
+      cell_methods = NULL,
       coordinates = NULL,
       grid_mapping = NULL,
       attributes = c(
@@ -1251,7 +1251,7 @@ create_netCDF <- function(
       deflate = nc_deflate,
       long_name = xy_attributes[["long_name"]][[2L]],
       units = xy_attributes[["units"]][[2L]],
-      cell_method = NULL,
+      cell_methods = NULL,
       coordinates = NULL,
       grid_mapping = NULL,
       attributes = c(

@@ -12,7 +12,11 @@ an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
 
 \item{units}{A character string.  The \code{"units"} attribute.}
 
-\item{cell_method}{A character string. The \code{"cell_method"} attribute.}
+\item{cell_methods}{A character string. The \code{"cell_methods"} attribute.
+Previously, misspelled as \code{"cell_method"}.}
+
+\item{cell_method}{A character string. Passed to \code{"cell_methods"} for
+backwards compatibility; will be removed in the version.}
 
 \item{coordinates}{A character string. The \code{"coordinates"} attribute.}
 

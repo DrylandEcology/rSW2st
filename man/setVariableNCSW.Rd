@@ -17,6 +17,7 @@ setVariableNCSW(
   long_name = NULL,
   units = NULL,
   cell_method = NULL,
+  cell_methods = cell_method,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
   attributes = NULL,
@@ -53,7 +54,11 @@ see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
 \item{units}{A character string.  The \code{"units"} attribute.}
 
-\item{cell_method}{A character string. The \code{"cell_method"} attribute.}
+\item{cell_method}{A character string. Passed to \code{"cell_methods"} for
+backwards compatibility; will be removed in the version.}
+
+\item{cell_methods}{A character string. The \code{"cell_methods"} attribute.
+Previously, misspelled as \code{"cell_method"}.}
 
 \item{coordinates}{A character string. The \code{"coordinates"} attribute.}
 
@@ -74,7 +79,7 @@ Add a variable
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}}.
 \item Write values if \code{values} are not \code{NULL}
 (using \code{count} and \code{start} if provided), see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}}.
-\item Add attributes \code{"long_name"}, \code{"units"}, \code{"cell_method"},
+\item Add attributes \code{"long_name"}, \code{"units"}, \code{"cell_methods"},
 \code{"coordinates"} and \code{"grid_mapping"} if provided.
 If \code{"long_name"} is not provided and there is no attribute with that
 name, then \code{varName} is used as value for \code{"long_name"}.
