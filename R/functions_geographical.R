@@ -1,4 +1,3 @@
-
 #' Calculate area extent of grid cells
 #'
 #' @inheritParams as_points
@@ -55,7 +54,6 @@ calculate_cell_area <- function(
   crs = sf::st_crs(x),
   ...
 ) {
-
   if (inherits(grid, "Raster")) {
     stopifnot(requireNamespace("raster"))
     grid <- terra::rast(grid)
@@ -74,18 +72,15 @@ calculate_cell_area <- function(
 
     coords <- sf::st_coordinates(x)[, 1:2]
     colnames(coords) <- c("x", "y")
-
   } else {
     coords <- if (inherits(grid, "SpatRaster")) {
       terra::crds(grid)
-
     } else if (inherits(grid, "stars")) {
       sf::st_coordinates(grid, center = TRUE)[, 1:2, drop = FALSE]
     }
   }
 
   cells <- data.frame(coords, km2 = NA, rel = NA)
-
 
   # Prepare grid on equator
   res <- if (inherits(grid, "SpatRaster")) {
@@ -95,13 +90,14 @@ calculate_cell_area <- function(
   }
 
   eq0 <- terra::rast(
-    xmin = - res[[1L]] / 2L, xmax = res[[1L]] / 2L,
-    ymin = - res[[2L]] / 2L, ymax = res[[2L]] / 2L,
+    xmin = -res[[1L]] / 2L,
+    xmax = res[[1L]] / 2L,
+    ymin = -res[[2L]] / 2L,
+    ymax = res[[2L]] / 2L,
     resolution = res,
     crs = "OGC:CRS84"
   )
   eq0[] <- 1L
-
 
   if (inherits(grid, "SpatRaster")) {
     # Calculate area of requested cells -- terra
@@ -124,7 +120,6 @@ calculate_cell_area <- function(
     } else {
       max(as.data.frame(terra::cellSize(eq, unit = "km"))[[1L]])
     }
-
   } else if (inherits(grid, "stars")) {
     stopifnot(requireNamespace("units"))
 
@@ -145,7 +140,9 @@ calculate_cell_area <- function(
     eq <- suppressWarnings(
       try(
         stars::st_warp(
-          stars::st_as_stars(eq0), crs = sf::st_crs(grid), cellsize = res
+          stars::st_as_stars(eq0),
+          crs = sf::st_crs(grid),
+          cellsize = res
         ),
         silent = TRUE
       )
@@ -225,11 +222,12 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
 
   if (!isTRUE(is.na(maskvalue))) {
     warning(
-      "maskvalue = ", shQuote(maskvalue), ": currently only NA is supported",
+      "maskvalue = ",
+      shQuote(maskvalue),
+      ": currently only NA is supported",
       call. = FALSE
     )
   }
-
 
   # For each grid cell, calculate the distance (in km) between each pair of
   # cell vertices and select the maximum distance ("dmax").
@@ -238,7 +236,6 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
   if (inherits(grid, "SpatRaster")) {
     tmpg <- terra::as.polygons(grid, aggregate = FALSE, na.rm = TRUE)
     tmpc <- terra::geom(tmpg)[, c(3L, 4L, 1L)]
-
   } else if (inherits(grid, "stars")) {
     tmpg <- sf::st_as_sf(grid, as_points = FALSE, na.rm = TRUE)
     tmpc <- sf::st_coordinates(
@@ -261,11 +258,24 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
 
   mean_resolution_km <- mean(do.call(c, tmpd))
 
-
   # Nominal resolution
   nr <- data.frame(
-    cuts =
-      c(0, 0.72, 1.6, 3.6, 7.2, 16, 36, 72, 160, 360, 720, 1600, 3600, 7200),
+    cuts = c(
+      0,
+      0.72,
+      1.6,
+      3.6,
+      7.2,
+      16,
+      36,
+      72,
+      160,
+      360,
+      720,
+      1600,
+      3600,
+      7200
+    ),
     label = paste0(
       c(0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
       " km"

@@ -1,4 +1,3 @@
-
 #' Convert two-dimensional locations to a spatially explicit object
 #'
 #' @param x A numerical two-dimensional object
@@ -64,7 +63,6 @@ as_points <- function(
   crs,
   to_class = c("sf", "sfc", "sp", "sv")
 ) {
-
   to_class <- match.arg(to_class)
 
   if (inherits(x, to_class)) {
@@ -91,7 +89,6 @@ as_points <- function(
       sf = x,
       sfc = sf::st_geometry(x)
     )
-
   } else if (is_sp) {
     switch(
       EXPR = to_class,
@@ -100,7 +97,6 @@ as_points <- function(
       sf = as(x, "sf"),
       sfc = as(x, "sfc")
     )
-
   } else if (is_sv) {
     switch(
       EXPR = to_class,
@@ -111,9 +107,7 @@ as_points <- function(
       sf = sf::st_as_sf(x),
       sfc = sf::st_geometry(sf::st_as_sf(x))
     )
-
   } else if (!(is_sp || is_sf || is_sv)) {
-
     if (is.null(dim(x)) && length(x) == 2) {
       # Assume that this is supposed to be one point (and the object lost its
       # 2-dim structure inadvertently, e.g., locations[1, , drop = TRUE])

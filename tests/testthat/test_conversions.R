@@ -23,7 +23,6 @@ test_that("as_points", {
   expect_s4_class(pts_sv, "SpatVector")
   expect_equal(terra::crds(pts_sv), locations, ignore_attr = "dimnames")
 
-
   #--- Check conversions from 2-dim numerical data.frame to sv/sp/sf/sfc ------
   locations_df <- as.data.frame(locations)
 
@@ -62,7 +61,6 @@ test_that("as_points", {
   pts_df_sv <- as_points(locations_df, crs = 4326, to_class = "sv")
   expect_s4_class(pts_df_sv, "SpatVector")
   expect_equal(terra::crds(pts_df_sv), locations, ignore_attr = "dimnames")
-
 
   #--- Check conversions from sv -> sp/sf/sfc ------
   if (requireNamespace("sp")) {
@@ -103,7 +101,6 @@ test_that("as_points", {
   expect_true(sf::st_crs(pts_sv_sfc) == sf::st_crs(pts_sv))
   # nolint end
 
-
   #--- Check conversions from sp -> sv/sf/sfc ------
   if (requireNamespace("sp")) {
     pts_sp_sv <- as_points(pts_sp, to_class = "sv")
@@ -138,7 +135,6 @@ test_that("as_points", {
     expect_true(sf::st_crs(pts_sp_sfc) == sf::st_crs(pts_sp))
     # nolint end
   }
-
 
   #--- Check conversions from sfc -> sv/sp/sf ------
   pts_sfc_sv <- as_points(pts_sfc, to_class = "sv")
@@ -175,8 +171,6 @@ test_that("as_points", {
   expect_true(sf::st_crs(pts_sfc_sf) == sf::st_crs(pts_sfc))
   # nolint end
 
-
-
   #--- Check conversions from sf -> sv/sp/sfc ------
   pts_sf_sv <- as_points(pts_sf, to_class = "sv")
   expect_s4_class(pts_sf_sv, "SpatVector")
@@ -211,7 +205,6 @@ test_that("as_points", {
   expect_true(sf::st_crs(pts_sf_sfc) == sf::st_crs(pts_sfc))
   expect_true(sf::st_crs(pts_sf_sfc) == sf::st_crs(pts_sf))
   # nolint end
-
 
   #--- Check conversions from one-dimensional numerical vector ------
   # A vector of length two is interpreted as a single point location

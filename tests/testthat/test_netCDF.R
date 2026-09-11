@@ -1,22 +1,21 @@
-
 # gridded data (coordinate value pairs uniquely identify gridcell):
 #   --> expanded xy(ztv) or collapsed s(ztv)
 
 # point data (coordinate value pairs identify irregularly spaced points):
 #   --> collapsed s(ztv); can be expanded (but mostly nonsensical) or rasterized
 
-
 #------ Tests for `get_data_dims()` ------
 test_that("get_data_dims", {
   check_data_dims <- function(x, check_na = TRUE, vars_zero = "nv") {
     expect_named(x, c("ns", "nx", "ny", "nz", "nt", "nv"))
-    if (check_na) expect_false(anyNA(x))
+    if (check_na) {
+      expect_false(anyNA(x))
+    }
     expect_true(x[["nx"]] > 0 && x[["ny"]] > 0 || x[["ns"]] > 0)
     for (var in vars_zero) {
       expect_equal(x[var], 0, ignore_attr = "names")
     }
   }
-
 
   #--- Check well-behaved arguments
   tmp <- get_data_dims("xyzt", c(a = 17, 15, c = 12, 100))
@@ -37,7 +36,6 @@ test_that("get_data_dims", {
   tmp <- get_data_dims("xy", c(17, 15, 3))
   check_data_dims(tmp, vars_zero = c("nz", "nt"))
 
-
   tmp <- get_data_dims("szt", c(17 * 15, 12, 100))
   check_data_dims(tmp)
 
@@ -52,7 +50,6 @@ test_that("get_data_dims", {
 
   tmp <- get_data_dims("s", c(17 * 15, 3))
   check_data_dims(tmp, vars_zero = c("nz", "nt"))
-
 
   #--- Check mis-specified arguments
   tmp <- get_data_dims("xyzt", c(17, 15, 100))
@@ -95,8 +92,10 @@ test_that("get_xyspace", {
 
   # 1) terra object;
   list_grids[["terra"]] <- terra::rast(
-    xmin = 0.5, xmax = 0.5 + gd[["nx"]],
-    ymin = 0.5, ymax = 0.5 + gd[["ny"]],
+    xmin = 0.5,
+    xmax = 0.5 + gd[["nx"]],
+    ymin = 0.5,
+    ymax = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = res
   )
@@ -137,10 +136,8 @@ test_that("get_xyspace", {
 
   list_grids[["nc"]] <- RNetCDF::open.nc(fname_nc)
 
-
   # 8) a filename pointing to a netCDF on disk
   list_grids[["nc_filename"]] <- fname_nc
-
 
   #--- Loop over grid cases
   res_grids <- list()
@@ -155,12 +152,10 @@ test_that("get_xyspace", {
     expect_identical(res_grids[[1L]], res_grids[[kg]])
   }
 
-
   # Clean up
   RNetCDF::close.nc(list_grids[["nc"]])
   unlink(fname_nc)
 })
-
 
 
 #------ Tests for `convert_xyspace()` ------
@@ -169,17 +164,17 @@ test_that("convert_xyspace", {
   d0 <- c(3L, 5L)
   gd <- c(nx = dd[["nx"]] + 2L * d0[[1L]], ny = dd[["ny"]] + 2L * d0[[2L]])
 
-
   #--- grid with full xy-space
   crs_wgs84 <- "OGC:CRS84"
 
   grid <- terra::rast(
-    xmin = 0.5, xmax = 0.5 + gd[["nx"]],
-    ymin = 0.5, ymax = 0.5 + gd[["ny"]],
+    xmin = 0.5,
+    xmax = 0.5 + gd[["nx"]],
+    ymin = 0.5,
+    ymax = 0.5 + gd[["ny"]],
     crs = crs_wgs84,
     resolution = c(1, 1)
   )
-
 
   #--- `data`
   locations <- cbind(
@@ -205,7 +200,6 @@ test_that("convert_xyspace", {
     }
   )
 
-
   #--- Create expanded test data
   xy_grid <- get_xyspace(grid)
   xy_data <- locations
@@ -229,7 +223,7 @@ test_that("convert_xyspace", {
   tmp_full[cbind(ids_x, ids_y, 2, 1)] <- 1000 + tmp_full[ids11]
   tmp_full[cbind(ids_x, ids_y, 1, 2)] <- 1
   tmp_full[cbind(ids_x, ids_y, 2, 2)] <- 1000
-  tmp_full[cbind(ids_x, ids_y, 1, 3)] <- - tmp_full[ids11]
+  tmp_full[cbind(ids_x, ids_y, 1, 3)] <- -tmp_full[ids11]
   tmp_full[cbind(ids_x, ids_y, 2, 3)] <- -1000 - tmp_full[ids11]
   # Add some NAs
   for (k in seq_len(dd[["nt"]])) {
@@ -250,7 +244,7 @@ test_that("convert_xyspace", {
   tmp_sparse[, 2, 1] <- 1000 + tmp_sparse[, 1, 1]
   tmp_sparse[, 1, 2] <- 1
   tmp_sparse[, 2, 2] <- 1000
-  tmp_sparse[, 1, 3] <- - tmp_sparse[, 1, 1]
+  tmp_sparse[, 1, 3] <- -tmp_sparse[, 1, 1]
   tmp_sparse[, 2, 3] <- -1000 - tmp_sparse[, 1, 1]
   # Add some NAs
   for (k in seq_len(dd[["nt"]])) {
@@ -279,19 +273,19 @@ test_that("convert_xyspace", {
     z = list(
       str = "z",
       collapse_degen = FALSE,
-      data = list(collapsed = tmp_sparse[, 1, ], expanded = tmp_full[, , 1, ])
+      data = list(collapsed = tmp_sparse[, 1, ], expanded = tmp_full[,, 1, ])
     ),
     t = list(
       str = "t",
       collapse_degen = FALSE,
-      data = list(collapsed = tmp_sparse[, , 1], expanded = tmp_full[, , , 1])
+      data = list(collapsed = tmp_sparse[,, 1], expanded = tmp_full[,,, 1])
     ),
     v1nodegen = list(
       str = "",
       collapse_degen = TRUE,
       data = list(
         collapsed = as.vector(tmp_sparse[, 1, 1]),
-        expanded = tmp_full[, , 1, 1]
+        expanded = tmp_full[,, 1, 1]
       )
     ),
     v1wdegen = list(
@@ -299,17 +293,15 @@ test_that("convert_xyspace", {
       collapse_degen = FALSE,
       data = list(
         collapsed = as.matrix(as.vector(tmp_sparse[, 1, 1])),
-        expanded = tmp_full[, , 1, ][, , 1, drop = FALSE]
+        expanded = tmp_full[,, 1, ][,, 1, drop = FALSE]
       )
     ),
     v = list(
       str = "",
       collapse_degen = FALSE,
-      data = list(collapsed = tmp_sparse[, 1, ], expanded = tmp_full[, , 1, ])
+      data = list(collapsed = tmp_sparse[, 1, ], expanded = tmp_full[,, 1, ])
     )
   )
-
-
 
   #--- Loop over data structure cases
 
@@ -353,17 +345,14 @@ test_that("convert_xyspace", {
           ref[loc_checks[[kc]][["loc"]], , ],
           ignore_attr = "names"
         )
-
       } else if (
-        data_str_res %in% c("xyz", "xyt", "xy") &&
-          !is.null(dim(ref))
+        data_str_res %in% c("xyz", "xyt", "xy") && !is.null(dim(ref))
       ) {
         expect_equal(
           res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], ],
           ref[loc_checks[[kc]][["loc"]], ],
           ignore_attr = "names"
         )
-
       } else {
         expect_equal(
           res[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], 1],
@@ -372,7 +361,6 @@ test_that("convert_xyspace", {
         )
       }
     }
-
 
     #------ Collapsing separate x and y dimensions into a collapsed xy-dimension
     # i.e., check that round-trip works correctly
@@ -391,7 +379,6 @@ test_that("convert_xyspace", {
       ignore_attr = c("names", "dimnames")
     )
   }
-
 
   #------ Collapsing separate x and y dimensions into a collapsed xy-dimension
   for (kd in names(list_data)) {
@@ -433,14 +420,12 @@ test_that("convert_xyspace", {
           ref[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], , ],
           ignore_attr = "names"
         )
-
       } else if (data_str_res %in% c("sz", "st", "s") && length(dim(ref)) > 2) {
         expect_equal(
           res[loc_checks[[kc]][["loc"]], ],
           ref[loc_checks[[kc]][["gx"]], loc_checks[[kc]][["gy"]], ],
           ignore_attr = "names"
         )
-
       } else {
         expect_equal(
           res[loc_checks[[kc]][["loc"]], 1],
@@ -449,7 +434,6 @@ test_that("convert_xyspace", {
         )
       }
     }
-
 
     #------ Expanding collapsed xy-dimension into separate x and y dimensions
     # i.e., check that round-trip works correctly
@@ -471,7 +455,6 @@ test_that("convert_xyspace", {
 })
 
 
-
 #------ Tests for `read_netCDF()` ------
 test_that("read_netCDF", {
   tmp_methods <- c("array", "raster", "stars", "terra")
@@ -483,7 +466,6 @@ test_that("read_netCDF", {
     type_timeaxis = c("timeseries", "climatology"),
     overwrite = TRUE
   )
-
 
   # Loop through netCDFs and check reading
   for (k in seq_along(tmp_nc)) {
@@ -505,14 +487,14 @@ test_that("read_netCDF", {
       setGlobalAttributesNCSW(
         fnc,
         attributes = c(
-          featureType = "featureType", frequency = "timeseries-withoutGeometry"
+          featureType = "featureType",
+          frequency = "timeseries-withoutGeometry"
         )
       )
     }
 
     # Loop over methods
     for (km in tmp_methods) {
-
       if (km %in% c("terra", "raster") && basename(fnc) == "nc_s.nc") {
         # It appears that the raster and terra packages do not handle this case
         next
@@ -536,9 +518,15 @@ test_that("read_netCDF", {
         expect_named(
           res,
           c(
-            "data", "data_str", "type_timeaxis", "crs", "xyspace",
-            "vertical_values", "vertical_bounds",
-            "time_values", "time_bounds",
+            "data",
+            "data_str",
+            "type_timeaxis",
+            "crs",
+            "xyspace",
+            "vertical_values",
+            "vertical_bounds",
+            "time_values",
+            "time_bounds",
             paste0(
               c("var", "xy", "crs", "time", "vertical", "global"),
               "_attributes"
@@ -553,21 +541,19 @@ test_that("read_netCDF", {
 
         expect_null(
           read_netCDF(
-            fnc, km,
+            fnc,
+            km,
             var = "sine",
             xy_names = c("x", "y"),
             load_values = FALSE
           )[["data"]]
         )
-
       } else if (km == "raster") {
         expect_s4_class(res, "RasterLayer")
         expect_gt(length(dim(res)), 0L)
-
       } else if (km == "stars") {
         expect_s3_class(res, "stars")
         expect_gt(length(dim(res)), 0L)
-
       } else if (km == "terra") {
         expect_s4_class(res, "SpatRaster")
         expect_gt(length(dim(res)), 0L)

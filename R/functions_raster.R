@@ -1,4 +1,3 @@
-
 #' Fills a raster grid with variable values associated with geographic locations
 #'
 #' @param data A vector or two-dimensional object. Elements/rows correspond to
@@ -73,7 +72,6 @@ create_raster_from_variables <- function(
         stopifnot(!inherits(tmp, "try-error"))
         data[, k] <- tmp
       }
-
     } else {
       data <- try(
         if (is.factor(data)) {
@@ -122,11 +120,9 @@ create_raster_from_variables <- function(
     # raster v2.9.6 the list-method of brick ignores all ... arguments
     r <- raster::brick(raster::stack(rl), filename = filename)
     unlink(filenameks)
-
   } else {
     r <- rl[[1L]]
   }
-
 
   # set datatype
   raster::dataType(r) <- get_raster_datatype(data)
@@ -135,15 +131,21 @@ create_raster_from_variables <- function(
 }
 
 
-
 #' Convert \code{\link{typeof}} to \code{\link[raster]{dataType}} types
 #'
 #' @references Relevant code adapted from \code{`raster:::dataType<-`}
 #' @noRd
 get_raster_datatype <- function(data) {
   supported_types <- c(
-    "DOUBL", "NUMER", "FLOAT", "SINGL", "REAL", "INTEG", "SMALL",
-    "BYTE", "LOGIC"
+    "DOUBL",
+    "NUMER",
+    "FLOAT",
+    "SINGL",
+    "REAL",
+    "INTEG",
+    "SMALL",
+    "BYTE",
+    "LOGIC"
   )
 
   tmp <- substr(toupper(typeof(data)), 1, 5)
@@ -180,7 +182,10 @@ get_raster_datatype <- function(data) {
     BYTE = "INT1U",
     SMALL = "INT2S",
     INTEG = "INT4S",
-    NUMER = , FLOAT = , SINGL = , REAL = "FLT4S",
+    NUMER = ,
+    FLOAT = ,
+    SINGL = ,
+    REAL = "FLT4S",
     DOUBL = "FLT8S"
   )
 }

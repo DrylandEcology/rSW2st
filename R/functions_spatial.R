@@ -1,4 +1,3 @@
-
 #' Automatic calculation of a variogram range
 #'
 #' @param x A two-dimensional
@@ -32,7 +31,6 @@ variogram_range <- function(
   crs = NULL,
   seed = NULL
 ) {
-
   stopifnot(
     requireNamespace("automap"), # nolint: missing_package_linter
     requireNamespace("gstat")
@@ -44,7 +42,6 @@ variogram_range <- function(
 
   pts <- if (inherits(x, "stars")) {
     sf::st_as_sf(x, as_points = TRUE, merge = FALSE)
-
   } else {
     as_points(x, crs = crs, to_class = "sf")
   }
@@ -52,7 +49,6 @@ variogram_range <- function(
   # question:
   # should all points have equal or unique value, e.g., seq_len(nrow(pts))
   pts[, "target"] <- 1
-
 
   if (!is.null(sub_samplepoints_N)) {
     set.seed(seed)
@@ -74,7 +70,6 @@ variogram_range <- function(
       "OGC:CRS84"
     }
   )
-
 
   #--- determine variogram; see gstat::variogram
   # nolint start: missing_package_linter, namespace_linter.

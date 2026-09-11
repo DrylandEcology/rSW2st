@@ -1,13 +1,17 @@
-
-
 #------ Tests for `ncDataType()` ------
 test_that("ncDataType", {
   types <- c(
-    "SHORT", "NC_SHORT",
-    "INT", "INTEGER", "NC_INT",
-    "FLOAT", "NC_FLOAT",
-    "DOUBLE", "NC_DOUBLE",
-    "BYTE", "NC_BYTE"
+    "SHORT",
+    "NC_SHORT",
+    "INT",
+    "INTEGER",
+    "NC_INT",
+    "FLOAT",
+    "NC_FLOAT",
+    "DOUBLE",
+    "NC_DOUBLE",
+    "BYTE",
+    "NC_BYTE"
   )
 
   for (type in types) {
@@ -22,11 +26,22 @@ test_that("ncDataType", {
 #------ Tests for `fillValue()` ------
 test_that("fillValue", {
   types <- c(
-    "SHORT", "NC_SHORT", "NC_FILL_SHORT",
-    "INT", "INTEGER", "NC_INT", "NC_FILL_INT",
-    "FLOAT", "NC_FLOAT", "NC_FILL_FLOAT",
-    "DOUBLE", "NC_DOUBLE", "NC_FILL_DOUBLE",
-    "BYTE", "NC_BYTE", "NC_FILL_BYTE"
+    "SHORT",
+    "NC_SHORT",
+    "NC_FILL_SHORT",
+    "INT",
+    "INTEGER",
+    "NC_INT",
+    "NC_FILL_INT",
+    "FLOAT",
+    "NC_FLOAT",
+    "NC_FILL_FLOAT",
+    "DOUBLE",
+    "NC_DOUBLE",
+    "NC_FILL_DOUBLE",
+    "BYTE",
+    "NC_BYTE",
+    "NC_FILL_BYTE"
   )
 
   for (type in types) {
@@ -126,7 +141,6 @@ test_that("manipulateNCforSOILWAT2", {
     expect_true(file.exists(tmpout_nc[[ds]]))
     xnc <- RNetCDF::open.nc(tmpout_nc[[ds]], write = TRUE)
 
-
     #--- Add spatial bounds
     expect_no_condition(
       setSpatialBoundsNCSW(
@@ -138,26 +152,29 @@ test_that("manipulateNCforSOILWAT2", {
       )
     )
 
-
     #--- Add global attributes
     expect_no_condition(
       setGlobalAttributesNCSW(xnc, globalAttributes)
     )
-
 
     #--- Do more stuff if xyzt
     if (isXYZT) {
       #--- Add vertical dimension
       expect_no_condition(
         setAxisVerticalNCSW(
-          xnc, nameAxis = nameDimZ, verticalValues = verticalValues
+          xnc,
+          nameAxis = nameDimZ,
+          verticalValues = verticalValues
         )
       )
 
       #--- Add time dimension
       expect_no_condition(
         setAxisTimeNCSW(
-          xnc, nameAxis = nameDimT, startYear = 1900, timeValues = timeValues
+          xnc,
+          nameAxis = nameDimT,
+          startYear = 1900,
+          timeValues = timeValues
         )
       )
 
@@ -191,7 +208,6 @@ test_that("manipulateNCforSOILWAT2", {
         }
       }
     }
-
 
     #--- Check spatial structure
     expect_no_condition(

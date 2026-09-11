@@ -1,9 +1,10 @@
-
 test_that("gridcell areas", {
   #--- Geographical WGS84
   r1 <- terra::rast(
-    xmin = 0, xmax = 1,
-    ymin = -90, ymax = 90,
+    xmin = 0,
+    xmax = 1,
+    ymin = -90,
+    ymax = 90,
     crs = "OGC:CRS84",
     resolution = c(1, 1),
     vals = 1:180
@@ -35,7 +36,6 @@ test_that("gridcell areas", {
     tolerance = 0.01
   )
 
-
   ## Calculate area for all cells in grid
   cell_areas1b <- calculate_cell_area(grid = r1)
 
@@ -45,18 +45,18 @@ test_that("gridcell areas", {
     tolerance = 0.01
   )
 
-
   expect_identical(
     as.matrix(unique(cell_areas1a)),
     as.matrix(unique(cell_areas1b))
   )
   expect_equal(max(cell_areas1a[, "rel"]), 1., tolerance = 0.0001)
 
-
   #--- USA Contiguous Albers Equal Area Conic USGS version
   r2 <- terra::rast(
-    xmin = -2480000, xmax = 90000,
-    ymin = 650000, ymax = 4020000,
+    xmin = -2480000,
+    xmax = 90000,
+    ymin = 650000,
+    ymax = 4020000,
     crs = "EPSG:6350",
     resolution = c(10000, 10000),
     vals = 1:86609
@@ -68,7 +68,6 @@ test_that("gridcell areas", {
     method = "regular",
     as.points = TRUE
   )
-
 
   ## Calculate area for a subset of cells in grid
   cell_areas2a <- calculate_cell_area(xy, grid = r2)
@@ -98,15 +97,16 @@ test_that("nominal resolution", {
 
   for (k in seq_len(nrow(tests))) {
     r1 <- terra::rast(
-      xmin = -120, xmax = -90,
-      ymin = 30, ymax = 50,
+      xmin = -120,
+      xmax = -90,
+      ymin = 30,
+      ymax = 50,
       crs = "OGC:CRS84",
       resolution = rep(tests[k, "res"], 2L)
     )
     n <- min(200L, terra::ncell(r1))
     xy <- suppressWarnings(terra::spatSample(r1, size = n, as.points = TRUE))
     r1[xy] <- 1L
-
 
     expect_identical(
       calculate_nominal_resolution(r1),
@@ -118,7 +118,6 @@ test_that("nominal resolution", {
       tests[k, "nr"]
     )
   }
-
 
   #--- Projected CRS: CONUS Albers Equal Area (USGS)
   tests <- data.frame(
@@ -132,8 +131,10 @@ test_that("nominal resolution", {
     # "NO", prefer_proj = prefer_proj) : Discarded datum NAD83 (National Spatial
     # Reference System 2011) in Proj4 definition
     r2 <- terra::rast(
-      xmin = -1000000, xmax = 0,
-      ymin = 650000, ymax = 1000000,
+      xmin = -1000000,
+      xmax = 0,
+      ymin = 650000,
+      ymax = 1000000,
       crs = "EPSG:6350",
       resolution = rep(tests[k, "res"], 2L)
     )

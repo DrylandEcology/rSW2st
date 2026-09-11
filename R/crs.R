@@ -36,9 +36,6 @@ crs_units <- function(crs) {
 }
 
 
-
-
-
 #' \var{UTM} zone based on geographic location(s)
 #'
 #' The function determines the \var{UTM} number and south/north location
@@ -101,7 +98,6 @@ utm_zone <- function(x, crs = 4326) {
     utm_NS = if (mxy[[2L]] > 0) "N" else "S"
   )
 }
-
 
 
 #' \var{EPSG} code for the \var{UTM} zone based on geographic location(s)
