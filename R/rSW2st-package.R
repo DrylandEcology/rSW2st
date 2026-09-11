@@ -17,8 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-
-
 #' Package \pkg{rSW2st}: Collection of general purpose functions that operate on
 #' spatially and temporally explicit objects
 #' to support \pkg{SOILWAT2} and \pkg{STEPWAT2} simulation experiments.
@@ -33,7 +31,5 @@ rSW2_glovars <- new.env()
 
 
 ## ------ Import from other packages
-#' @importFrom stats aggregate coef complete.cases cor cov fitted median
-#'   na.exclude na.omit predict quantile sd weighted.mean
 #' @importFrom methods as
 NULL
