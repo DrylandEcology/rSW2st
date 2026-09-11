@@ -2106,7 +2106,8 @@ read_netCDF_as_raster <- function(
   } else {
     # silence `print()`, see issue #9
     utils::capture.output(
-      res <- suppressMessages( # nolint: implicit_assignment_linter.
+      # nolint next: implicit_assignment_linter.
+      res <- suppressMessages(
         suppressWarnings(
           eval(e)
         )

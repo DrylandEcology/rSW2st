@@ -110,6 +110,6 @@ test_that("isoline_from_raster", {
     threshold <- grid_n + 10L
     ip3 <- isoline_from_raster(rs, alpha = threshold)
     expect_s3_class(ip3, "sf")
-    expect_identical(nrow(ip3), 0L)
+    expect_shape(ip3, nrow = 0L)
   }
 })
