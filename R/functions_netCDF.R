@@ -2664,7 +2664,7 @@ get_data_dims <- function(
       " not implemented.",
       call. = FALSE
     )
-  )
+  ) # nolint: unreachable_code_linter. False positive (lintr 3.4.0)
 }
 
 
@@ -2701,7 +2701,7 @@ get_nc_type <- function(x) {
       " is not implemented.",
       call. = FALSE
     )
-  )
+  ) # nolint: unreachable_code_linter. False positive (lintr 3.4.0)
 }
 
 

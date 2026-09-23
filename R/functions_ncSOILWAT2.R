@@ -180,7 +180,7 @@ fillValue <- function(dataType) {
     NC_FILL_STRING = "",
 
     stop(shQuote(dataType), " is not implemented.", call. = FALSE)
-  )
+  ) # nolint: unreachable_code_linter. False positive (lintr 3.4.0)
 }
 
 
