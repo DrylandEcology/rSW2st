@@ -584,3 +584,224 @@ test_that("read_netCDF", {
 
   unlink(unlist(tmp_nc))
 })
+
+
+#------ Tests for `create_netCDF()` ------
+test_that("create_netCDF: multiple variables, compression, time axis", {
+  xyspace <- list(x = 1:4 - 0.5, y = 1:3 - 0.5, res = c(1, 1))
+  nx <- length(xyspace[["x"]])
+  ny <- length(xyspace[["y"]])
+  nt <- 5L
+  fname_nc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fname_nc), add = TRUE)
+
+  #--- Round trip of several variables ("xy")
+  data_xyv <- array(seq_len(nx * ny * 2L), dim = c(nx, ny, 2L))
+
+  create_netCDF(
+    filename = fname_nc,
+    xyspace = xyspace,
+    data = data_xyv,
+    data_str = "xy",
+    var_attributes = list(name = c("v1", "v2"), units = c("1", "1")),
+    overwrite = TRUE
+  )
+
+  res <- read_netCDF(fname_nc, "array", var = c("v1", "v2"))
+  expect_equal(res[["data"]], data_xyv, ignore_attr = "dimnames")
+  expect_identical(dimnames(res[["data"]])[[3L]], c("v1", "v2"))
+
+  #--- Round trip of several variables ("s")
+  data_sv <- matrix(seq_len(nx * 2L), nrow = nx, ncol = 2L)
+
+  create_netCDF(
+    filename = fname_nc,
+    xyspace = cbind(x = xyspace[["x"]], y = 0.5),
+    data = data_sv,
+    data_str = "s",
+    var_attributes = list(name = c("v1", "v2"), units = c("1", "1")),
+    overwrite = TRUE
+  )
+
+  nc <- RNetCDF::open.nc(fname_nc)
+  for (k in 1:2) {
+    expect_equal(
+      RNetCDF::var.get.nc(nc, paste0("v", k)),
+      data_sv[, k],
+      ignore_attr = "dim"
+    )
+  }
+  RNetCDF::close.nc(nc)
+
+  #--- Compression with default data type and user-specified chunks
+  data_xyt <- array(seq_len(nx * ny * nt), dim = c(nx, ny, nt))
+
+  for (shuffle in c(TRUE, FALSE)) {
+    for (chunks in list("by_zt", c(nx, ny, 1L))) {
+      expect_no_error(
+        create_netCDF(
+          filename = fname_nc,
+          xyspace = xyspace,
+          data = data_xyt,
+          data_str = "xyt",
+          var_attributes = list(name = "v", units = "1"),
+          time_values = seq_len(nt),
+          overwrite = TRUE,
+          nc_compression = TRUE,
+          nc_shuffle = shuffle,
+          nc_chunks = chunks
+        )
+      )
+
+      nc <- RNetCDF::open.nc(fname_nc)
+      vinfo <- RNetCDF::var.inq.nc(nc, "v")
+      RNetCDF::close.nc(nc)
+      expect_identical(vinfo[["shuffle"]], shuffle)
+      expect_identical(vinfo[["deflate"]], 5L)
+      if (is.numeric(chunks)) {
+        expect_identical(as.integer(vinfo[["chunksizes"]]), chunks)
+      }
+    }
+  }
+
+  #--- Unlimited time dimension (not the last-defined dimension)
+  create_netCDF(
+    filename = fname_nc,
+    xyspace = xyspace,
+    data = data_xyt,
+    data_str = "xyt",
+    var_attributes = list(name = "v", units = "1"),
+    time_values = seq_len(nt),
+    time_bounds = cbind(seq_len(nt) - 1L, seq_len(nt)),
+    time_attributes = list(
+      units = "days since 1900-01-01",
+      calendar = "standard",
+      unlim = TRUE
+    ),
+    overwrite = TRUE
+  )
+
+  expect_true(
+    read_attributes_from_netCDF(fname_nc, group = "time")[["unlim"]]
+  )
+
+  #--- Climatological time axis uses "climatology" and not "bounds"
+  create_netCDF(
+    filename = fname_nc,
+    xyspace = xyspace,
+    data = data_xyt,
+    data_str = "xyt",
+    var_attributes = list(name = "v", units = "1"),
+    time_values = seq_len(nt),
+    type_timeaxis = "climatology",
+    time_bounds = cbind(seq_len(nt) - 1L, seq_len(nt)),
+    overwrite = TRUE
+  )
+
+  nc <- RNetCDF::open.nc(fname_nc)
+  tatts <- vapply(
+    seq_len(RNetCDF::var.inq.nc(nc, "time")[["natts"]]),
+    function(k) RNetCDF::att.inq.nc(nc, "time", k - 1L)[["name"]],
+    FUN.VALUE = NA_character_
+  )
+  RNetCDF::close.nc(nc)
+  expect_true("climatology" %in% tatts)
+  expect_false("bounds" %in% tatts)
+})
+
+
+#------ Tests for `read_netCDF_as_raster()` ------
+test_that("read_netCDF_as_raster: crs check", {
+  skip_if_not_installed("raster")
+  skip_if_not_installed("ncdf4")
+
+  tmp_nc <- create_example_netCDFs(
+    path = tempdir(),
+    data_str = "xy",
+    type_timeaxis = "timeseries",
+    overwrite = TRUE
+  )
+  on.exit(unlink(unlist(tmp_nc)), add = TRUE)
+
+  # `raster` reads a crs only from the short form of "grid_mapping"
+  nc <- RNetCDF::open.nc(tmp_nc[[1L]], write = TRUE)
+  RNetCDF::att.put.nc(nc, "sine", "grid_mapping", "NC_CHAR", "crs")
+  RNetCDF::close.nc(nc)
+
+  res <- read_netCDF(
+    tmp_nc[[1L]],
+    method = "raster",
+    var = "sine",
+    xy_names = c("x", "y")
+  )
+  expect_s4_class(res, "RasterLayer")
+  expect_false(is.na(sf::st_crs(raster::crs(res))))
+})
+
+
+#------ Tests for `convert_xyspace()` with locations outside grid ------
+test_that("convert_xyspace: locations outside grid", {
+  grid <- terra::rast(
+    xmin = 0,
+    xmax = 4,
+    ymin = 0,
+    ymax = 3,
+    crs = "OGC:CRS84",
+    resolution = c(1, 1)
+  )
+  locations <- cbind(x = c(0.5, 10.5, 2.5, -5), y = c(0.5, 1.5, 2.5, 1.5))
+  n_loc <- nrow(locations)
+  ids_in <- c(1L, 3L)
+
+  for (ds in c("xy", "xyt", "xyzt")) {
+    data <- switch(
+      ds,
+      xy = matrix(seq_len(n_loc), ncol = 1L),
+      xyt = matrix(seq_len(n_loc * 2L), ncol = 2L),
+      xyzt = array(seq_len(n_loc * 2L * 3L), dim = c(n_loc, 2L, 3L))
+    )
+
+    expect_warning(
+      convert_xyspace(
+        grid = grid,
+        data = data,
+        locations = locations,
+        locations_crs = "OGC:CRS84",
+        data_str = ds,
+        direction = "expand"
+      ),
+      regexp = "outside"
+    )
+    res <- suppressWarnings(
+      convert_xyspace(
+        grid = grid,
+        data = data,
+        locations = locations,
+        locations_crs = "OGC:CRS84",
+        data_str = ds,
+        direction = "expand"
+      )
+    )
+
+    # Values of locations inside the grid are transferred
+    expect_identical(
+      sum(!is.na(res)),
+      as.integer(length(ids_in) * prod(dim(data)[-1L]))
+    )
+
+    res2 <- suppressWarnings(
+      convert_xyspace(
+        grid = grid,
+        data = res,
+        locations = locations,
+        locations_crs = "OGC:CRS84",
+        data_str = ds,
+        direction = "collapse"
+      )
+    )
+    tmp <- array(data, dim = c(n_loc, prod(dim(data)[-1L])))
+    tmp2 <- array(res2, dim = c(n_loc, prod(dim(data)[-1L])))
+    expect_identical(tmp2[ids_in, ], tmp[ids_in, ])
+    expect_true(all(is.na(tmp2[-ids_in, ])))
+  }
+})

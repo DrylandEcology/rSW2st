@@ -1058,6 +1058,9 @@ setAxisMonthClimatologyNCSW <- function(
 #' @param dimensions A vector, see [`RNetCDF::var.def.nc()`] for more detail.
 #' @param deflate A numeric value or `NA`,
 #' see [`RNetCDF::var.def.nc()`] for more detail.
+#' @param shuffle A logical value. Turn on the shuffle filter?
+#' Default is to turn it on if `deflate` is not `NA`;
+#' see [`RNetCDF::var.def.nc()`] for more detail.
 #' @param addFillValue A logical value. Add a `"_FillValue"` attribute? The
 #' value is determined by `dataType` and [fillValue()].
 #'
@@ -1083,6 +1086,7 @@ setVariableNCSW <- function(
   dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
+  shuffle = !anyNA(deflate),
   long_name = NULL,
   units = NULL,
   cell_method = NULL,
@@ -1121,7 +1125,7 @@ setVariableNCSW <- function(
       chunking = if (doChunk) TRUE else NA,
       chunksizes = if (doChunk) var_chunksizes_xyzt,
       deflate = deflate,
-      shuffle = !anyNA(deflate)
+      shuffle = isTRUE(shuffle)
     )
 
     if (isTRUE(addFillValue)) {

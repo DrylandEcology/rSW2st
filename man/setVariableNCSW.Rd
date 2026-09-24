@@ -14,6 +14,7 @@ setVariableNCSW(
   dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
+  shuffle = !anyNA(deflate),
   long_name = NULL,
   units = NULL,
   cell_method = NULL,
@@ -48,6 +49,10 @@ see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 \item{dimensions}{A vector, see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
 \item{deflate}{A numeric value or \code{NA},
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
+\item{shuffle}{A logical value. Turn on the shuffle filter?
+Default is to turn it on if \code{deflate} is not \code{NA};
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
 \item{long_name}{A character string. The \code{"long_name"} attribute.}

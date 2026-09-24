@@ -382,16 +382,13 @@ create_netCDF <- function(
 
   nc_deflate <- if (has_compression) nc_deflate else NA
 
-  has_chunks <- has_compression && !is.na(nc_chunks)
+  has_chunks <- has_compression && !anyNA(nc_chunks)
   has_predet_chunks <- is.character(nc_chunks)
   if (has_compression && has_predet_chunks) {
-    stopifnot(nc_chunks %in% c("by_zt", "by_t"))
+    stopifnot(length(nc_chunks) == 1L, nc_chunks %in% c("by_zt", "by_t"))
   }
 
-  nc_shuffle <-
-    has_compression &&
-    isTRUE(nc_shuffle) &&
-    data_type %in% c("integer", "short")
+  nc_shuffle <- has_compression && isTRUE(nc_shuffle)
 
   #------ netCDF filename ------
   if (file.exists(filename)) {
@@ -1156,15 +1153,8 @@ create_netCDF <- function(
         nameBndsVar = varid_timebnds,
         nameDim = nameTime,
         valuesBnds = t(time_bounds),
+        boundsAttributeName = att_timebnds,
         nameBndsDim = nameBndsDim
-      )
-
-      RNetCDF::att.put.nc(
-        xnc,
-        variable = nameTime,
-        name = att_timebnds,
-        type = "NC_CHAR",
-        value = varid_timebnds
       )
     }
 
@@ -1195,6 +1185,7 @@ create_netCDF <- function(
       dataType = data_type,
       dimensions = var_dims,
       deflate = nc_deflate,
+      shuffle = nc_shuffle,
       long_name = var_attributes[["long_name"]],
       units = var_units[[k]],
       coordinates = var_attributes[["coordinates"]],
@@ -1290,11 +1281,11 @@ create_netCDF <- function(
       if (is_gridded) {
         values <- data[,, k]
         var_start <- c(1L, 1L)
-        var_count <- c(-1L, -1L)
+        var_count <- c(NA, NA)
       } else {
         values <- data[, k]
         var_start <- 1L
-        var_count <- -1L
+        var_count <- NA
       }
 
       RNetCDF::var.put.nc(
@@ -2032,7 +2023,12 @@ read_netCDF_as_array <- function(
       if (hasMultiVariableDimension) {
         dimd <- dim(tmp[["data"]])
         if (length(dimd) > n_xy && dimd[[n_xy + 1L]] == length(nc_vars)) {
-          dimnames(tmp[["data"]])[n_xy + 1L] <- nc_vars
+          dn <- dimnames(tmp[["data"]])
+          if (is.null(dn)) {
+            dn <- vector("list", length(dimd))
+          }
+          dn[[n_xy + 1L]] <- nc_vars
+          dimnames(tmp[["data"]]) <- dn
         }
       }
     } else if (length(tmp[["data"]]) == length(nc_vars)) {
@@ -2097,7 +2093,7 @@ read_netCDF_as_raster <- function(
   r_has_crs <-
     inherits(r_crs, "CRS") &&
     !is.na(r_crs) &&
-    isTRUE(try(inherits(sf::st_crs(r_crs)), "crs"))
+    isTRUE(try(inherits(sf::st_crs(r_crs), "crs"), silent = TRUE))
 
   if (!r_has_crs) {
     nc_crs <- read_crs_from_netCDF(
@@ -2116,7 +2112,11 @@ read_netCDF_as_raster <- function(
     ) {
       raster::crs(r) <- nc_crs
     } else {
-      warning("Could not locate a valid crs: ", nc_crs, call. = FALSE)
+      warning(
+        "Could not locate a valid crs: ",
+        format(tmp_crs),
+        call. = FALSE
+      )
     }
   }
 
@@ -2490,7 +2490,8 @@ read_attributes_from_netCDF <- function(
           unlim = if (isTRUE(is.na(tmp))) {
             FALSE
           } else {
-            meta[["dims"]][[tmp]] == time_name
+            # `unlimdimid` is a 0-based netCDF dimension ID
+            meta[["dims"]][[tmp + 1L]] == time_name
           }
         )
       )
@@ -3026,7 +3027,8 @@ convert_xyspace <- function(
     ids_y[ids_outside] <- NA_integer_
   }
 
-  if (anyDuplicated(cbind(ids_x, ids_y)) > 0) {
+  ids_xy <- cbind(ids_x, ids_y)[!ids_outside, , drop = FALSE]
+  if (anyDuplicated(ids_xy) > 0L) {
     warning(
       "`locations` identify non-unique cells on the `grid`.",
       call. = FALSE
@@ -3061,13 +3063,18 @@ convert_xyspace <- function(
       dimnames = lapply(tmp_dn, function(x) NULL)
     )
 
+    # Locations outside the grid are not transferred
+    ids_inside <- rep(!ids_outside, times = prod(data_dims[-1L]))
+
     if (data_str %in% c("xyt", "xyz", "xy")) {
       ids_tzv <- rep(seq_len(data_dims[[2L]]), each = n_loc)
-      res[cbind(ids_x, ids_y, ids_tzv)] <- as.matrix(data)
+      res[cbind(ids_x, ids_y, ids_tzv)[ids_inside, , drop = FALSE]] <-
+        as.matrix(data)[ids_inside]
     } else if (data_str == "xyzt") {
       ids_t <- rep(seq_len(data_dims[[2L]]), each = n_loc)
       ids_z <- rep(seq_len(data_dims[[3L]]), each = prod(data_dims[1:2]))
-      res[cbind(ids_x, ids_y, ids_t, ids_z)] <- data
+      res[cbind(ids_x, ids_y, ids_t, ids_z)[ids_inside, , drop = FALSE]] <-
+        data[ids_inside]
     } else {
       stop(
         "No implementation for `data` to expand space; ",

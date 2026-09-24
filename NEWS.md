@@ -3,6 +3,30 @@
 * `setVariableNCSW()` now spells the `"cell_methods"` argument correctly.
   The previous, incorrect spelling `"cell_method"` is retained for
   backwards compatibility.
+* `setVariableNCSW()` gains argument `shuffle` to control the shuffle filter;
+  the default retains the previous behavior.
+
+## Bug fixes
+* `create_netCDF()` (via `populate_netCDF()`) can again write several
+  variables for data structures `"xy"` and `"s"`.
+* `read_netCDF_as_array()` can again read several variables of
+  data structure `"xy"`.
+* `create_netCDF()` no longer fails if `nc_compression` is `TRUE` and
+  `data_type` is the default or if `nc_chunks` is an integer vector.
+  Argument `nc_shuffle` is now applied (previously, the shuffle filter was
+  always on if compression was activated).
+* `create_netCDF()` with `type_timeaxis = "climatology"` now sets only the
+  `"climatology"` and no longer also a `"bounds"` attribute on the time
+  variable (as required by CF conventions).
+* `read_attributes_from_netCDF()` now correctly reports whether the time
+  dimension is unlimited.
+* `read_netCDF_as_raster()` now correctly checks whether `raster` has
+  read a valid `crs` (previously, the check failed with an error).
+* `calculate_cell_area()` now works if `grid` is a `SpatRaster` with
+  cells that have missing values or if `x` is a single point.
+* `convert_xyspace(direction = "expand")` now works if some `locations`
+  fall outside the `grid`; their values are dropped (as documented by the
+  warning).
 
 
 # rSW2st v0.3.2

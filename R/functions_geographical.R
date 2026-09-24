@@ -70,11 +70,11 @@ calculate_cell_area <- function(
       x <- sf::st_transform(x, crs = sf::st_crs(grid))
     }
 
-    coords <- sf::st_coordinates(x)[, 1:2]
+    coords <- sf::st_coordinates(x)[, 1:2, drop = FALSE]
     colnames(coords) <- c("x", "y")
   } else {
     coords <- if (inherits(grid, "SpatRaster")) {
-      terra::crds(grid)
+      terra::crds(grid, na.rm = FALSE)
     } else if (inherits(grid, "stars")) {
       sf::st_coordinates(grid, center = TRUE)[, 1:2, drop = FALSE]
     }

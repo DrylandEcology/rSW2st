@@ -153,3 +153,29 @@ test_that("nominal resolution", {
     )
   }
 })
+
+
+test_that("gridcell areas: NA cells and single points", {
+  r <- terra::rast(
+    xmin = 0,
+    xmax = 2,
+    ymin = 0,
+    ymax = 2,
+    crs = "OGC:CRS84",
+    resolution = c(1, 1),
+    vals = c(1, NA, 3, 4)
+  )
+
+  # All grid cells, including cells with NA values
+  res <- calculate_cell_area(grid = r)
+  expect_identical(nrow(res), as.integer(terra::ncell(r)))
+  expect_false(anyNA(res[["km2"]]))
+
+  # Single point
+  res <- calculate_cell_area(cbind(0.5, 0.5), grid = r, crs = "OGC:CRS84")
+  expect_identical(nrow(res), 1L)
+  expect_identical(
+    res[["km2"]],
+    calculate_cell_area(grid = r)[["km2"]][[3L]]
+  )
+})
