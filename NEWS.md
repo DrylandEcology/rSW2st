@@ -7,6 +7,9 @@
   the default retains the previous behavior.
 
 ## Bug fixes
+* `writeTerraToNCSW()` with `increasingLat = FALSE` no longer reverses
+  latitude values relative to the data (previously, the map was written
+  upside down).
 * `create_netCDF()` (via `populate_netCDF()`) can again write several
   variables for data structures `"xy"` and `"s"`.
 * `read_netCDF_as_array()` can again read several variables of

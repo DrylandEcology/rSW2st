@@ -268,3 +268,205 @@ test_that("manipulateNCforSOILWAT2", {
   unlink(unlist(tmpin_nc))
   unlink(unlist(tmpout_nc))
 })
+
+
+test_that("writeTerraToNCSW: latitude order", {
+  skip_if_not_installed("ncdf4")
+
+  # Rows from north to south have values 30, 20, 10
+  r <- terra::rast(
+    nrows = 3L,
+    ncols = 2L,
+    xmin = 0,
+    xmax = 2,
+    ymin = 0,
+    ymax = 3,
+    crs = "EPSG:4326",
+    vals = rep(c(30, 20, 10), each = 2L)
+  )
+  terra::varnames(r) <- "v"
+
+  for (increasingLat in c(TRUE, FALSE)) {
+    tmp_nc <- tempfile(fileext = ".nc")
+
+    suppressWarnings(
+      writeTerraToNCSW(
+        x = r,
+        filename = tmp_nc,
+        increasingLat = increasingLat,
+        addSpatialBounds = FALSE
+      )
+    )
+
+    xnc <- RNetCDF::open.nc(tmp_nc)
+    lat <- as.vector(RNetCDF::var.get.nc(xnc, "latitude"))
+    vals <- RNetCDF::var.get.nc(xnc, "v", collapse = FALSE)
+    RNetCDF::close.nc(xnc)
+    unlink(tmp_nc)
+
+    expect_identical(
+      lat,
+      if (increasingLat) c(0.5, 1.5, 2.5) else c(2.5, 1.5, 0.5)
+    )
+
+    # Values match latitudes: value = 10 * (latitude + 0.5)
+    for (k in seq_along(lat)) {
+      expect_identical(unique(vals[, k]), 10 * (lat[[k]] + 0.5))
+    }
+  }
+})
+
+
+test_that("writeTerraToNCSW: round trips from GeoTIFF and netCDF", {
+  skip_if_not_installed("ncdf4")
+
+  tol <- sqrt(.Machine[["double.eps"]])
+
+  # Write values to a netCDF with RNetCDF only
+  # `vals`: matrix with rows along `lon` and columns along `lat`
+  writeRNetCDF <- function(filename, lon, lat, vals) {
+    xnc <- RNetCDF::create.nc(filename)
+    on.exit(RNetCDF::close.nc(xnc))
+    RNetCDF::dim.def.nc(xnc, "longitude", length(lon))
+    RNetCDF::dim.def.nc(xnc, "latitude", length(lat))
+    RNetCDF::var.def.nc(xnc, "longitude", "NC_DOUBLE", "longitude")
+    RNetCDF::var.def.nc(xnc, "latitude", "NC_DOUBLE", "latitude")
+    RNetCDF::var.def.nc(xnc, "v", "NC_DOUBLE", c("longitude", "latitude"))
+    RNetCDF::att.put.nc(xnc, "longitude", "units", "NC_CHAR", "degrees_east")
+    RNetCDF::att.put.nc(xnc, "latitude", "units", "NC_CHAR", "degrees_north")
+    RNetCDF::att.put.nc(xnc, "v", "grid_mapping", "NC_CHAR", "crs")
+    RNetCDF::var.put.nc(xnc, "longitude", lon)
+    RNetCDF::var.put.nc(xnc, "latitude", lat)
+    RNetCDF::var.put.nc(xnc, "v", vals)
+    setCRSWGS84NCSW(xnc, nameCRS = "crs")
+  }
+
+  # Reference: `lat` from north to south,
+  # `vals` with rows along `lon` and columns along `lat`
+  describeRef <- function(lon, lat, vals) {
+    dx <- abs(lon[[2L]] - lon[[1L]])
+    dy <- abs(lat[[2L]] - lat[[1L]])
+    list(
+      lon = lon,
+      lat = lat,
+      vals = vals,
+      ext = c(
+        min(lon) - dx / 2,
+        max(lon) + dx / 2,
+        min(lat) - dy / 2,
+        max(lat) + dy / 2
+      )
+    )
+  }
+
+  #--- netCDF inputs: each cell has a distinct value
+  lon <- c(0.5, 1.5)
+  lat <- c(2.5, 1.5, 0.5) # north to south
+  vals <- matrix(1:6 + 0.5, nrow = length(lon), ncol = length(lat))
+
+  #--- GeoTIFF input
+  ftif <- system.file("ex", "elev.tif", package = "terra")
+  rtif <- terra::rast(ftif)
+
+  #--- Input files and their references
+  fin <- c(
+    tif = ftif,
+    ncDecreasingLat = tempfile(fileext = ".nc"),
+    ncIncreasingLat = tempfile(fileext = ".nc")
+  )
+
+  writeRNetCDF(fin[["ncDecreasingLat"]], lon = lon, lat = lat, vals = vals)
+  writeRNetCDF(
+    fin[["ncIncreasingLat"]],
+    lon = lon,
+    lat = rev(lat),
+    vals = vals[, rev(seq_along(lat))]
+  )
+
+  refs <- list(
+    tif = describeRef(
+      lon = terra::xFromCol(rtif, seq_len(terra::ncol(rtif))),
+      lat = terra::yFromRow(rtif, seq_len(terra::nrow(rtif))),
+      vals = matrix(terra::values(rtif), nrow = terra::ncol(rtif))
+    ),
+    ncDecreasingLat = describeRef(lon = lon, lat = lat, vals = vals),
+    ncIncreasingLat = describeRef(lon = lon, lat = lat, vals = vals)
+  )
+
+  #--- Read input files, write with writeTerraToNCSW(), and compare
+  for (k in seq_along(fin)) {
+    ref <- refs[[k]]
+
+    xin <- terra::rast(fin[[k]])
+    terra::varnames(xin) <- "v"
+
+    # Input is read correctly (terra values are row-wise from north-west)
+    expect_equal(
+      as.vector(terra::values(xin)),
+      as.vector(ref[["vals"]]),
+      tolerance = tol
+    )
+    expect_equal(
+      as.vector(terra::ext(xin)),
+      ref[["ext"]],
+      tolerance = tol,
+      ignore_attr = TRUE
+    )
+
+    for (increasingLat in c(TRUE, FALSE)) {
+      info <- paste(names(fin)[[k]], "increasingLat =", increasingLat)
+      tmp_nc <- tempfile(fileext = ".nc")
+
+      suppressWarnings(
+        writeTerraToNCSW(
+          x = xin,
+          filename = tmp_nc,
+          increasingLat = increasingLat,
+          addSpatialBounds = FALSE
+        )
+      )
+
+      # Latitude order and values match latitudes in the netCDF
+      xnc <- RNetCDF::open.nc(tmp_nc)
+      latOut <- as.vector(RNetCDF::var.get.nc(xnc, "latitude"))
+      lonOut <- as.vector(RNetCDF::var.get.nc(xnc, "longitude"))
+      valsOut <- RNetCDF::var.get.nc(xnc, "v", collapse = FALSE)
+      RNetCDF::close.nc(xnc)
+
+      ids <- seq_along(ref[["lat"]])
+      if (increasingLat) {
+        ids <- rev(ids)
+      }
+
+      expect_equal(lonOut, ref[["lon"]], tolerance = tol, info = info)
+      expect_equal(latOut, ref[["lat"]][ids], tolerance = tol, info = info)
+      expect_equal(
+        unname(valsOut),
+        ref[["vals"]][, ids],
+        tolerance = tol,
+        info = info
+      )
+
+      # Round trip: terra reads the same raster
+      xout <- terra::rast(tmp_nc)
+      expect_equal(
+        as.vector(terra::values(xout)),
+        as.vector(ref[["vals"]]),
+        tolerance = tol,
+        info = info
+      )
+      expect_equal(
+        as.vector(terra::ext(xout)),
+        ref[["ext"]],
+        tolerance = tol,
+        ignore_attr = TRUE,
+        info = info
+      )
+      expect_true(terra::same.crs(xout, "EPSG:4326"), info = info)
+
+      unlink(tmp_nc)
+    }
+  }
+
+  unlink(fin[c("ncDecreasingLat", "ncIncreasingLat")])
+})

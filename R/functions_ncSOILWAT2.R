@@ -270,7 +270,7 @@ writeTerraToNCSW <- function(
 
   dataType <- match.arg(dataType) # terra dataType
 
-  if (increasingLat) {
+  if (isTRUE(increasingLat)) {
     x <- terra::flip(x, direction = "vertical")
   }
 
@@ -328,13 +328,15 @@ writeTerraToNCSW <- function(
   #--- Delete unwanted global attributes created by terra
   deleteGlobalAttributesNCSW(xnc, deleteGlobalAttributes)
 
-  #--- Flip latitude values
+  #--- Flip latitude values (data were flipped before writing)
   # [terra::writeCDF] (v1.7.78) forces latitude to be decreasing, see
   # nolint start.
   # [terra:::.write_cdf] `ydim <- ncdf4::ncdim_def( yname, yunit, yFromRow(y, 1:nrow(y)) )`
   # nolint end.
-  xlat <- RNetCDF::var.get.nc(xnc, variable = nameDimY)
-  RNetCDF::var.put.nc(xnc, variable = nameDimY, data = rev(xlat))
+  if (isTRUE(increasingLat)) {
+    xlat <- RNetCDF::var.get.nc(xnc, variable = nameDimY)
+    RNetCDF::var.put.nc(xnc, variable = nameDimY, data = rev(xlat))
+  }
 
   #--- longitude/latitude attributes
   RNetCDF::att.put.nc(xnc, nameDimX, "axis", "NC_CHAR", value = "X")
