@@ -1032,8 +1032,7 @@ setAxisMonthClimatologyNCSW <- function(
             paste0(endYear, "-", seq_len(12L)[-1L], "-01"),
             paste0(endYear + 1L, "-01-01")
           )
-        ) -
-          1L
+        )
       )
     )
   )

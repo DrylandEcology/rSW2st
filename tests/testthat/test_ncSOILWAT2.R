@@ -470,3 +470,28 @@ test_that("writeTerraToNCSW: round trips from GeoTIFF and netCDF", {
 
   unlink(fin[c("ncDecreasingLat", "ncIncreasingLat")])
 })
+
+
+test_that("setAxisMonthClimatologyNCSW: bounds", {
+  fnc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fnc), add = TRUE)
+
+  xnc <- RNetCDF::create.nc(fnc)
+  on.exit(RNetCDF::close.nc(xnc), add = TRUE, after = FALSE)
+
+  setAxisMonthClimatologyNCSW(xnc, startYear = 1991L, endYear = 2020L)
+
+  tunit <- RNetCDF::att.get.nc(xnc, "time", "units")
+  cbnds <- RNetCDF::var.get.nc(xnc, "climatology_bounds")
+  toDate <- function(x) as.Date(RNetCDF::utcal.nc(tunit, x, type = "c"))
+
+  expect_identical(
+    toDate(cbnds[1L, ]),
+    seq(as.Date("1991-01-01"), by = "month", length.out = 12L)
+  )
+  # Upper bounds: first day of the following month (of `endYear`)
+  expect_identical(
+    toDate(cbnds[2L, ]),
+    seq(as.Date("2020-02-01"), by = "month", length.out = 12L)
+  )
+})

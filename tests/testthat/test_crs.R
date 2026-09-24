@@ -129,22 +129,22 @@ test_that("UTM", {
       56L
     ),
     expected_utm_epsg = c(
-      32711,
-      32611,
-      32714,
-      32614,
-      32716,
-      32616,
-      32731,
-      32631,
-      32733,
-      32633,
-      32746,
-      32646,
-      32753,
-      32653,
-      32756,
-      32656
+      32711L,
+      32611L,
+      32714L,
+      32614L,
+      32716L,
+      32616L,
+      32731L,
+      32631L,
+      32733L,
+      32633L,
+      32746L,
+      32646L,
+      32753L,
+      32653L,
+      32756L,
+      32656L
     )
   )
 
@@ -159,4 +159,12 @@ test_that("UTM", {
       locations[k, "expected_utm_epsg"]
     )
   }
+})
+
+
+test_that("UTM: equator and integer EPSG code", {
+  xy <- data.frame(longitude = -100, latitude = 0)
+  expect_identical(utm_zone(xy)[["utm_NS"]], "N")
+  expect_identical(epsg_for_utm(xy), 32614L)
+  expect_identical(epsg_for_utm(data.frame(-100, -1e-6)), 32714L)
 })

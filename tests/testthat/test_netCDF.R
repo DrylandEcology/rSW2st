@@ -898,3 +898,99 @@ test_that("convert_xyspace: locations outside grid", {
     expect_true(all(is.na(tmp2[-ids_in, ])))
   }
 })
+
+
+test_that("read_netCDF_as_terra: variable, arguments, and crs", {
+  # Two variables; crs variable is not referenced via "grid_mapping"
+  fnc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fnc), add = TRUE)
+
+  vals <- list(
+    a = matrix(1:6 + 0.5, nrow = 2L),
+    b = matrix(11:16 + 0.5, nrow = 2L)
+  )
+
+  xnc <- RNetCDF::create.nc(fnc)
+  RNetCDF::dim.def.nc(xnc, "x", 2L)
+  RNetCDF::dim.def.nc(xnc, "y", 3L)
+  RNetCDF::var.def.nc(xnc, "x", "NC_DOUBLE", "x")
+  RNetCDF::var.def.nc(xnc, "y", "NC_DOUBLE", "y")
+  RNetCDF::var.put.nc(xnc, "x", c(500, 1500))
+  RNetCDF::var.put.nc(xnc, "y", c(2500, 1500, 500))
+  for (v in names(vals)) {
+    RNetCDF::var.def.nc(xnc, v, "NC_DOUBLE", c("x", "y"))
+    RNetCDF::var.put.nc(xnc, v, vals[[v]])
+  }
+  setCRSNCSW(xnc, crs_wkt = sf::st_crs(6350)[["wkt"]])
+  RNetCDF::close.nc(xnc)
+
+  for (v in names(vals)) {
+    # `xy_names` is not an argument of `terra::rast()` and must be ignored
+    r <- read_netCDF(
+      fnc,
+      method = "terra",
+      var = v,
+      xy_names = c("x", "y"),
+      verbose_read = FALSE
+    )
+    expect_named(r, v)
+    expect_identical(as.vector(terra::values(r)), as.vector(vals[[v]]))
+    expect_true(terra::same.crs(r, "EPSG:6350"))
+  }
+
+  # Arguments accepted by `terra::rast()` are passed on
+  expect_error(
+    read_netCDF_as_terra(fnc, var = "a", lyrs = 2L, verbose_read = FALSE)
+  )
+  r <- read_netCDF_as_terra(fnc, var = "a", lyrs = 1L, verbose_read = FALSE)
+  expect_named(r, "a")
+
+  # "ncdf4" object
+  skip_if_not_installed("ncdf4")
+  nc4 <- ncdf4::nc_open(fnc)
+  r <- read_netCDF_as_terra(nc4, var = "b")
+  ncdf4::nc_close(nc4)
+  expect_named(r, "b")
+
+  # "NetCDF" connection
+  xnc <- RNetCDF::open.nc(fnc)
+  on.exit(RNetCDF::close.nc(xnc), add = TRUE, after = FALSE)
+  expect_error(read_netCDF_as_terra(xnc, var = "b"), "file name")
+})
+
+
+test_that("read_attributes_from_netCDF: non-default time and vertical names", {
+  fnc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fnc), add = TRUE)
+
+  xnc <- RNetCDF::create.nc(fnc)
+  RNetCDF::dim.def.nc(xnc, "x", 2L)
+  RNetCDF::dim.def.nc(xnc, "y", 2L)
+  RNetCDF::dim.def.nc(xnc, "depth", 1L)
+  RNetCDF::dim.def.nc(xnc, "t", unlim = TRUE)
+  for (d in c("x", "y", "depth", "t")) {
+    RNetCDF::var.def.nc(xnc, d, "NC_DOUBLE", d)
+    RNetCDF::att.put.nc(xnc, d, "long_name", "NC_CHAR", d)
+  }
+  RNetCDF::var.def.nc(xnc, "v", "NC_DOUBLE", c("x", "y", "depth", "t"))
+  RNetCDF::att.put.nc(xnc, "v", "units", "NC_CHAR", "1")
+  RNetCDF::var.put.nc(xnc, "t", 0)
+  RNetCDF::close.nc(xnc)
+
+  res <- read_attributes_from_netCDF(
+    fnc,
+    group = "all",
+    var = "v",
+    xy_names = c("x", "y"),
+    time_name = "t",
+    vertical_name = "depth"
+  )
+
+  expect_named(
+    res,
+    paste0(c("var", "xy", "crs", "t", "depth", "global"), "_attributes")
+  )
+  expect_identical(res[["t_attributes"]][["long_name"]], "t")
+  expect_true(res[["t_attributes"]][["unlim"]])
+  expect_identical(res[["depth_attributes"]][["long_name"]], "depth")
+})

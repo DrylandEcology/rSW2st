@@ -1397,7 +1397,8 @@ populate_netCDF_dev <- function(
 #' @param method A character string. Determines how the \var{netCDF} is read
 #'   and if a spatial subset (by \code{locations}) is extracted.
 #' @param var A character string. The variable name to be read. Passed along as
-#'   \var{varname} for \var{rasters} or \var{var} for \var{stars} targets.
+#'   \var{varname} for \var{rasters}, \var{var} for \var{stars}, or
+#'   \var{subds} for \var{terra} targets.
 #' @param nc_name_crs A character string. The name of the \var{crs} variable
 #'   in the \var{netCDF}.
 #'   Function \code{\link{create_netCDF}} hard codes \var{"crs"}.
@@ -2206,6 +2207,9 @@ read_netCDF_as_stars <- function(
 #' @section Details: \code{\link{read_netCDF_as_terra}} is a thin wrapper
 #' around \code{\link[terra:rast]{terra::rast}},
 #' but makes an extra attempt to correctly set the \var{crs} object.
+#' Arguments in \code{...} that \code{\link[terra:rast]{terra::rast}} does
+#' not accept are ignored. \code{x} cannot be an object of class
+#' \var{"NetCDF"}.
 #'
 #' @export
 read_netCDF_as_terra <- function(
@@ -2216,16 +2220,44 @@ read_netCDF_as_terra <- function(
   verbose_read = TRUE,
   ...
 ) {
-  e <- expression(
-    terra::rast(x, drivers = "NETCDF")
+  if (inherits(x, "ncdf4")) {
+    x <- x[["filename"]]
+  } else if (inherits(x, "NetCDF")) {
+    stop(
+      "`read_netCDF_as_terra()` requires a file name or an \"ncdf4\" object; ",
+      "an open \"NetCDF\" connection does not provide the file name.",
+      call. = FALSE
+    )
+  }
+
+  argsRast <- list(x = x, subds = 0, drivers = "NETCDF")
+  if (!is.null(var)) {
+    argsRast[["subds"]] <- var
+  }
+
+  # Pass on only those arguments that `terra::rast()` accepts
+  # (formal arguments of the S4 method for "character")
+  dots <- list(...)
+  tmp <- names(
+    formals(
+      methods::unRematchDefinition(
+        methods::getMethod(terra::rast, "character")
+      )
+    )
   )
+  if (!("..." %in% tmp)) {
+    dots <- dots[names(dots) %in% tmp]
+  }
+  argsRast <- c(argsRast, dots[!(names(dots) %in% names(argsRast))])
+
+  readRast <- function() do.call(terra::rast, args = argsRast)
 
   r <- if (verbose_read) {
-    eval(e)
+    readRast()
   } else {
     suppressMessages(
       suppressWarnings(
-        eval(e)
+        readRast()
       )
     )
   }
@@ -2235,11 +2267,16 @@ read_netCDF_as_terra <- function(
   r_has_crs <- inherits(r_crs, "crs") && !is.na(r_crs)
 
   if (!r_has_crs) {
-    sf::st_crs(r) <- read_crs_from_netCDF(
+    nc_crs <- read_crs_from_netCDF(
       x,
       nc_name_crs = nc_name_crs,
       nc_name_crs_wkt = nc_name_crs_wkt
     )
+
+    if (!is.na(nc_crs)) {
+      # `sf::st_crs<-` has no method for "SpatRaster"
+      terra::crs(r) <- nc_crs[["wkt"]]
+    }
   }
 
   r
@@ -2406,6 +2443,8 @@ read_attributes_from_netCDF <- function(
               group = att,
               var = var,
               xy_names = xy_names,
+              time_name = time_name,
+              vertical_name = vertical_name,
               nc_name_crs = nc_name_crs,
               meta = meta
             )

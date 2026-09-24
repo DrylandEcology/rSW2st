@@ -38,7 +38,8 @@ or of a class including
 or a \code{\link[sf]{sf}} or \code{\link[sf]{sfc}} class.}
 
 \item{seed}{Passed to \code{\link{set.seed}}; used only if
-\code{sub_samplepoints_N} is a number.}
+\code{sub_samplepoints_N} is a number and \code{seed} is not \code{NULL}.
+The random number state of the caller is restored on exit.}
 }
 \value{
 A numeric value representing the variogram range

@@ -95,7 +95,7 @@ utm_zone <- function(x, crs = 4326) {
 
   list(
     utm_zone = as.integer(unname(utm_zone)),
-    utm_NS = if (mxy[[2L]] > 0) "N" else "S"
+    utm_NS = if (mxy[[2L]] >= 0) "N" else "S"
   )
 }
 
@@ -128,8 +128,8 @@ epsg_for_utm <- function(x, crs = 4326) {
   tmp <- utm_zone(x, crs)
 
   if (tmp[["utm_NS"]] == "S") {
-    32700 + tmp[["utm_zone"]]
+    32700L + tmp[["utm_zone"]]
   } else {
-    32600 + tmp[["utm_zone"]]
+    32600L + tmp[["utm_zone"]]
   }
 }

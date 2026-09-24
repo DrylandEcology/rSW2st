@@ -34,6 +34,21 @@
 * `convert_xyspace(direction = "expand")` now works if some `locations`
   fall outside the `grid`; their values are dropped (as documented by the
   warning).
+* `setAxisMonthClimatologyNCSW()` now sets the upper climatology bounds to
+  the first day of the following month of `endYear` (as required by CF
+  conventions); previously, the last day of each month was excluded.
+* `utm_zone()` now assigns locations at the equator (latitude 0) to the
+  northern hemisphere.
+* `epsg_for_utm()` now returns an integer value (as documented).
+* `read_netCDF_as_terra()` now reads the requested variable `var` and
+  passes on those arguments in `...` that `terra::rast()` accepts;
+  it now accepts `"ncdf4"` objects and gives a clear error for
+  `"NetCDF"` connections; setting the `crs` from the `netCDF` if `terra`
+  did not locate one no longer fails with an error.
+* `variogram_range()` no longer changes the random number state of the
+  caller; `set.seed()` is called only if `seed` is not `NULL`.
+* `read_attributes_from_netCDF(group = "all")` now works with non-default
+  values of `time_name` and `vertical_name`.
 
 
 # rSW2st v0.3.2
