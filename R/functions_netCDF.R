@@ -1785,7 +1785,9 @@ read_netCDF_as_array <- function(
       has_time_subset <- !isTRUE(identical(time_ids, seq_along(nc_time_values)))
       if (has_time_subset) {
         nc_time_values <- nc_time_values[time_ids]
-        nc_time_bounds <- nc_time_bounds[time_ids, , drop = FALSE]
+        if (!is.null(nc_time_bounds)) {
+          nc_time_bounds <- nc_time_bounds[time_ids, , drop = FALSE]
+        }
       }
     }
 
@@ -1823,7 +1825,7 @@ read_netCDF_as_array <- function(
     if (has_vertical_subset) {
       if (any(vertical_ids > nc_vertical_N)) {
         stop(
-          "Not all requested `vertical_ids` not available; ",
+          "Not all requested `vertical_ids` are available; ",
           "available vertical steps = ",
           nc_vertical_N,
           call. = FALSE
@@ -1835,8 +1837,10 @@ read_netCDF_as_array <- function(
       )
 
       if (has_vertical_subset) {
-        nc_vertical_values <- nc_vertical_values[time_ids]
-        nc_vertical_bounds <- nc_vertical_bounds[time_ids, , drop = FALSE]
+        nc_vertical_values <- nc_vertical_values[vertical_ids]
+        if (!is.null(nc_vertical_bounds)) {
+          nc_vertical_bounds <- nc_vertical_bounds[vertical_ids, , drop = FALSE]
+        }
       }
     }
 
@@ -1858,82 +1862,24 @@ read_netCDF_as_array <- function(
     if (has_time && !has_time_collapsed) "t"
   )
 
-  nc_data_str <- paste0(
-    if (is_gridded) "xy" else "s",
-    if (has_vertical) "z",
-    if (has_time) "t"
-  )
-
   hasMultiVariableDimension <- FALSE
 
   if (load_values) {
-    if (has_vertical_subset) {
-      id_vertical_dim <- as.integer(regexpr("z", nc_data_str, fixed = TRUE))
-    }
-
-    if (has_time_subset) {
-      id_time_dim <- as.integer(regexpr("t", nc_data_str, fixed = TRUE))
-    }
-
-    if (has_time_subset || has_vertical_subset) {
-      # This requires that all variables have identical xy-space dimensions!
-      varid <- nc_vars[[1L]]
-      nc_count <- x[["var"]][[varid]][["varsize"]]
-      if (has_vertical_subset) {
-        nc_count[id_vertical_dim] <- 1
-      }
-      if (has_time_subset) {
-        nc_count[id_time_dim] <- 1
-      }
-
-      nc_start <- c(
-        rep(1L, n_xy),
-        if (has_vertical) NA_integer_,
-        if (has_time) NA_integer_
-      )
-      res_dim <- c(
-        nc_count[seq_len(n_xy)],
-        if (has_vertical && !has_vertical_collapsed) length(vertical_ids),
-        if (has_time && !has_time_collapsed) length(time_ids)
-      )
-    }
-
     #--- Read values
     res <- lapply(
       nc_vars,
       function(varid) {
         if (has_time_subset || has_vertical_subset) {
           # Read a subset of values
-          tmp <- list()
-          tmp_extr <- expand.grid(t = time_ids, v = vertical_ids)
-
-          for (k in seq_len(nrow(tmp_extr))) {
-            tmp_start <- nc_start
-            if (has_vertical) {
-              tmp_start[id_vertical_dim] <- tmp_extr[k, "v"]
-            }
-            if (has_time) {
-              tmp_start[id_time_dim] <- tmp_extr[k, "t"]
-            }
-
-            tmp[[k]] <- RNetCDF::var.get.nc(
-              xnc,
-              variable = varid,
-              start = tmp_start,
-              count = nc_count,
-              unpack = TRUE,
-              collapse = TRUE
-            )
+          tmp_ids <- list()
+          if (has_time_subset) {
+            tmp_ids[[time_name]] <- time_ids
+          }
+          if (has_vertical_subset) {
+            tmp_ids[[vertical_name]] <- vertical_ids
           }
 
-          tmp_collapse <-
-            has_vertical_collapsed && has_time_collapsed && length(tmp) == 1L
-
-          # TODO: check that this works correctly if both time + vertical subset
-          tmp_res <- abind::abind(
-            tmp,
-            along = length(res_dim) + if (tmp_collapse) 0L else 1L
-          )
+          tmp_res <- get_nc_var_subset(xnc, variable = varid, ids = tmp_ids)
         } else {
           # Read all values
           tmp_res <- RNetCDF::var.get.nc(
@@ -1949,7 +1895,7 @@ read_netCDF_as_array <- function(
         tmp_degen <- tmp_degen[tmp_degen > n_xy]
 
         if (collapse_degen && length(tmp_degen) > 0) {
-          tmp_res <- abind::adrop(tmp_res, drop = tmp_degen)
+          tmp_res <- abind::adrop(tmp_res, drop = tmp_degen, one.d.array = TRUE)
         }
 
         # Check data structure
@@ -2041,6 +1987,77 @@ read_netCDF_as_array <- function(
   } else {
     c(tmp, list(site = sites))
   }
+}
+
+
+#' Read a subset of values of a `netCDF` variable
+#'
+#' @param xnc An open `RNetCDF` connection.
+#' @param variable A character string. The name of the variable.
+#' @param ids A named list. Each element is an integer vector with the
+#'   (1-based) indices to read along the dimension of the same name;
+#'   all values are read along dimensions not named in `ids`.
+#'
+#' @return An array with one dimension per dimension of `variable`.
+#'   Values are ordered by sorted, unique indices.
+#'   Each set of consecutive indices is read with one call to
+#'   [RNetCDF::var.get.nc()].
+#'
+#' @noRd
+get_nc_var_subset <- function(xnc, variable, ids) {
+  vinfo <- RNetCDF::var.inq.nc(xnc, variable)
+  dinfo <- lapply(vinfo[["dimids"]], RNetCDF::dim.inq.nc, ncfile = xnc)
+
+  # Requested indices per dimension
+  req <- lapply(
+    dinfo,
+    function(d) {
+      tmp <- if (d[["name"]] %in% names(ids)) ids[[d[["name"]]]]
+      if (length(tmp) > 0L && all(tmp > 0L)) {
+        sort(unique(as.integer(tmp)))
+      } else {
+        seq_len(d[["length"]])
+      }
+    }
+  )
+
+  # Positions within `req` split into runs of consecutive indices
+  runs <- lapply(
+    req,
+    function(i) unname(split(seq_along(i), cumsum(c(1L, diff(i) != 1L))))
+  )
+
+  res <- NULL
+  combs <- expand.grid(lapply(runs, seq_along))
+
+  for (k in seq_len(nrow(combs))) {
+    pos <- Map(
+      function(r, j) r[[j]],
+      runs,
+      unlist(combs[k, ], use.names = FALSE)
+    )
+
+    tmp <- RNetCDF::var.get.nc(
+      xnc,
+      variable = variable,
+      start = vapply(
+        seq_along(req),
+        function(d) req[[d]][[pos[[d]][[1L]]]],
+        FUN.VALUE = NA_integer_
+      ),
+      count = lengths(pos),
+      unpack = TRUE,
+      collapse = FALSE
+    )
+
+    if (is.null(res)) {
+      res <- array(tmp[NA_integer_], dim = lengths(req))
+    }
+
+    res <- do.call(`[<-`, c(list(res), pos, list(value = tmp)))
+  }
+
+  res
 }
 
 

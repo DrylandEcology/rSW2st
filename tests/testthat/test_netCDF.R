@@ -586,6 +586,99 @@ test_that("read_netCDF", {
 })
 
 
+test_that("read_netCDF_as_array: time and vertical subsets", {
+  tmp_nc <- create_example_netCDFs(
+    path = tempdir(),
+    data_str = c("xyzt", "xyt", "xyz", "szt"),
+    type_timeaxis = "timeseries",
+    overwrite = TRUE
+  )
+  on.exit(unlink(unlist(tmp_nc)), add = TRUE)
+
+  list_ids <- list(
+    list(t = 2:3, z = -1),
+    list(t = c(1L, 3L), z = -1),
+    list(t = -1, z = 2:3),
+    list(t = c(1L, 3L), z = c(1L, 3L)),
+    list(t = 2L, z = -1),
+    list(t = -1, z = 2L),
+    list(t = 2L, z = 3L)
+  )
+
+  for (k in seq_along(tmp_nc)) {
+    fnc <- tmp_nc[[k]]
+    nc_str <- sub("^nc_", "", sub("\\.nc$", "", basename(fnc)))
+    has_z <- grepl("z", nc_str, fixed = TRUE)
+    has_t <- grepl("t", nc_str, fixed = TRUE)
+
+    full <- read_netCDF(
+      fnc,
+      method = "array",
+      var = "sine",
+      xy_names = c("x", "y"),
+      collapse_degen = FALSE
+    )
+    dims_full <- dim(full[["data"]])
+    n_xy <- length(dims_full) - has_z - has_t
+
+    for (ids in list_ids) {
+      if ((!has_t && any(ids[["t"]] > 0)) || (!has_z && any(ids[["z"]] > 0))) {
+        next
+      }
+
+      for (collapse in c(TRUE, FALSE)) {
+        res <- read_netCDF(
+          fnc,
+          method = "array",
+          var = "sine",
+          xy_names = c("x", "y"),
+          time_ids = ids[["t"]],
+          vertical_ids = ids[["z"]],
+          collapse_degen = collapse
+        )
+
+        # Expected values: subset of all values
+        tmp_ids <- lapply(dims_full, seq_len)
+        if (has_z && all(ids[["z"]] > 0)) {
+          tmp_ids[[n_xy + 1L]] <- ids[["z"]]
+        }
+        if (has_t && all(ids[["t"]] > 0)) {
+          tmp_ids[[n_xy + has_z + 1L]] <- ids[["t"]]
+        }
+        expected <- do.call(`[`, c(list(full[["data"]]), tmp_ids, drop = FALSE))
+        if (collapse) {
+          tmp <- which(dim(expected) == 1L)
+          tmp <- tmp[tmp > n_xy]
+          if (length(tmp) > 0L) {
+            expected <- abind::adrop(expected, drop = tmp, one.d.array = TRUE)
+          }
+        }
+
+        expect_equal(res[["data"]], expected, ignore_attr = "dimnames")
+        expect_identical(nchar(res[["data_str"]]), length(dim(res[["data"]])))
+
+        if (has_t) {
+          expect_identical(
+            res[["time_values"]],
+            full[["time_values"]][tmp_ids[[n_xy + has_z + 1L]]]
+          )
+        }
+        if (has_z) {
+          expect_identical(
+            res[["vertical_values"]],
+            full[["vertical_values"]][tmp_ids[[n_xy + 1L]]]
+          )
+          expect_identical(
+            res[["vertical_bounds"]],
+            full[["vertical_bounds"]][tmp_ids[[n_xy + 1L]], , drop = FALSE]
+          )
+        }
+      }
+    }
+  }
+})
+
+
 #------ Tests for `create_netCDF()` ------
 test_that("create_netCDF: multiple variables, compression, time axis", {
   xyspace <- list(x = 1:4 - 0.5, y = 1:3 - 0.5, res = c(1, 1))

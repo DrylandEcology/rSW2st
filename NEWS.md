@@ -11,6 +11,10 @@
   variables for data structures `"xy"` and `"s"`.
 * `read_netCDF_as_array()` can again read several variables of
   data structure `"xy"`.
+* `read_netCDF_as_array()` can again read subsets of the time and/or
+  vertical axis (arguments `time_ids` and `vertical_ids`; previously,
+  this failed with an error). Vertical values and bounds are now subset
+  by `vertical_ids` instead of `time_ids`.
 * `create_netCDF()` no longer fails if `nc_compression` is `TRUE` and
   `data_type` is the default or if `nc_chunks` is an integer vector.
   Argument `nc_shuffle` is now applied (previously, the shuffle filter was
