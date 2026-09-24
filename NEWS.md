@@ -49,6 +49,26 @@
   caller; `set.seed()` is called only if `seed` is not `NULL`.
 * `read_attributes_from_netCDF(group = "all")` now works with non-default
   values of `time_name` and `vertical_name`.
+* Functions that accept an `"ncdf4"` object now close it (with a warning)
+  before re-opening the file with `RNetCDF`; previously, the `"ncdf4"`
+  connection was kept open, and writing to a `netCDF-4` file failed.
+* `setAxisNCSW()` now signals an error if `values` is `NULL` and
+  `isUnlimitedDim` is `FALSE`; previously, an unlimited dimension was
+  created.
+* `setAxisBoundsNCSW()` now signals a clear error if `valuesBnds` is `NULL`
+  and `calculateValuesBndsIfMissing` is `FALSE`.
+* `setVariableNCSW()` now creates variables of type `"NC_INT64"` and
+  `"NC_UINT64"` (previously, adding the `"_FillValue"` attribute failed);
+  it adds no `"_FillValue"` attribute for these types (with a warning),
+  and the default fill value of the `netCDF` library applies.
+* `read_netCDF_as_array()` no longer drops data variables whose names contain
+  a dimension name (e.g., `"lat.mean"`).
+* `create_netCDF()` now checks that `data_dims` agree with site-based
+  data structures `"szt"`, `"st"`, `"sz"`, and `"s"`.
+* `create_raster_from_variables()` now converts a character matrix to numeric
+  values and accepts a one-column `data.frame`.
+* `calculate_nominal_resolution()` now returns the smallest class instead of
+  `character(0)` if the mean resolution is exactly 0.
 
 
 # rSW2st v0.3.2

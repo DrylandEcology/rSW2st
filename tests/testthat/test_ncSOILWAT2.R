@@ -495,3 +495,74 @@ test_that("setAxisMonthClimatologyNCSW: bounds", {
     seq(as.Date("2020-02-01"), by = "month", length.out = 12L)
   )
 })
+
+
+test_that("openRnetCDF: \"ncdf4\" object is closed and re-opened", {
+  skip_if_not_installed("ncdf4")
+
+  fnc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fnc), add = TRUE)
+
+  # Writing with a second connection to an open netCDF-4 file fails
+  xnc <- RNetCDF::create.nc(fnc, format = "netcdf4")
+  RNetCDF::dim.def.nc(xnc, "x", 2L)
+  RNetCDF::close.nc(xnc)
+
+  nc4 <- ncdf4::nc_open(fnc)
+  expect_warning(
+    setGlobalAttributesNCSW(nc4, attributes = c(title = "a")),
+    "Closing \"ncdf4\" connection"
+  )
+
+  xnc <- RNetCDF::open.nc(fnc)
+  on.exit(RNetCDF::close.nc(xnc), add = TRUE, after = FALSE)
+  expect_identical(RNetCDF::att.get.nc(xnc, "NC_GLOBAL", "title"), "a")
+})
+
+
+test_that("setAxisNCSW, setAxisBoundsNCSW, setVariableNCSW: edge cases", {
+  fnc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fnc), add = TRUE)
+
+  xnc <- RNetCDF::create.nc(fnc, format = "netcdf4")
+  on.exit(RNetCDF::close.nc(xnc), add = TRUE, after = FALSE)
+
+  #--- Fixed-length axis requires values (length 0 creates unlimited dim)
+  expect_error(
+    setAxisNCSW(xnc, nameAxis = "t", dataType = "NC_DOUBLE"),
+    "fixed length"
+  )
+  expect_error(RNetCDF::dim.inq.nc(xnc, "t"))
+
+  setAxisNCSW(
+    xnc,
+    nameAxis = "t",
+    dataType = "NC_DOUBLE",
+    isUnlimitedDim = TRUE
+  )
+  expect_true(RNetCDF::dim.inq.nc(xnc, "t")[["unlim"]])
+
+  #--- Bounds without values and without calculation
+  setAxisNCSW(xnc, nameAxis = "x", dataType = "NC_DOUBLE", values = 1:2)
+  expect_error(
+    setAxisBoundsNCSW(xnc, nameBndsVar = "x_bnds", nameDim = "x"),
+    "require `valuesBnds`"
+  )
+  expect_error(RNetCDF::dim.inq.nc(xnc, "bnds"))
+
+  #--- 64-bit integer variables: no "_FillValue" attribute (with warning)
+  for (dt in c("NC_INT64", "NC_UINT64")) {
+    expect_warning(
+      setVariableNCSW(
+        xnc,
+        varName = dt,
+        dataType = dt,
+        dimensions = "x",
+        coordinates = NULL,
+        grid_mapping = NULL
+      ),
+      "No \"_FillValue\" attribute"
+    )
+    expect_error(RNetCDF::att.inq.nc(xnc, dt, "_FillValue"))
+  }
+})

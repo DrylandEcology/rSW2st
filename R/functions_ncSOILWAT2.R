@@ -2,6 +2,15 @@ openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
   closeOnExit <- FALSE
 
   if (inherits(x, "ncdf4")) {
+    # Two open connections to the same file may fail or become inconsistent
+    warning(
+      "Closing \"ncdf4\" connection to ",
+      shQuote(x[["filename"]]),
+      " and re-opening with \"RNetCDF\".",
+      call. = FALSE
+    )
+    stopifnot(requireNamespace("ncdf4", quietly = TRUE))
+    ncdf4::nc_close(x)
     x <- x[["filename"]]
   }
 
@@ -29,7 +38,8 @@ openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
 #'
 #' @param x A character string (file name that will be opened and closed),
 #' an object of class `"NetCDF"` from the `RNetCDF` package (kept open), or
-#' an object of class `"ncdf4"` from the `ncdf4` package (kept open).
+#' an object of class `"ncdf4"` from the `ncdf4` package (closed with a warning;
+#' the file is then opened by its file name and closed on exit).
 #' @param long_name A character string. The `"long_name"` attribute.
 #' @param units A character string.  The `"units"` attribute.
 #' @param cell_methods A character string. The `"cell_methods"` attribute.
@@ -134,6 +144,10 @@ ncDataType <- function(dataType, stopOnError = TRUE) {
 #' Identify the fill value corresponding to a data type
 #'
 #' @inheritParams ncsw
+#'
+#' @return The default fill value of the `netCDF` library for `dataType`.
+#' The values for `"NC_INT64"` and `"NC_UINT64"` are approximate because
+#' they cannot be exactly represented as R numbers.
 #'
 #' @examples
 #' fillValue("integer")
@@ -599,6 +613,24 @@ setAxisBoundsNCSW <- function(
     on.exit(RNetCDF::close.nc(xnc))
   }
 
+  hasBndsVar <- !inherits(
+    try(RNetCDF::var.inq.nc(xnc, nameBndsVar), silent = TRUE),
+    "try-error"
+  )
+
+  if (
+    !hasBndsVar &&
+      is.null(valuesBnds) &&
+      !isTRUE(calculateValuesBndsIfMissing)
+  ) {
+    stop(
+      "Bounds ",
+      shQuote(nameBndsVar),
+      " require `valuesBnds` or `calculateValuesBndsIfMissing = TRUE`.",
+      call. = FALSE
+    )
+  }
+
   #--- Create dimension
   res <- try(RNetCDF::dim.inq.nc(xnc, nameBndsDim), silent = TRUE)
   if (inherits(res, "try-error")) {
@@ -606,8 +638,7 @@ setAxisBoundsNCSW <- function(
   }
 
   #--- Create bound variable
-  res <- try(RNetCDF::var.inq.nc(xnc, nameBndsVar), silent = TRUE)
-  if (inherits(res, "try-error")) {
+  if (!hasBndsVar) {
     RNetCDF::var.def.nc(
       xnc,
       varname = nameBndsVar,
@@ -706,6 +737,16 @@ setAxisNCSW <- function(
   #--- Create dimension
   res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
+    # netCDF library creates an unlimited dimension if length is zero
+    if (length(values) == 0L && !isTRUE(isUnlimitedDim)) {
+      stop(
+        "Cannot create dimension ",
+        shQuote(nameAxis),
+        " of fixed length without `values`.",
+        call. = FALSE
+      )
+    }
+
     RNetCDF::dim.def.nc(
       xnc,
       dimname = nameAxis,
@@ -1063,7 +1104,9 @@ setAxisMonthClimatologyNCSW <- function(
 #' Default is to turn it on if `deflate` is not `NA`;
 #' see [`RNetCDF::var.def.nc()`] for more detail.
 #' @param addFillValue A logical value. Add a `"_FillValue"` attribute? The
-#' value is determined by `dataType` and [fillValue()].
+#' value is determined by `dataType` and [fillValue()]. For `"NC_INT64"` and
+#' `"NC_UINT64"`, no attribute is added (with a warning) and the default fill
+#' value of the `netCDF` library applies.
 #'
 #' @section Details:
 #'   1. Create variable of `dataType` and `dimensions` if not present,
@@ -1129,7 +1172,17 @@ setVariableNCSW <- function(
       shuffle = isTRUE(shuffle)
     )
 
-    if (isTRUE(addFillValue)) {
+    if (isTRUE(addFillValue) && dataType %in% c("NC_INT64", "NC_UINT64")) {
+      # 64-bit fill values are not exactly representable as R numbers
+      warning(
+        "No \"_FillValue\" attribute added to ",
+        shQuote(varName),
+        " (",
+        dataType,
+        "); the default fill value of the netCDF library applies.",
+        call. = FALSE
+      )
+    } else if (isTRUE(addFillValue)) {
       RNetCDF::att.put.nc(
         xnc,
         variable = varName,

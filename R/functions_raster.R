@@ -60,32 +60,30 @@ create_raster_from_variables <- function(
   # Attempt to convert data to a numeric type, if not, so that it can be
   # converted to a raster object
   if (!(is.numeric(data) || all(vapply(data, is.numeric, FUN.VALUE = NA)))) {
-    if (nl > 1) {
-      for (k in seq_len(nl)) {
-        tmp <- try(
-          if (is.factor(data[, k])) {
-            as.integer(data[, k])
-          } else {
-            as.double(data[, k])
-          }
-        )
-        stopifnot(!inherits(tmp, "try-error"))
-        data[, k] <- tmp
-      }
+    toNumeric <- function(x) {
+      tmp <- try(if (is.factor(x)) as.integer(x) else as.double(x))
+      stopifnot(!inherits(tmp, "try-error"))
+      tmp
+    }
+
+    data <- if (is.null(dim(data))) {
+      toNumeric(data)
     } else {
-      data <- try(
-        if (is.factor(data)) {
-          as.integer(data)
-        } else {
-          as.double(data)
-        }
+      # Convert column by column into a numeric matrix (a character matrix
+      # would otherwise remain character and a data.frame cannot be passed
+      # to `as.double()`)
+      matrix(
+        unlist(
+          lapply(seq_len(nl), function(k) toNumeric(data[, k, drop = TRUE]))
+        ),
+        ncol = nl,
+        dimnames = list(NULL, cnames)
       )
-      stopifnot(!inherits(data, "try-error"))
     }
   }
 
   if (nl == 1) {
-    data <- matrix(data, ncol = 1)
+    data <- matrix(unlist(data, use.names = FALSE), ncol = 1)
   }
 
   # create raster, init with NAs, and add data

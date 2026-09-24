@@ -483,6 +483,34 @@ create_netCDF <- function(
       data_dims[["nt"]] == 0L,
       data_dims[["nz"]] == 0L,
       data_dims[["nv"]] >= 0L
+    ),
+
+    szt = stopifnot(
+      data_dims[["ns"]] > 0L,
+      data_dims[["nt"]] > 0L,
+      data_dims[["nz"]] > 0L,
+      data_dims[["nv"]] == 0L
+    ),
+
+    st = stopifnot(
+      data_dims[["ns"]] > 0L,
+      data_dims[["nt"]] > 0L,
+      data_dims[["nz"]] == 0L,
+      data_dims[["nv"]] == 0L
+    ),
+
+    sz = stopifnot(
+      data_dims[["ns"]] > 0L,
+      data_dims[["nt"]] == 0L,
+      data_dims[["nz"]] > 0L,
+      data_dims[["nv"]] == 0L
+    ),
+
+    s = stopifnot(
+      data_dims[["ns"]] > 0L,
+      data_dims[["nt"]] == 0L,
+      data_dims[["nz"]] == 0L,
+      data_dims[["nv"]] >= 0L
     )
   )
   # nolint end
@@ -1393,7 +1421,8 @@ populate_netCDF_dev <- function(
 #' @inheritParams rSW2st_netCDF
 #' @param x An object identifying a \var{netCDF} file, i.e.,
 #'   a character string as file name, an object of class \var{"NetCDF"},
-#'   or an object of class \var{"ncdf4"}.
+#'   or an object of class \var{"ncdf4"} (which may be closed, with a warning,
+#'   and the file re-opened by its file name).
 #' @param method A character string. Determines how the \var{netCDF} is read
 #'   and if a spatial subset (by \code{locations}) is extracted.
 #' @param var A character string. The variable name to be read. Passed along as
@@ -1713,12 +1742,7 @@ read_netCDF_as_array <- function(
 
   # Exclude variables associated with dimensions and bounds
   tmp <- c(nc_dims, "crs", "climatology_bounds", paste0(nc_dims, "_bnds"))
-  nc_vars <- grep(
-    paste0("(\\<", tmp, "\\>)", collapse = "|"),
-    nc_vars,
-    value = TRUE,
-    invert = TRUE
-  )
+  nc_vars <- nc_vars[!(nc_vars %in% tmp)]
 
   has_vars <- all(var %in% nc_vars)
   if (has_vars) {
@@ -3448,7 +3472,7 @@ create_example_netCDFs <- function(
               zt = cbind(
                 rep(sites_ids[, "x"], times = nz * nt),
                 rep(sites_ids[, "y"], times = nz * nt),
-                z = rep(rep(seq_len(nz), each = ns), times = nz),
+                z = rep(rep(seq_len(nz), each = ns), times = nt),
                 t = rep(seq_len(nt), each = ns * nz)
               ),
               t = cbind(

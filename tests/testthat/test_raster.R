@@ -58,6 +58,15 @@ test_that("create_raster_from_variables", {
   # Extracted values are equal to input values
   expect_identical(raster::extract(rv2, xy), data.matrix(v2))
 
+  #--- Non-numeric data are converted
+  v3 <- cbind(a = as.character(1:10), b = as.character(101:110))
+  rv3 <- create_raster_from_variables(data = v3, site_locations = xy, grid = r)
+  expect_identical(raster::extract(rv3, xy), data.matrix(v2))
+
+  v4 <- data.frame(a = as.character(1:10), stringsAsFactors = FALSE)
+  rv4 <- create_raster_from_variables(data = v4, site_locations = xy, grid = r)
+  expect_identical(raster::extract(rv4, xy), v1)
+
   # Resulting raster is of same kind as input grid
   expect_true(
     raster::compareRaster(

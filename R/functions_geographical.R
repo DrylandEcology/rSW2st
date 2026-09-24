@@ -282,5 +282,10 @@ calculate_nominal_resolution <- function(grid, maskvalue = NA) {
     )
   )
 
-  nr[findInterval(mean_resolution_km, nr[, "cuts"], left.open = TRUE), "label"]
+  # A mean resolution of exactly 0 belongs to the first class
+  ids <- max(
+    1L,
+    findInterval(mean_resolution_km, nr[, "cuts"], left.open = TRUE)
+  )
+  nr[ids, "label"]
 }

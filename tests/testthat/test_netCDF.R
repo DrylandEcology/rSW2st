@@ -994,3 +994,62 @@ test_that("read_attributes_from_netCDF: non-default time and vertical names", {
   expect_true(res[["t_attributes"]][["unlim"]])
   expect_identical(res[["depth_attributes"]][["long_name"]], "depth")
 })
+
+
+test_that("read_netCDF_as_array: variable names containing dimension names", {
+  xyspace <- list(x = 1:4 - 0.5, y = 1:3 - 0.5, res = c(1, 1))
+  fname_nc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fname_nc), add = TRUE)
+
+  data_xyv <- array(seq_len(4L * 3L * 2L), dim = c(4L, 3L, 2L))
+  vnames <- c("v1", "lat.mean")
+
+  create_netCDF(
+    filename = fname_nc,
+    xyspace = xyspace,
+    data = data_xyv,
+    data_str = "xy",
+    var_attributes = list(name = vnames, units = c("1", "1")),
+    overwrite = TRUE
+  )
+
+  res <- read_netCDF(fname_nc, "array")
+  expect_identical(dimnames(res[["data"]])[[3L]], vnames)
+  expect_equal(res[["data"]], data_xyv, ignore_attr = "dimnames")
+})
+
+
+test_that("create_netCDF: data dimensions of site data are checked", {
+  fname_nc <- tempfile(fileext = ".nc")
+  on.exit(unlink(fname_nc), add = TRUE)
+
+  xyspace <- cbind(x = 1:3 - 0.5, y = 0.5)
+  dd <- c(ns = 3L, nx = 0L, ny = 0L, nt = 0L, nz = 0L, nv = 0L)
+
+  for (ds in c("szt", "st", "sz")) {
+    expect_error(
+      create_netCDF(
+        filename = fname_nc,
+        xyspace = xyspace,
+        data_str = ds,
+        data_dims = dd,
+        var_attributes = list(name = "v", units = "1"),
+        overwrite = TRUE
+      ),
+      "is not TRUE"
+    )
+  }
+
+  dd[["nt"]] <- 5L
+  expect_error(
+    create_netCDF(
+      filename = fname_nc,
+      xyspace = xyspace,
+      data_str = "s",
+      data_dims = dd,
+      var_attributes = list(name = "v", units = "1"),
+      overwrite = TRUE
+    ),
+    "is not TRUE"
+  )
+})

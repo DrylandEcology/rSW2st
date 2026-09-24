@@ -28,7 +28,8 @@ setVariableNCSW(
 \arguments{
 \item{x}{A character string (file name that will be opened and closed),
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
-an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (closed with a warning;
+the file is then opened by its file name and closed on exit).}
 
 \item{varName}{A character string. The name of the variable.
 see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
@@ -72,7 +73,9 @@ Previously, misspelled as \code{"cell_method"}.}
 \item{attributes}{A named vector or named list of character strings.}
 
 \item{addFillValue}{A logical value. Add a \code{"_FillValue"} attribute? The
-value is determined by \code{dataType} and \code{\link[=fillValue]{fillValue()}}.}
+value is determined by \code{dataType} and \code{\link[=fillValue]{fillValue()}}. For \code{"NC_INT64"} and
+\code{"NC_UINT64"}, no attribute is added (with a warning) and the default fill
+value of the \code{netCDF} library applies.}
 }
 \description{
 Add a variable

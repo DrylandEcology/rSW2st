@@ -65,7 +65,8 @@ read_netCDF_as_terra(
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
 a character string as file name, an object of class \var{"NetCDF"},
-or an object of class \var{"ncdf4"}.}
+or an object of class \var{"ncdf4"} (which may be closed, with a warning,
+and the file re-opened by its file name).}
 
 \item{method}{A character string. Determines how the \var{netCDF} is read
 and if a spatial subset (by \code{locations}) is extracted.}
