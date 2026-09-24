@@ -18,7 +18,8 @@ read_attributes_from_netCDF(
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
 a character string as file name, an object of class \var{"NetCDF"},
-or an object of class \var{"ncdf4"}.}
+or an object of class \var{"ncdf4"} (which may be closed, with a warning,
+and the file re-opened by its file name).}
 
 \item{group}{A character string. Specifies which attributes to extract.}
 

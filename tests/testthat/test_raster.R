@@ -2,8 +2,10 @@ test_that("create_raster_from_variables", {
   skip_if_not(requireNamespace("raster"))
 
   r <- raster::raster(
-    xmn = 0, xmx = 10,
-    ymn = 0, ymx = 10,
+    xmn = 0,
+    xmx = 10,
+    ymn = 0,
+    ymx = 10,
     crs = "OGC:CRS84",
     resolution = c(1, 1)
   )
@@ -30,12 +32,17 @@ test_that("create_raster_from_variables", {
   # Resulting raster is of same kind as input grid
   expect_true(
     raster::compareRaster(
-      rv1, r,
-      extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE, orig = TRUE,
-      rotation = TRUE, values = FALSE
+      rv1,
+      r,
+      extent = TRUE,
+      rowcol = TRUE,
+      crs = TRUE,
+      res = TRUE,
+      orig = TRUE,
+      rotation = TRUE,
+      values = FALSE
     )
   )
-
 
   #--- Multiple variables in data.frame
   v2 <- data.frame(a = as.numeric(1:10), b = as.numeric(101:110))
@@ -51,16 +58,30 @@ test_that("create_raster_from_variables", {
   # Extracted values are equal to input values
   expect_identical(raster::extract(rv2, xy), data.matrix(v2))
 
+  #--- Non-numeric data are converted
+  v3 <- cbind(a = as.character(1:10), b = as.character(101:110))
+  rv3 <- create_raster_from_variables(data = v3, site_locations = xy, grid = r)
+  expect_identical(raster::extract(rv3, xy), data.matrix(v2))
+
+  v4 <- data.frame(a = as.character(1:10), stringsAsFactors = FALSE)
+  rv4 <- create_raster_from_variables(data = v4, site_locations = xy, grid = r)
+  expect_identical(raster::extract(rv4, xy), v1)
+
   # Resulting raster is of same kind as input grid
   expect_true(
     raster::compareRaster(
-      rv2, r,
-      extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE, orig = TRUE,
-      rotation = TRUE, values = FALSE
+      rv2,
+      r,
+      extent = TRUE,
+      rowcol = TRUE,
+      crs = TRUE,
+      res = TRUE,
+      orig = TRUE,
+      rotation = TRUE,
+      values = FALSE
     )
   )
 })
-
 
 
 test_that("isoline_from_raster", {
@@ -78,7 +99,6 @@ test_that("isoline_from_raster", {
 
   sf::st_crs(grid_template) <- "OGC:CRS84"
 
-
   types <- c("stars", "Raster")
 
   if (requireNamespace("terra", quietly = TRUE)) {
@@ -92,7 +112,6 @@ test_that("isoline_from_raster", {
       SpatRaster = terra::rast(grid_template),
       stars = stars::st_as_stars(grid_template)
     )
-
 
     #--- All grid values >= threshold
     threshold <- -5
@@ -110,6 +129,6 @@ test_that("isoline_from_raster", {
     threshold <- grid_n + 10L
     ip3 <- isoline_from_raster(rs, alpha = threshold)
     expect_s3_class(ip3, "sf")
-    expect_identical(nrow(ip3), 0L)
+    expect_shape(ip3, nrow = 0L)
   }
 })

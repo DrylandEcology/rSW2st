@@ -33,7 +33,6 @@ test_that("crs", {
   locs <- matrix(c(1, 1), ncol = 2)
   r <- terra::rast(nrows = 1, ncols = 1, xmin = 0, xmax = 1)
 
-
   #--- Run checks
   for (k in seq_len(nrow(test_crs))) {
     epsg <- test_crs[k, "epsg"]
@@ -53,7 +52,6 @@ test_that("crs", {
       expect_s3_class(sf::st_crs(tmp_spCRS), expected_class)
     }
 
-
     expect_s3_class(
       sf::st_crs(as_points(locs, "sp", crs = epsg)),
       expected_class
@@ -68,8 +66,6 @@ test_that("crs", {
     )
 
     expect_s3_class(sf::st_crs(r), expected_class)
-
-
 
     #--- Determine crs units
     expect_identical(crs_units(epsg), expected_unit)
@@ -108,7 +104,6 @@ test_that("crs", {
 })
 
 
-
 test_that("UTM", {
   tmp <- c(-120, -100, -90, 0, 15, 90, 135, 150)
 
@@ -116,24 +111,40 @@ test_that("UTM", {
     longitude = rep(tmp, each = 2L),
     latitude = rep(c(-40, 40), times = length(tmp)),
     expected_utm_zone = c(
-      11L, 11L,
-      14L, 14L,
-      16L, 16L,
-      31L, 31L,
-      33L, 33L,
-      46L, 46L,
-      53L, 53L,
-      56L, 56L
+      11L,
+      11L,
+      14L,
+      14L,
+      16L,
+      16L,
+      31L,
+      31L,
+      33L,
+      33L,
+      46L,
+      46L,
+      53L,
+      53L,
+      56L,
+      56L
     ),
     expected_utm_epsg = c(
-      32711, 32611,
-      32714, 32614,
-      32716, 32616,
-      32731, 32631,
-      32733, 32633,
-      32746, 32646,
-      32753, 32653,
-      32756, 32656
+      32711L,
+      32611L,
+      32714L,
+      32614L,
+      32716L,
+      32616L,
+      32731L,
+      32631L,
+      32733L,
+      32633L,
+      32746L,
+      32646L,
+      32753L,
+      32653L,
+      32756L,
+      32656L
     )
   )
 
@@ -148,4 +159,12 @@ test_that("UTM", {
       locations[k, "expected_utm_epsg"]
     )
   }
+})
+
+
+test_that("UTM: equator and integer EPSG code", {
+  xy <- data.frame(longitude = -100, latitude = 0)
+  expect_identical(utm_zone(xy)[["utm_NS"]], "N")
+  expect_identical(epsg_for_utm(xy), 32614L)
+  expect_identical(epsg_for_utm(data.frame(-100, -1e-6)), 32714L)
 })

@@ -9,6 +9,11 @@ fillValue(dataType)
 \arguments{
 \item{dataType}{A character string. A \code{netCDF} data type, see \code{\link[=ncDataType]{ncDataType()}}.}
 }
+\value{
+The default fill value of the \code{netCDF} library for \code{dataType}.
+The values for \code{"NC_INT64"} and \code{"NC_UINT64"} are approximate because
+they cannot be exactly represented as R numbers.
+}
 \description{
 Identify the fill value corresponding to a data type
 }

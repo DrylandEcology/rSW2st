@@ -2,8 +2,10 @@ test_that("variogram_range", {
   skip_if_not_installed("automap")
 
   rv1 <- terra::rast(
-    xmin = 0, xmax = 10,
-    ymin = 0, ymax = 10,
+    xmin = 0,
+    xmax = 10,
+    ymin = 0,
+    ymax = 10,
     crs = "EPSG:6350",
     resolution = c(1, 1)
   )
@@ -27,4 +29,19 @@ test_that("variogram_range", {
     variogram_range(x = xy, sub_samplepoints_N = 5, seed = 2017),
     tolerance = 1e-6
   )
+})
+
+
+test_that("variogram_range: restores random number state", {
+  skip_if_not_installed("automap")
+  skip_if_not_installed("gstat")
+
+  xy <- as_points(0.5 + cbind(0:9, 0:9), crs = 6350, to_class = "sf")
+
+  set.seed(1L)
+  ref <- stats::runif(1L)
+
+  set.seed(1L)
+  variogram_range(x = xy, sub_samplepoints_N = 5, seed = 2017)
+  expect_identical(stats::runif(1L), ref)
 })

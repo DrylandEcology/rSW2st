@@ -65,13 +65,15 @@ read_netCDF_as_terra(
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
 a character string as file name, an object of class \var{"NetCDF"},
-or an object of class \var{"ncdf4"}.}
+or an object of class \var{"ncdf4"} (which may be closed, with a warning,
+and the file re-opened by its file name).}
 
 \item{method}{A character string. Determines how the \var{netCDF} is read
 and if a spatial subset (by \code{locations}) is extracted.}
 
 \item{var}{A character string. The variable name to be read. Passed along as
-\var{varname} for \var{rasters} or \var{var} for \var{stars} targets.}
+\var{varname} for \var{rasters}, \var{var} for \var{stars}, or
+\var{subds} for \var{terra} targets.}
 
 \item{nc_name_crs}{A character string. The name of the \var{crs} variable
 in the \var{netCDF}.
@@ -155,6 +157,9 @@ the \code{crs} object.
  \code{\link{read_netCDF_as_terra}} is a thin wrapper
 around \code{\link[terra:rast]{terra::rast}},
 but makes an extra attempt to correctly set the \var{crs} object.
+Arguments in \code{...} that \code{\link[terra:rast]{terra::rast}} does
+not accept are ignored. \code{x} cannot be an object of class
+\var{"NetCDF"}.
 }
 
 \examples{

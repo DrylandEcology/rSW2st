@@ -1,4 +1,3 @@
-
 #' Fills a raster grid with variable values associated with geographic locations
 #'
 #' @param data A vector or two-dimensional object. Elements/rows correspond to
@@ -61,33 +60,30 @@ create_raster_from_variables <- function(
   # Attempt to convert data to a numeric type, if not, so that it can be
   # converted to a raster object
   if (!(is.numeric(data) || all(vapply(data, is.numeric, FUN.VALUE = NA)))) {
-    if (nl > 1) {
-      for (k in seq_len(nl)) {
-        tmp <- try(
-          if (is.factor(data[, k])) {
-            as.integer(data[, k])
-          } else {
-            as.double(data[, k])
-          }
-        )
-        stopifnot(!inherits(tmp, "try-error"))
-        data[, k] <- tmp
-      }
+    toNumeric <- function(x) {
+      tmp <- try(if (is.factor(x)) as.integer(x) else as.double(x))
+      stopifnot(!inherits(tmp, "try-error"))
+      tmp
+    }
 
+    data <- if (is.null(dim(data))) {
+      toNumeric(data)
     } else {
-      data <- try(
-        if (is.factor(data)) {
-          as.integer(data)
-        } else {
-          as.double(data)
-        }
+      # Convert column by column into a numeric matrix (a character matrix
+      # would otherwise remain character and a data.frame cannot be passed
+      # to `as.double()`)
+      matrix(
+        unlist(
+          lapply(seq_len(nl), function(k) toNumeric(data[, k, drop = TRUE]))
+        ),
+        ncol = nl,
+        dimnames = list(NULL, cnames)
       )
-      stopifnot(!inherits(data, "try-error"))
     }
   }
 
   if (nl == 1) {
-    data <- matrix(data, ncol = 1)
+    data <- matrix(unlist(data, use.names = FALSE), ncol = 1)
   }
 
   # create raster, init with NAs, and add data
@@ -122,11 +118,9 @@ create_raster_from_variables <- function(
     # raster v2.9.6 the list-method of brick ignores all ... arguments
     r <- raster::brick(raster::stack(rl), filename = filename)
     unlink(filenameks)
-
   } else {
     r <- rl[[1L]]
   }
-
 
   # set datatype
   raster::dataType(r) <- get_raster_datatype(data)
@@ -135,15 +129,21 @@ create_raster_from_variables <- function(
 }
 
 
-
 #' Convert \code{\link{typeof}} to \code{\link[raster]{dataType}} types
 #'
 #' @references Relevant code adapted from \code{`raster:::dataType<-`}
 #' @noRd
 get_raster_datatype <- function(data) {
   supported_types <- c(
-    "DOUBL", "NUMER", "FLOAT", "SINGL", "REAL", "INTEG", "SMALL",
-    "BYTE", "LOGIC"
+    "DOUBL",
+    "NUMER",
+    "FLOAT",
+    "SINGL",
+    "REAL",
+    "INTEG",
+    "SMALL",
+    "BYTE",
+    "LOGIC"
   )
 
   tmp <- substr(toupper(typeof(data)), 1, 5)
@@ -180,7 +180,10 @@ get_raster_datatype <- function(data) {
     BYTE = "INT1U",
     SMALL = "INT2S",
     INTEG = "INT4S",
-    NUMER = , FLOAT = , SINGL = , REAL = "FLT4S",
+    NUMER = ,
+    FLOAT = ,
+    SINGL = ,
+    REAL = "FLT4S",
     DOUBL = "FLT8S"
   )
 }

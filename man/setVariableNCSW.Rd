@@ -14,9 +14,11 @@ setVariableNCSW(
   dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
+  shuffle = !anyNA(deflate),
   long_name = NULL,
   units = NULL,
   cell_method = NULL,
+  cell_methods = cell_method,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
   attributes = NULL,
@@ -26,7 +28,8 @@ setVariableNCSW(
 \arguments{
 \item{x}{A character string (file name that will be opened and closed),
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
-an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (closed with a warning;
+the file is then opened by its file name and closed on exit).}
 
 \item{varName}{A character string. The name of the variable.
 see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}} for more detail.}
@@ -49,11 +52,19 @@ see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 \item{deflate}{A numeric value or \code{NA},
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 
+\item{shuffle}{A logical value. Turn on the shuffle filter?
+Default is to turn it on if \code{deflate} is not \code{NA};
+see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
+
 \item{long_name}{A character string. The \code{"long_name"} attribute.}
 
 \item{units}{A character string.  The \code{"units"} attribute.}
 
-\item{cell_method}{A character string. The \code{"cell_method"} attribute.}
+\item{cell_method}{A character string. Passed to \code{"cell_methods"} for
+backwards compatibility; will be removed in the version.}
+
+\item{cell_methods}{A character string. The \code{"cell_methods"} attribute.
+Previously, misspelled as \code{"cell_method"}.}
 
 \item{coordinates}{A character string. The \code{"coordinates"} attribute.}
 
@@ -62,7 +73,9 @@ see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}} for more detail.}
 \item{attributes}{A named vector or named list of character strings.}
 
 \item{addFillValue}{A logical value. Add a \code{"_FillValue"} attribute? The
-value is determined by \code{dataType} and \code{\link[=fillValue]{fillValue()}}.}
+value is determined by \code{dataType} and \code{\link[=fillValue]{fillValue()}}. For \code{"NC_INT64"} and
+\code{"NC_UINT64"}, no attribute is added (with a warning) and the default fill
+value of the \code{netCDF} library applies.}
 }
 \description{
 Add a variable
@@ -74,7 +87,7 @@ Add a variable
 see \code{\link[RNetCDF:var.def.nc]{RNetCDF::var.def.nc()}}.
 \item Write values if \code{values} are not \code{NULL}
 (using \code{count} and \code{start} if provided), see \code{\link[RNetCDF:var.put.nc]{RNetCDF::var.put.nc()}}.
-\item Add attributes \code{"long_name"}, \code{"units"}, \code{"cell_method"},
+\item Add attributes \code{"long_name"}, \code{"units"}, \code{"cell_methods"},
 \code{"coordinates"} and \code{"grid_mapping"} if provided.
 If \code{"long_name"} is not provided and there is no attribute with that
 name, then \code{varName} is used as value for \code{"long_name"}.

@@ -21,4 +21,9 @@ Useful links:
 \author{
 \strong{Maintainer}: Daniel Schlaepfer \email{danielrschlaepfer@gmail.com} (\href{https://orcid.org/0000-0001-9973-2065}{ORCID})
 
+Authors:
+\itemize{
+  \item Daniel Schlaepfer \email{danielrschlaepfer@gmail.com} (\href{https://orcid.org/0000-0001-9973-2065}{ORCID})
+}
+
 }

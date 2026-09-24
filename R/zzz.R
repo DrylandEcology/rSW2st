@@ -17,9 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-
-
-
 .onLoad <- function(libname, pkgname) {
   #--- Define package level variables that should be hidden from package user
   # 'rSW2_glovars' is defined in rSW2space-package.R

@@ -6,13 +6,18 @@
 \arguments{
 \item{x}{A character string (file name that will be opened and closed),
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
-an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (closed with a warning;
+the file is then opened by its file name and closed on exit).}
 
 \item{long_name}{A character string. The \code{"long_name"} attribute.}
 
 \item{units}{A character string.  The \code{"units"} attribute.}
 
-\item{cell_method}{A character string. The \code{"cell_method"} attribute.}
+\item{cell_methods}{A character string. The \code{"cell_methods"} attribute.
+Previously, misspelled as \code{"cell_method"}.}
+
+\item{cell_method}{A character string. Passed to \code{"cell_methods"} for
+backwards compatibility; will be removed in the version.}
 
 \item{coordinates}{A character string. The \code{"coordinates"} attribute.}
 

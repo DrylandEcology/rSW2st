@@ -16,7 +16,8 @@ checkSpatialNCSW(
 \arguments{
 \item{x}{A character string (file name that will be opened and closed),
 an object of class \code{"NetCDF"} from the \code{RNetCDF} package (kept open), or
-an object of class \code{"ncdf4"} from the \code{ncdf4} package (kept open).}
+an object of class \code{"ncdf4"} from the \code{ncdf4} package (closed with a warning;
+the file is then opened by its file name and closed on exit).}
 
 \item{nameDimX}{A character string. The name of the \code{X}-axis dimension and
 coordinate variable.}

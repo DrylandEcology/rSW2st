@@ -1,8 +1,16 @@
-
 openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
   closeOnExit <- FALSE
 
   if (inherits(x, "ncdf4")) {
+    # Two open connections to the same file may fail or become inconsistent
+    warning(
+      "Closing \"ncdf4\" connection to ",
+      shQuote(x[["filename"]]),
+      " and re-opening with \"RNetCDF\".",
+      call. = FALSE
+    )
+    stopifnot(requireNamespace("ncdf4", quietly = TRUE))
+    ncdf4::nc_close(x)
     x <- x[["filename"]]
   }
 
@@ -13,7 +21,9 @@ openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
     closeOnExit <- TRUE
   } else if (isTRUE(stopOnError)) {
     stop(
-      "Class ", class(x), " not implemented for argument 'x'.",
+      "Class ",
+      class(x),
+      " not implemented for argument 'x'.",
       call. = FALSE
     )
   } else {
@@ -28,10 +38,14 @@ openRnetCDF <- function(x, write = FALSE, stopOnError = TRUE) {
 #'
 #' @param x A character string (file name that will be opened and closed),
 #' an object of class `"NetCDF"` from the `RNetCDF` package (kept open), or
-#' an object of class `"ncdf4"` from the `ncdf4` package (kept open).
+#' an object of class `"ncdf4"` from the `ncdf4` package (closed with a warning;
+#' the file is then opened by its file name and closed on exit).
 #' @param long_name A character string. The `"long_name"` attribute.
 #' @param units A character string.  The `"units"` attribute.
-#' @param cell_method A character string. The `"cell_method"` attribute.
+#' @param cell_methods A character string. The `"cell_methods"` attribute.
+#' Previously, misspelled as `"cell_method"`.
+#' @param cell_method A character string. Passed to `"cell_methods"` for
+#' backwards compatibility; will be removed in the version.
 #' @param coordinates A character string. The `"coordinates"` attribute.
 #' @param grid_mapping A character string. The `"grid_mapping"` attribute.
 #' @param attributes A named vector or named list of character strings.
@@ -131,6 +145,10 @@ ncDataType <- function(dataType, stopOnError = TRUE) {
 #'
 #' @inheritParams ncsw
 #'
+#' @return The default fill value of the `netCDF` library for `dataType`.
+#' The values for `"NC_INT64"` and `"NC_UINT64"` are approximate because
+#' they cannot be exactly represented as R numbers.
+#'
 #' @examples
 #' fillValue("integer")
 #'
@@ -176,7 +194,7 @@ fillValue <- function(dataType) {
     NC_FILL_STRING = "",
 
     stop(shQuote(dataType), " is not implemented.", call. = FALSE)
-  )
+  ) # nolint: unreachable_code_linter. False positive (lintr 3.4.0)
 }
 
 
@@ -261,20 +279,19 @@ writeTerraToNCSW <- function(
   timeValues = NULL,
   deleteGlobalAttributes = c("created_by", "created_date", "date")
 ) {
-
   # `terra::writeCDF()` uses "ncdf4" but it is a suggested package
   stopifnot(requireNamespace("ncdf4", quietly = TRUE))
 
   dataType <- match.arg(dataType) # terra dataType
 
-  if (increasingLat) {
+  if (isTRUE(increasingLat)) {
     x <- terra::flip(x, direction = "vertical")
   }
 
   listArgsWriteCDF <- list(
     filename = filename,
     varname = terra::varnames(x),
-    longname =  terra::longnames(x),
+    longname = terra::longnames(x),
     unit = terra::units(x),
     gridmap = NULL, # writes only text
     prec = dataType,
@@ -301,7 +318,6 @@ writeTerraToNCSW <- function(
     } else {
       terra::time(x) <- NULL
     }
-
   } else {
     # terra v1.8-42 introduced terra::depth() and terra::time()
     if (hasVertical && hasTime) {
@@ -319,36 +335,41 @@ writeTerraToNCSW <- function(
 
   do.call(terra::writeCDF, args = listArgsWriteCDF)
 
-
   #--- Open netCDF for post-processing
   xnc <- RNetCDF::open.nc(filename, write = TRUE)
   on.exit(RNetCDF::close.nc(xnc))
 
-
   #--- Delete unwanted global attributes created by terra
   deleteGlobalAttributesNCSW(xnc, deleteGlobalAttributes)
 
-
-  #--- Flip latitude values
+  #--- Flip latitude values (data were flipped before writing)
   # [terra::writeCDF] (v1.7.78) forces latitude to be decreasing, see
   # nolint start.
   # [terra:::.write_cdf] `ydim <- ncdf4::ncdim_def( yname, yunit, yFromRow(y, 1:nrow(y)) )`
   # nolint end.
-  xlat <- RNetCDF::var.get.nc(xnc, variable = nameDimY)
-  RNetCDF::var.put.nc(xnc, variable = nameDimY, data = rev(xlat))
-
+  if (isTRUE(increasingLat)) {
+    xlat <- RNetCDF::var.get.nc(xnc, variable = nameDimY)
+    RNetCDF::var.put.nc(xnc, variable = nameDimY, data = rev(xlat))
+  }
 
   #--- longitude/latitude attributes
   RNetCDF::att.put.nc(xnc, nameDimX, "axis", "NC_CHAR", value = "X")
   RNetCDF::att.put.nc(
-    xnc, nameDimX, "standard_name", "NC_CHAR", value = nameDimX
+    xnc,
+    nameDimX,
+    "standard_name",
+    "NC_CHAR",
+    value = nameDimX
   )
 
   RNetCDF::att.put.nc(xnc, nameDimY, "axis", "NC_CHAR", value = "Y")
   RNetCDF::att.put.nc(
-    xnc, nameDimY, "standard_name", "NC_CHAR", value = nameDimY
+    xnc,
+    nameDimY,
+    "standard_name",
+    "NC_CHAR",
+    value = nameDimY
   )
-
 
   #--- Spatial bounds
   if (isTRUE(addSpatialBounds)) {
@@ -381,12 +402,17 @@ setCRSNCSW <- function(
 ) {
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   res <- try(RNetCDF::var.inq.nc(xnc, nameCRS), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::var.def.nc(
-      xnc, varname = nameCRS, vartype = "NC_BYTE", dimensions = NA
+      xnc,
+      varname = nameCRS,
+      vartype = "NC_BYTE",
+      dimensions = NA
     )
   }
 
@@ -469,11 +495,11 @@ checkSpatialNCSW <- function(
   expectedSpatialExtent = c(xmin = NA, xmax = NA, ymin = NA, ymax = NA),
   tolerance = sqrt(.Machine[["double.eps"]])
 ) {
-
   ox <- openRnetCDF(x, write = FALSE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   #--- Check spatial dimensions
   if (!anyNA(expectedSpatialDims)) {
@@ -522,11 +548,11 @@ renameSpatialNCSW <- function(
   nameDimY = c(orig = "latitude", to = "lat"),
   nameCRS = c(orig = "crs", to = "crs_geogsc")
 ) {
-
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   if (!is.null(nameDimX) && !identical(nameDimX[["orig"]], nameDimX[["to"]])) {
     RNetCDF::dim.rename.nc(xnc, nameDimX[["orig"]], newname = nameDimX[["to"]])
@@ -583,8 +609,27 @@ setAxisBoundsNCSW <- function(
 ) {
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
+  hasBndsVar <- !inherits(
+    try(RNetCDF::var.inq.nc(xnc, nameBndsVar), silent = TRUE),
+    "try-error"
+  )
+
+  if (
+    !hasBndsVar &&
+      is.null(valuesBnds) &&
+      !isTRUE(calculateValuesBndsIfMissing)
+  ) {
+    stop(
+      "Bounds ",
+      shQuote(nameBndsVar),
+      " require `valuesBnds` or `calculateValuesBndsIfMissing = TRUE`.",
+      call. = FALSE
+    )
+  }
 
   #--- Create dimension
   res <- try(RNetCDF::dim.inq.nc(xnc, nameBndsDim), silent = TRUE)
@@ -593,8 +638,7 @@ setAxisBoundsNCSW <- function(
   }
 
   #--- Create bound variable
-  res <- try(RNetCDF::var.inq.nc(xnc, nameBndsVar), silent = TRUE)
-  if (inherits(res, "try-error")) {
+  if (!hasBndsVar) {
     RNetCDF::var.def.nc(
       xnc,
       varname = nameBndsVar,
@@ -617,7 +661,11 @@ setAxisBoundsNCSW <- function(
 
     RNetCDF::var.put.nc(xnc, nameBndsVar, data = valuesBnds)
     RNetCDF::att.put.nc(
-      xnc, nameDim, boundsAttributeName, "NC_CHAR", value = nameBndsVar
+      xnc,
+      nameDim,
+      boundsAttributeName,
+      "NC_CHAR",
+      value = nameBndsVar
     )
   }
 }
@@ -676,16 +724,29 @@ setAxisNCSW <- function(
 ) {
   dataType <- ncDataType(dataType[[1L]])
 
-  if (!is.null(axis)) stopifnot(axis %in% c("X", "Y", "Z", "T"))
+  if (!is.null(axis)) {
+    stopifnot(axis %in% c("X", "Y", "Z", "T"))
+  }
 
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   #--- Create dimension
   res <- try(RNetCDF::dim.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
+    # netCDF library creates an unlimited dimension if length is zero
+    if (length(values) == 0L && !isTRUE(isUnlimitedDim)) {
+      stop(
+        "Cannot create dimension ",
+        shQuote(nameAxis),
+        " of fixed length without `values`.",
+        call. = FALSE
+      )
+    }
+
     RNetCDF::dim.def.nc(
       xnc,
       dimname = nameAxis,
@@ -698,14 +759,16 @@ setAxisNCSW <- function(
   res <- try(RNetCDF::var.inq.nc(xnc, nameAxis), silent = TRUE)
   if (inherits(res, "try-error")) {
     RNetCDF::var.def.nc(
-      xnc, varname = nameAxis, vartype = dataType, dimensions = nameAxis
+      xnc,
+      varname = nameAxis,
+      vartype = dataType,
+      dimensions = nameAxis
     )
   }
 
   if (!is.null(values)) {
     RNetCDF::var.put.nc(xnc, variable = nameAxis, data = values)
   }
-
 
   #--- Variable attributes
   tmp <- c(
@@ -782,7 +845,9 @@ setAxisVerticalNCSW <- function(
 
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   setAxisNCSW(
     xnc,
@@ -812,7 +877,8 @@ setAxisVerticalNCSW <- function(
   #--- Vertical bounds
   if (
     identical(verticalType, "values") &&
-      !is.null(verticalUpperBound) && !is.null(verticalLowerBound)
+      !is.null(verticalUpperBound) &&
+      !is.null(verticalLowerBound)
   ) {
     vertical_bnds <- apply(
       rbind(verticalUpperBound, verticalLowerBound),
@@ -839,7 +905,10 @@ setAxisVerticalNCSW <- function(
 setAxisPFTsNCSW <- function(
   x,
   pftValues = c(
-    Tree = "Trees", Shrub = "Shrubs", Forb = "Forbs", Grass = "Grasses"
+    Tree = "Trees",
+    Shrub = "Shrubs",
+    Forb = "Forbs",
+    Grass = "Grasses"
   ),
   nameAxis = "pft",
   dataType = c("NC_STRING", "NC_BYTE")
@@ -848,7 +917,9 @@ setAxisPFTsNCSW <- function(
 
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   setAxisNCSW(
     xnc,
@@ -870,10 +941,13 @@ setAxisPFTsNCSW <- function(
     )
   )
 
-
   if (identical(dataType, "NC_BYTE")) {
     RNetCDF::att.put.nc(
-      xnc, nameAxis, "flag_values", "NC_BYTE", value = seq_along(pftValues)
+      xnc,
+      nameAxis,
+      "flag_values",
+      "NC_BYTE",
+      value = seq_along(pftValues)
     )
   }
 }
@@ -956,8 +1030,9 @@ setAxisMonthClimatologyNCSW <- function(
 
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   time_unit <- paste0("days since ", startYear, "-01-01 00:00:00")
 
@@ -982,7 +1057,6 @@ setAxisMonthClimatologyNCSW <- function(
     dataType = dataType
   )
 
-
   #--- Create bounds
   cbnds <- rbind(
     start = RNetCDF::utinvcal.nc(
@@ -999,7 +1073,7 @@ setAxisMonthClimatologyNCSW <- function(
             paste0(endYear, "-", seq_len(12L)[-1L], "-01"),
             paste0(endYear + 1L, "-01-01")
           )
-        ) - 1L
+        )
       )
     )
   )
@@ -1026,15 +1100,20 @@ setAxisMonthClimatologyNCSW <- function(
 #' @param dimensions A vector, see [`RNetCDF::var.def.nc()`] for more detail.
 #' @param deflate A numeric value or `NA`,
 #' see [`RNetCDF::var.def.nc()`] for more detail.
+#' @param shuffle A logical value. Turn on the shuffle filter?
+#' Default is to turn it on if `deflate` is not `NA`;
+#' see [`RNetCDF::var.def.nc()`] for more detail.
 #' @param addFillValue A logical value. Add a `"_FillValue"` attribute? The
-#' value is determined by `dataType` and [fillValue()].
+#' value is determined by `dataType` and [fillValue()]. For `"NC_INT64"` and
+#' `"NC_UINT64"`, no attribute is added (with a warning) and the default fill
+#' value of the `netCDF` library applies.
 #'
 #' @section Details:
 #'   1. Create variable of `dataType` and `dimensions` if not present,
 #'      see [`RNetCDF::var.def.nc()`].
 #'   2. Write values if `values` are not `NULL`
 #'      (using `count` and `start` if provided), see [`RNetCDF::var.put.nc()`].
-#'   3. Add attributes `"long_name"`, `"units"`, `"cell_method"`,
+#'   3. Add attributes `"long_name"`, `"units"`, `"cell_methods"`,
 #'      `"coordinates"` and `"grid_mapping"` if provided.
 #'      If `"long_name"` is not provided and there is no attribute with that
 #'      name, then `varName` is used as value for `"long_name"`.
@@ -1051,9 +1130,11 @@ setVariableNCSW <- function(
   dataType = "NC_DOUBLE",
   dimensions = NULL,
   deflate = 5L,
+  shuffle = !anyNA(deflate),
   long_name = NULL,
   units = NULL,
   cell_method = NULL,
+  cell_methods = cell_method,
   coordinates = paste("latitude", "longitude"),
   grid_mapping = "crs",
   attributes = NULL,
@@ -1061,7 +1142,8 @@ setVariableNCSW <- function(
 ) {
   if (length(varName) != 1L) {
     stop(
-      "Process one variable at a time, currently n = ", length(varName),
+      "Process one variable at a time, currently n = ",
+      length(varName),
       call. = FALSE
     )
   }
@@ -1070,8 +1152,9 @@ setVariableNCSW <- function(
 
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   #--- Create variable
   res <- try(RNetCDF::var.inq.nc(xnc, varName), silent = TRUE)
@@ -1086,10 +1169,20 @@ setVariableNCSW <- function(
       chunking = if (doChunk) TRUE else NA,
       chunksizes = if (doChunk) var_chunksizes_xyzt,
       deflate = deflate,
-      shuffle = !anyNA(deflate)
+      shuffle = isTRUE(shuffle)
     )
 
-    if (isTRUE(addFillValue)) {
+    if (isTRUE(addFillValue) && dataType %in% c("NC_INT64", "NC_UINT64")) {
+      # 64-bit fill values are not exactly representable as R numbers
+      warning(
+        "No \"_FillValue\" attribute added to ",
+        shQuote(varName),
+        " (",
+        dataType,
+        "); the default fill value of the netCDF library applies.",
+        call. = FALSE
+      )
+    } else if (isTRUE(addFillValue)) {
       RNetCDF::att.put.nc(
         xnc,
         variable = varName,
@@ -1103,7 +1196,11 @@ setVariableNCSW <- function(
   #--- Write values
   if (!is.null(values)) {
     RNetCDF::var.put.nc(
-      xnc, variable = varName, data = values, start = start, count = count
+      xnc,
+      variable = varName,
+      data = values,
+      start = start,
+      count = count
     )
   }
 
@@ -1113,7 +1210,7 @@ setVariableNCSW <- function(
     if (!is.null(units)) list(units = units),
     if (!is.null(coordinates)) list(coordinates = coordinates),
     if (!is.null(grid_mapping)) list(grid_mapping = grid_mapping),
-    if (!is.null(cell_method)) list(cell_method = cell_method),
+    if (!is.null(cell_methods)) list(cell_methods = cell_methods),
     if (!is.null(attributes)) as.list(attributes)
   )
   tmp <- tmp[unique(names(tmp))]
@@ -1122,7 +1219,9 @@ setVariableNCSW <- function(
   for (k in seq_along(tmp)) {
     RNetCDF::att.put.nc(
       xnc,
-      variable = varName, name = names(tmp)[[k]], type = "NC_CHAR",
+      variable = varName,
+      name = names(tmp)[[k]],
+      type = "NC_CHAR",
       value = as.character(tmp[[k]])
     )
   }
@@ -1132,7 +1231,9 @@ setVariableNCSW <- function(
   if (inherits(res, "try-error")) {
     RNetCDF::att.put.nc(
       xnc,
-      variable = varName, name = "long_name", type = "NC_CHAR",
+      variable = varName,
+      name = "long_name",
+      type = "NC_CHAR",
       value = varName
     )
   }
@@ -1155,11 +1256,11 @@ setVariableNCSW <- function(
 #'
 #' @export
 setGlobalAttributesNCSW <- function(x, attributes) {
-
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   for (k in seq_along(attributes)) {
     RNetCDF::att.put.nc(
@@ -1188,11 +1289,11 @@ setGlobalAttributesNCSW <- function(x, attributes) {
 #'
 #' @export
 deleteGlobalAttributesNCSW <- function(x, attributes) {
-
   ox <- openRnetCDF(x, write = TRUE)
   xnc <- ox[["con"]]
-  if (ox[["closeOnExit"]]) on.exit(RNetCDF::close.nc(xnc))
-
+  if (ox[["closeOnExit"]]) {
+    on.exit(RNetCDF::close.nc(xnc))
+  }
 
   for (k in seq_along(attributes)) {
     try(

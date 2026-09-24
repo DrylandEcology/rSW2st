@@ -9,7 +9,8 @@ is_netCDF_gridded(x, xy_names = c("lon", "lat"))
 \arguments{
 \item{x}{An object identifying a \var{netCDF} file, i.e.,
 a character string as file name, an object of class \var{"NetCDF"},
-or an object of class \var{"ncdf4"}.}
+or an object of class \var{"ncdf4"} (which may be closed, with a warning,
+and the file re-opened by its file name).}
 
 \item{xy_names}{A vector with two character strings. The names of the
 \var{x} and \var{y} spatial dimensions of a \var{netCDF} file.}
